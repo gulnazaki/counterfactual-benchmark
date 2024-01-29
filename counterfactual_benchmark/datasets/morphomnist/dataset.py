@@ -73,6 +73,7 @@ class MorphoMNISTLike(Dataset):
 
         # TODO load from labels
         columns = [att for att in columns if att != 'digit']
+        attributes = [att for att in attributes if att != 'digit']
 
         images, labels, metrics_df = load_morphomnist_like(data_dir, train, columns)
         # .copy() removes annoying warning
