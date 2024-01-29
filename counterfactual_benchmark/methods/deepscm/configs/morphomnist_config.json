@@ -2,7 +2,7 @@
     "causal_graph": {
         "thickness": [],
         "intensity": ["thickness"],
-        "digit:": [],
+        "digit": [],
         "image": ["thickness", "intensity", "digit"]
     },
     "mechanism_models": {
