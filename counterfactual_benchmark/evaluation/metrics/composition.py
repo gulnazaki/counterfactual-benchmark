@@ -14,7 +14,7 @@ def composition(factual_batch, method, cycles=10):
     plt.imsave("composition_sample.png", all_images[0][0], cmap='gray')
 
     # loop on different embeddings
-    return l1_distance(images[0], images[-1]) # add more distances
+    return l1_distance(images, steps=cycles) # add more distances
 
-def l1_distance(image1, image2):
-    return np.sum(np.abs(image1 - image2))
+def l1_distance(all_images, steps):
+    return np.mean(np.abs(all_images[steps].numpy() - all_images[0].numpy()))
