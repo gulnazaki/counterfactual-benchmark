@@ -71,5 +71,5 @@ if __name__ == "__main__":
     transform = ReturnLabelsTransform(attributes=attributes, image_name="image")
     test_set = data_class(attributes=attributes, train=False, columns=attributes, transform=transform)
 
-    evaluate(test_set, batch_size=10, scm=scm, attributes=attributes)
+    evaluate(test_set, batch_size=256, scm=scm, attributes=attributes)
 
