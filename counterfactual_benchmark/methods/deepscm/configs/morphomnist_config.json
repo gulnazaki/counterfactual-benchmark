@@ -15,7 +15,7 @@
                 "batch_size_train" : 64,
                 "batch_size_val" : 10000,
                 "patience" : 2,
-                "max_epochs" : 1,
+                "max_epochs" : 1000,
                 "train_val_split" : 0.8
             }
         },
@@ -29,7 +29,7 @@
                 "batch_size_train" : 64,
                 "batch_size_val" : 10000,
                 "patience" : 2,
-                "max_epochs" : 1,
+                "max_epochs" : 1000,
                 "train_val_split" : 0.8
             }
         },
@@ -43,7 +43,7 @@
                 "batch_size_train" : 64,
                 "batch_size_val" : 10000,
                 "patience" : 2,
-                "max_epochs" : 1,
+                "max_epochs" : 1000,
                 "train_val_split" : 0.8
             }
         },
@@ -60,7 +60,7 @@
                 "batch_size_train" : 128,
                 "batch_size_val" : 256,
                 "patience" : 10,
-                "max_epochs" : 3,
+                "max_epochs" : 1000,
                 "train_val_split" : 0.8
             }
         }
