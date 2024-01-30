@@ -32,7 +32,7 @@ if __name__ == "__main__":
 
         module = import_module(model_config["module"])
         model_class = getattr(module, model_config["model_class"])
-        model = model_class(name=variable, params=model_config["params"])
+        model = model_class(name=variable, params=model_config["params"], attrs=attributes)
 
         train_fn = model_to_script[config["mechanism_models"][variable]["model_type"]]
         train_fn(model,

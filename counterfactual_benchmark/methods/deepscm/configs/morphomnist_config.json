@@ -2,8 +2,7 @@
     "causal_graph": {
         "thickness": [],
         "intensity": ["thickness"],
-        "digit": [],
-        "image": ["thickness", "intensity", "digit"]
+        "image": ["thickness", "intensity"]
     },
     "mechanism_models": {
         "thickness": {
@@ -16,7 +15,7 @@
                 "batch_size_train" : 64,
                 "batch_size_val" : 10000,
                 "patience" : 2,
-                "max_epochs" : 1000,
+                "max_epochs" : 1,
                 "train_val_split" : 0.8
             }
         },
@@ -30,7 +29,7 @@
                 "batch_size_train" : 64,
                 "batch_size_val" : 10000,
                 "patience" : 2,
-                "max_epochs" : 1000,
+                "max_epochs" : 1,
                 "train_val_split" : 0.8
             }
         },
@@ -44,23 +43,24 @@
                 "batch_size_train" : 64,
                 "batch_size_val" : 10000,
                 "patience" : 2,
-                "max_epochs" : 1000,
+                "max_epochs" : 1,
                 "train_val_split" : 0.8
             }
         },
         "image": {
             "model_type": "vae",
-            "model_class": "TMmnistCondVAE",
+            "model_class": "MmnistCondVAE",
             "module": "models.vaes",
             "params": {
                 "n_chan" : [1, 16, 32, 128, 128],
                 "latent_dim" : 32,
                 "beta" : 4,
                 "lr" : 1e-6,
+                "gradient_clip_val": "null",
                 "batch_size_train" : 128,
                 "batch_size_val" : 256,
                 "patience" : 10,
-                "max_epochs" : 1000,
+                "max_epochs" : 3,
                 "train_val_split" : 0.8
             }
         }

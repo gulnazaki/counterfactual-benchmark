@@ -1,12 +1,13 @@
-from scm.modules import CondVAE
-from utils import flatten_list
 from torch.functional import F
 from torch import nn
 import torch
 from collections import OrderedDict
+from models.utils import flatten_list
+from models.vaes import CondVAE
+
 
 class Encoder(nn.Module):
-    def __init__(self, cond_dim, latent_dim, n_chan=[1, 16, 32, 64, 128], stride=[1, 2, 2, 2], 
+    def __init__(self, cond_dim, latent_dim, n_chan=[1, 16, 32, 64, 128], stride=[1, 2, 2, 2],
                  kernel_size=[4, 4, 4, 3], padding=[1, 1, 1, 0]):
         super().__init__()
         self.n_chan = n_chan
@@ -15,7 +16,7 @@ class Encoder(nn.Module):
         # conv layers
         self.conv = nn.Sequential(
             OrderedDict(flatten_list([
-                [('enc' + str(i+1), nn.Conv2d(in_channels=n_chan[i], out_channels=n_chan[i+1], 
+                [('enc' + str(i+1), nn.Conv2d(in_channels=n_chan[i], out_channels=n_chan[i+1],
                                               kernel_size=kernel_size[i], stride=stride[i], padding=padding[i])),
                 ('enc' + str(i+1) + 'relu', nn.ReLU())] for i in range(len(n_chan) - 1)
             ]))
@@ -35,9 +36,9 @@ class Encoder(nn.Module):
         logvar = self.logvar(torch.cat([hidden, cond], dim=1))
 
         return mu, logvar
-    
+
 class Decoder(nn.Module):
-    def __init__(self, cond_dim, latent_dim, n_chan=[128, 64, 32, 16, 1], stride=[2, 2, 2, 2], 
+    def __init__(self, cond_dim, latent_dim, n_chan=[128, 64, 32, 16, 1], stride=[2, 2, 2, 2],
                  kernel_size=[3, 4, 4, 4], padding=[0, 1, 0, 1]):
         super().__init__()
         self.n_chan = n_chan
@@ -47,12 +48,12 @@ class Decoder(nn.Module):
         # decoder
         self.conv1 = torch.nn.Sequential(
             OrderedDict(flatten_list([[
-                ('dec' + str(i+1), nn.ConvTranspose2d(in_channels=n_chan[i], out_channels=n_chan[i+1], 
+                ('dec' + str(i+1), nn.ConvTranspose2d(in_channels=n_chan[i], out_channels=n_chan[i+1],
                                                       kernel_size=kernel_size[i], stride=stride[i], padding=padding[i])),
                 ('dec' + str(i+1) + 'relu', nn.ReLU())] for i in range(len(n_chan) - 2)
             ]))
         )
-        # no relu for last layer 
+        # no relu for last layer
         self.conv_fin = torch.nn.Sequential(
             OrderedDict([
                 ('dec' + str(self.n_chan[-2]), nn.ConvTranspose2d(self.n_chan[-2], self.n_chan[-1], kernel_size=3, stride=2, padding=1, output_padding=1))
@@ -67,12 +68,15 @@ class Decoder(nn.Module):
         return x
 
 class MmnistCondVAE(CondVAE):
-    def __init__(self, cond_dim, latent_dim, name="image_vae", n_chan=[1, 16, 32, 64, 128], beta=4):
+    def __init__(self, params, attrs, name="image_vae"):
         # dimensionality of the conditional data
-        self.cond_dim = cond_dim
-        self.latent_dim = latent_dim
+        cond_dim = len(attrs)
+        latent_dim = params["latent_dim"]
+        n_chan = params["n_chan"]
+        beta = params["beta"]
+        lr = params["lr"]
 
         encoder = Encoder(cond_dim, latent_dim, n_chan=n_chan)
         decoder = Decoder(cond_dim, latent_dim, n_chan=n_chan[::-1])
 
-        super(MmnistCondVAE, self).__init__(encoder, decoder, latent_dim, name=name)
+        super().__init__(encoder, decoder, latent_dim, beta, lr, name)
