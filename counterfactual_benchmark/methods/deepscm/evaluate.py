@@ -3,6 +3,7 @@ import numpy as np
 from json import load
 from importlib import import_module
 from model import SCM
+from tqdm import tqdm
 
 import sys
 sys.path.append("../../")
@@ -22,10 +23,10 @@ def evaluate(test_set, batch_size, scm, attributes):
 
     # composition
     composition_scores = []
-    for factual_batch in test_data_loader:
-        composition_scores.append(composition(factual_batch, method=scm, cycles=10))
+    for i, factual_batch in enumerate(tqdm(test_data_loader)):
+        composition_scores.append(composition(factual_batch, i, method=scm, cycles=10))
     composition_score = np.mean(composition_scores)
-    print(composition_score)
+    print("Composition score:", composition_score)
 
     # # get "true" counterfactuals
     # counterfactuals = []
