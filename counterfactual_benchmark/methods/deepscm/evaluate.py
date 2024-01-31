@@ -54,12 +54,12 @@ def evaluate_composition(test_set: Dataset, batch_size: int, cycles: int, scm: n
 
 def produce_counterfactuals(factual_batch: torch.Tensor, scm: nn.Module, do_parent:str, intervention_source: Dataset):
 
-    batch_size, _, _, _ = factual_batch["image"].shape
+    batch_size, _ , _ , _ = factual_batch["image"].shape
     idxs = torch.randperm(len(intervention_source))[:batch_size] # select random indices from train set to perform interventions
    
    
     #update with the counterfactual parent
-    interventions = {do_parent: torch.cat([ train_set[id][do_parent] for id in idxs]).view(-1).unsqueeze(1)}
+    interventions = {do_parent: torch.cat([intervention_source[id][do_parent] for id in idxs]).view(-1).unsqueeze(1)}
     
     abducted_noise = scm.encode(**factual_batch)
     counterfactual_batch = scm.decode(interventions, **abducted_noise)
@@ -94,7 +94,7 @@ if __name__ == "__main__":
     scm = SCM(ckpt_path=config["checkpoint_dir"],
               graph_structure=config["causal_graph"],
               **models)
-
+    
     dataset = config["dataset"]
     data_class = dataclass_mapping[dataset]
     transform = ReturnLabelsTransform(attributes=attributes, image_name="image")
