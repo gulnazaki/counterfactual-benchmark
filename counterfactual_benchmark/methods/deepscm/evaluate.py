@@ -4,6 +4,11 @@ from json import load
 from importlib import import_module
 from model import SCM
 from tqdm import tqdm
+import torch.nn as nn
+from torch.utils.data import Dataset
+
+import matplotlib.pyplot as plt
+import numpy as np
 
 import sys
 sys.path.append("../../")
@@ -18,15 +23,17 @@ dataclass_mapping = {
 }
 
 
-def evaluate(test_set, batch_size, scm, attributes):
+def evaluate_composition(test_set: Dataset, batch_size: int, cycles: int, scm: nn.Module):
     test_data_loader = torch.utils.data.DataLoader(test_set, batch_size=batch_size, shuffle=False, num_workers=7)
 
     # composition
     composition_scores = []
     for i, factual_batch in enumerate(tqdm(test_data_loader)):
-        composition_scores.append(composition(factual_batch, i, method=scm, cycles=10))
+        composition_scores.append(composition(factual_batch, i, method=scm, cycles=cycles))
     composition_score = np.mean(composition_scores)
     print("Composition score:", composition_score)
+
+    return composition_score
 
     # # get "true" counterfactuals
     # counterfactuals = []
@@ -42,6 +49,27 @@ def evaluate(test_set, batch_size, scm, attributes):
 
     # # coverage & density
     # coverage_density(train_set["image"], counterfactuals[0])
+
+
+
+def produce_counterfactuals(factual_batch: torch.Tensor, scm: nn.Module, do_parent:str, intervention_source: Dataset):
+
+    batch_size, _, _, _ = factual_batch["image"].shape
+    idxs = torch.randperm(len(intervention_source))[:batch_size] # select random indices from train set to perform interventions
+   
+   
+    #update with the counterfactual parent
+    interventions = {do_parent: torch.cat([ train_set[id][do_parent] for id in idxs]).view(-1).unsqueeze(1)}
+    
+    abducted_noise = scm.encode(**factual_batch)
+    counterfactual_batch = scm.decode(interventions, **abducted_noise)
+
+    return counterfactual_batch
+    
+
+
+def evaluate_effectiveness():
+    pass
 
 
 if __name__ == "__main__":
@@ -70,7 +98,23 @@ if __name__ == "__main__":
     dataset = config["dataset"]
     data_class = dataclass_mapping[dataset]
     transform = ReturnLabelsTransform(attributes=attributes, image_name="image")
+    
+    train_set = data_class(attributes=attributes, train=True, columns=attributes, transform=transform)
     test_set = data_class(attributes=attributes, train=False, columns=attributes, transform=transform)
 
-    evaluate(test_set, batch_size=256, scm=scm, attributes=attributes)
+    evaluate_composition(test_set, batch_size=256, cycles=10, scm=scm)
+
+
+    #########################################################################################################################
+    ## just test code for the produced counterfactuals -> may delete later 
+    test_data_loader = torch.utils.data.DataLoader(test_set, batch_size=1, shuffle=False, num_workers=7)
+    iterator = iter(test_data_loader)
+    batch = next(iterator)
+    counterfactuals = produce_counterfactuals(batch, scm, do_parent="thickness", intervention_source=train_set)
+    
+    cf_image = counterfactuals["image"].squeeze(0).squeeze(0).numpy()
+
+    plt.imsave("cf_img.png", cf_image, cmap='gray')
+
+
 
