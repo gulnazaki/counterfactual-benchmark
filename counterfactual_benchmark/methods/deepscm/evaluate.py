@@ -17,8 +17,13 @@ sys.path.append("../../")
 from models.classifiers.classifier import Classifier
 from datasets.morphomnist.dataset import MorphoMNISTLike
 from evaluation.metrics.composition import composition
+<<<<<<< HEAD
 from evaluation.metrics.effectiveness import effectiveness
 
+=======
+from evaluation.metrics.coverage_density import coverage_density
+from evaluation.embeddings.vgg import vgg
+>>>>>>> 30858584e0eabad54aa22c23729f123994411357
 
 from datasets.transforms import ReturnLabelsTransform
 
@@ -26,6 +31,25 @@ from datasets.transforms import ReturnLabelsTransform
 dataclass_mapping = {
     "morphomnist": MorphoMNISTLike
 }
+
+
+
+def evaluate_coverage_density(real_set: Dataset, test_set: Dataset, batch_size: int, scm: nn.Module):
+    test_data_loader = torch.utils.data.DataLoader(test_set, batch_size=batch_size, shuffle=False, num_workers=7)
+    real_data_loader = torch.utils.data.DataLoader(real_set, batch_size=batch_size, shuffle=False, num_workers=7)
+  
+    counterfactuals = []
+    factuals = []  
+    for batch in test_data_loader:
+        counterfactual_batch =  produce_counterfactuals(batch, scm, do_parent='thickness', intervention_source=real_set)
+        counterfactuals.append(counterfactual_batch['image'])
+        batch = (counterfactual_batch['image']).numpy()
+    for batch in real_data_loader:
+        factuals.append(batch['image'])
+        
+    return coverage_density(factuals, counterfactuals, k = 5, embedding_fn=vgg, pretrained=True)
+
+
 
 
 def evaluate_composition(test_set: Dataset, batch_size: int, cycles: int, scm: nn.Module):
@@ -133,6 +157,7 @@ if __name__ == "__main__":
     train_set = data_class(attributes=attributes, train=True, columns=attributes, transform=transform)
     test_set = data_class(attributes=attributes, train=False, columns=attributes, transform=transform)
 
+    evaluate_coverage_density(real_set=train_set, test_set=test_set, batch_size=1, scm=scm) 
     evaluate_composition(test_set, batch_size=256, cycles=10, scm=scm)
 
 
