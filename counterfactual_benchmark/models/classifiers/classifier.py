@@ -70,14 +70,17 @@ class Classifier(pl.LightningModule):
         else:
             y_hat = self(x)
         
-        loss = nn.CrossEntropyLoss()(y_hat, y.type(torch.long))
+        loss = nn.BCEWithLogitsLoss()(y_hat, y.type(torch.float32).view(-1, 1))
+        #loss = nn.CrossEntropyLoss()(y_hat, y.type(torch.long))
         return loss
     
     def validation_step(self, batch, batch_idx):
         x, attrs_ = batch
         y = attrs_[:, self.attr]
         y_hat = self(x)
-        loss = nn.CrossEntropyLoss()(y_hat, y.type(torch.long))
+        
+        loss = nn.BCEWithLogitsLoss()(y_hat, y.type(torch.float32).view(-1, 1))
+      #  loss = nn.CrossEntropyLoss()(y_hat, y.type(torch.long))
         return loss
     
     def configure_optimizers(self):
