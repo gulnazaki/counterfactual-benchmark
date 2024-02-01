@@ -10,7 +10,7 @@ sys.path.append("../../")
 from datasets.morphomnist.dataset import MorphoMNISTLike
 from evaluation.metrics.composition import composition
 
-from datasets.transforms import ReturnLabelsTransform
+from datasets.transforms import ReturnDictTransform
 
 
 dataclass_mapping = {
@@ -51,7 +51,7 @@ if __name__ == "__main__":
         config = load(f)
 
     dataset = config["dataset"]
-    attributes = config["causal_graph"]["image"]
+    attribute_size = config["attribute_size"]
 
     models = {}
     for variable in config["causal_graph"].keys():
@@ -59,18 +59,17 @@ if __name__ == "__main__":
 
         module = import_module(model_config["module"])
         model_class = getattr(module, model_config["model_class"])
-        model = model_class(name=variable, params=model_config["params"], attrs=attributes)
+        model = model_class(name=variable, params=model_config["params"], attr_size=attribute_size)
 
         models[variable] = model
 
-    scm = SCM(ckpt_path=config["checkpoint_dir"],
+    scm = SCM(checkpoint_dir=config["checkpoint_dir"],
               graph_structure=config["causal_graph"],
               **models)
 
     dataset = config["dataset"]
     data_class = dataclass_mapping[dataset]
-    transform = ReturnLabelsTransform(attributes=attributes, image_name="image")
-    test_set = data_class(attributes=attributes, train=False, columns=attributes, transform=transform)
+    test_set = data_class(attribute_size, train=False, transform=ReturnDictTransform(attribute_size))
 
-    evaluate(test_set, batch_size=256, scm=scm, attributes=attributes)
+    evaluate(test_set, batch_size=256, scm=scm, attributes=attribute_size.keys())
 
