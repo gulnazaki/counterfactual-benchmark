@@ -56,12 +56,12 @@ class CondVAE(StructuralEquation, pl.LightningModule):
         x, cond = train_batch
         xhat, mu_u, logvar_u = self.forward(x, cond)
         loss = self._vae_loss(xhat, x, mu_u, logvar_u, beta=self.beta)
-        self.log("train_loss", loss, on_step=False, on_epoch=True)
+        self.log("train_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
         return loss
 
     def validation_step(self, train_batch, batch_idx):
         x, cond = train_batch
         xhat, mu_u, logvar_u = self.forward(x, cond)
         loss = self._vae_loss(xhat, x, mu_u, logvar_u, beta=self.beta)
-        self.log("val_loss", loss, on_step=False, on_epoch=True)
+        self.log("val_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
         return loss
