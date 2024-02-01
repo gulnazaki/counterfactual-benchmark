@@ -14,6 +14,8 @@ import sys
 sys.path.append("../../")
 from datasets.morphomnist.dataset import MorphoMNISTLike
 from evaluation.metrics.composition import composition
+from evaluation.metrics.coverage_density import coverage_density
+from evaluation.embeddings.vgg import vgg
 
 from datasets.transforms import ReturnLabelsTransform
 
