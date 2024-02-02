@@ -55,7 +55,7 @@ if __name__ == "__main__":
                                                               1-config_cls["train_val_split"]])
     
   
-    for attribute in ["digit"]:#attribute_size.keys():
+    for attribute in attribute_size.keys():
         print("Train "+ attribute +" classfier!!")
         if attribute == "thickness":
             classifier = Classifier(attr=attribute, width=8, num_outputs=config_cls[attribute +"_num_out"],
