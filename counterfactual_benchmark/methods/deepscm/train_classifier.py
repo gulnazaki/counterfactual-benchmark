@@ -13,8 +13,13 @@ from models.utils import generate_checkpoint_callback, generate_early_stopping_c
 
 def train_classifier(classifier, attr, train_set, val_set, config, default_root_dir):
 
+    ckp_callback = generate_checkpoint_callback(attr + "_classifier", config["ckpt_path"])
+
+   # if attr == "digit":
+   #     ckp_callback = generate_checkpoint_callback(attr + "_classifier", config["ckpt_path"], monitor=None)
+
     trainer = Trainer(accelerator="auto", devices="auto", strategy="auto", 
-                      callbacks=[generate_checkpoint_callback(attr + "_classifier", config["ckpt_path"]), 
+                      callbacks=[ckp_callback, 
                                  generate_early_stopping_callback(patience=config["patience"])], 
                       default_root_dir=default_root_dir, max_epochs=config["max_epochs"])
     
@@ -40,14 +45,17 @@ if __name__ == "__main__":
         config_cls = load(f1)
 
     dataset = config["dataset"]
-    attributes = config["causal_graph"]["image"]
+   # attributes = config["causal_graph"]["image"]
+    attribute_size = config["attribute_size"]
+  
 
-    data = dataclass_mapping[dataset](attributes=attributes, columns=attributes, normalize_=True, train=True)
+    data = dataclass_mapping[dataset](attribute_size=attribute_size, normalize_=True, train=True)
 
     train_set, val_set = torch.utils.data.random_split(data, [config_cls["train_val_split"], 
                                                               1-config_cls["train_val_split"]])
     
-    for attribute in attributes:
+  
+    for attribute in attribute_size.keys():
         print("Train "+ attribute +" classfier!!")
         if attribute == "thickness":
             classifier = Classifier(attr=attribute, width=8, num_outputs=config_cls[attribute +"_num_out"],

@@ -7,6 +7,10 @@ def effectiveness(counterfactual_batch, predictors):
                    if key=="thickness"
                    else clfs(counterfactual_batch["image"]) for key , clfs in predictors.items()} #predicted values
 
-    result = {key:(targets[key] - predictions[key]).abs().mean().detach().numpy() for key in targets}
+#acc = (targets['digit'].argmax(-1).numpy() == preds['digit'].argmax(-1).numpy()).mean()
+
+    result = {key:(unnormalize(targets[key], key) - unnormalize(predictions[key], key)).abs().mean().detach().numpy() 
+              if key!="digit" else  (targets[key].argmax(-1).numpy() == predictions[key].argmax(-1).numpy()).mean()
+              for key in targets}
 
     return result

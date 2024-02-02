@@ -61,7 +61,10 @@ def produce_counterfactuals(factual_batch: torch.Tensor, scm: nn.Module, do_pare
 
 
     #update with the counterfactual parent
-    interventions = {do_parent: torch.cat([intervention_source[id][do_parent] for id in idxs]).view(-1).unsqueeze(1)}
+
+    interventions = {do_parent: torch.cat([intervention_source[id][do_parent] for id in idxs]).view(-1).unsqueeze(1) 
+                     if do_parent!="digit" else torch.cat([intervention_source[id][do_parent].unsqueeze(0) for id in idxs])}
+    
 
     abducted_noise = scm.encode(**factual_batch)
     counterfactual_batch = scm.decode(interventions, **abducted_noise)
@@ -149,10 +152,12 @@ if __name__ == "__main__":
    # load checkpoints of the predictors
     for key , cls in predictors.items():
         file_name = next((file for file in os.listdir(config_cls["ckpt_path"]) if file.startswith(key)), None)
+        print(file_name)
         cls.load_state_dict(torch.load(config_cls["ckpt_path"] + file_name , map_location=torch.device('cpu'))["state_dict"])
 
     #print(predictors)
-    evaluate_effectiveness(test_set, batch_size=256, scm=scm, attributes=attribute_size.keys(), do_parent="thickness",
+    for pa in attribute_size.keys():
+        evaluate_effectiveness(test_set, batch_size=256, scm=scm, attributes=list(attribute_size.keys()), do_parent=pa,
                            intervention_source=train_set, predictors=predictors)
 
     evaluate_coverage_density(real_set=train_set, test_set=test_set, batch_size=64, scm=scm)
