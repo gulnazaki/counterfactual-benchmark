@@ -61,13 +61,8 @@ class Classifier(pl.LightningModule):
 
         if y is not None:
 
-            #y = y.unsqueeze(1)
-          #  print(x.shape, y.shape)
             x = torch.cat([x, y], dim=-1)
-        
-        if self.variable == "digit":
-            return F.softmax(self.fc(x), dim=-1)
-
+      
         return self.fc(x)
 
 
@@ -93,7 +88,7 @@ class Classifier(pl.LightningModule):
             
             else: #digit
               #  print(y_hat.shape, y.argmax(-1).type(torch.long).shape)
-                loss = F.cross_entropy(y_hat, y.argmax(-1).type(torch.long))
+                loss = nn.CrossEntropyLoss()(y_hat, y.argmax(-1).type(torch.long))
 
 
         #loss = nn.BCEWithLogitsLoss()(y_hat, y.type(torch.float32).view(-1, 1))
@@ -125,8 +120,8 @@ class Classifier(pl.LightningModule):
                 loss = nn.MSELoss()(y_hat, y.type(torch.float32).view(-1, 1))
             
             else: #digit
-                loss = F.cross_entropy(y_hat, y.argmax(-1).type(torch.long))
-              #  accuracy = Accuracy(task="multiclass", num_classes=10)(y_hat, y.argmax(-1).type(torch.long))
+                loss = nn.CrossEntropyLoss()(y_hat, y.argmax(-1).type(torch.long))
+             
               #  self.log("val_acc", loss, on_step=False, on_epoch=True, prog_bar=True)
                 val_acc =   self.accuracy(y_hat, y.argmax(-1).type(torch.long))
 
