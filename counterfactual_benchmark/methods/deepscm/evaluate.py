@@ -7,7 +7,7 @@ from model import SCM
 from tqdm import tqdm
 import torch.nn as nn
 from torch.utils.data import Dataset
-
+import os
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -118,7 +118,7 @@ if __name__ == "__main__":
 
         models[variable] = model
 
-    scm = SCM(checkpoint_dir=config["checkpoint_dir"],
+    scm = SCM(checkpoint_dir=os.path.join(config["checkpoint_dir"], 'trained_scm'),
               graph_structure=config["causal_graph"],
               **models)
 
@@ -130,7 +130,6 @@ if __name__ == "__main__":
     train_set = data_class(attribute_size, train=True, transform=transform)
     test_set = data_class(attribute_size, train=False, transform=transform)
 
-    evaluate_coverage_density(real_set=train_set, test_set=test_set, batch_size=1, scm=scm)
     evaluate_composition(test_set, batch_size=256, cycles=10, scm=scm)
 
 
@@ -149,7 +148,7 @@ if __name__ == "__main__":
     import os
     predictors = {atr: Classifier(attr=atr, width=8, num_outputs=config_cls[atr +"_num_out"], context_dim=1)
                                      if atr=="thickness"
-                                     else Classifier(attr=atr, width=8, num_outputs=config_cls[atr +"_num_out"]) for atr in attributes}
+                                     else Classifier(attr=atr, width=8, num_outputs=config_cls[atr +"_num_out"]) for atr in attribute_size.keys()}
 
    # load checkpoints of the predictors
     for key , cls in predictors.items():
@@ -157,10 +156,11 @@ if __name__ == "__main__":
         cls.load_state_dict(torch.load(config_cls["ckpt_path"] + file_name , map_location=torch.device('cpu'))["state_dict"])
 
     #print(predictors)
-    evaluate_effectiveness(test_set, 256, scm, attributes = attributes, do_parent="thickness",
+    evaluate_effectiveness(test_set, 256, scm, attributes=attribute_size.keys(), do_parent="thickness",
                            intervention_source=train_set, predictors=predictors)
 
-
+    # TODO evaluate on counterfactuals not test set
+    evaluate_coverage_density(real_set=train_set, test_set=test_set, batch_size=1, scm=scm)
 
 
 
