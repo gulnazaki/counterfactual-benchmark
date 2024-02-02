@@ -8,7 +8,6 @@ from tqdm import tqdm
 import torch.nn as nn
 from torch.utils.data import Dataset
 import os
-import matplotlib.pyplot as plt
 import numpy as np
 
 import sys
@@ -31,19 +30,16 @@ dataclass_mapping = {
 
 
 def evaluate_coverage_density(real_set: Dataset, test_set: Dataset, batch_size: int, scm: nn.Module):
-    test_data_loader = torch.utils.data.DataLoader(test_set, batch_size=batch_size, shuffle=False, num_workers=7)
     real_data_loader = torch.utils.data.DataLoader(real_set, batch_size=batch_size, shuffle=False, num_workers=7)
+    test_data_loader = torch.utils.data.DataLoader(test_set, batch_size=batch_size, shuffle=False, num_workers=7)
 
-    counterfactuals = []
-    factuals = []
-    for batch in test_data_loader:
-        counterfactual_batch =  produce_counterfactuals(batch, scm, do_parent='thickness', intervention_source=real_set)
-        counterfactuals.append(counterfactual_batch['image'])
-        batch = (counterfactual_batch['image']).numpy()
-    for batch in real_data_loader:
-        factuals.append(batch['image'])
+    counterfactual_images = []
+    for factual_batch in tqdm(test_data_loader):
+        counterfactual_batch =  produce_counterfactuals(factual_batch, scm, do_parent='thickness', intervention_source=real_set)
+        counterfactual_images.append(counterfactual_batch['image'])
 
-    return coverage_density(factuals, counterfactuals, k = 5, embedding_fn=vgg, pretrained=True)
+    real_images = [batch["image"] for batch in real_data_loader]
+    return coverage_density(real_images, generated_images=counterfactual_images, k = 5, embedding_fn=vgg, pretrained=True)
 
 
 def evaluate_composition(test_set: Dataset, batch_size: int, cycles: int, scm: nn.Module):
@@ -156,13 +152,8 @@ if __name__ == "__main__":
         cls.load_state_dict(torch.load(config_cls["ckpt_path"] + file_name , map_location=torch.device('cpu'))["state_dict"])
 
     #print(predictors)
-    evaluate_effectiveness(test_set, 256, scm, attributes=attribute_size.keys(), do_parent="thickness",
+    evaluate_effectiveness(test_set, batch_size=256, scm=scm, attributes=attribute_size.keys(), do_parent="thickness",
                            intervention_source=train_set, predictors=predictors)
 
-    # TODO evaluate on counterfactuals not test set
-    evaluate_coverage_density(real_set=train_set, test_set=test_set, batch_size=1, scm=scm)
-
-
-
-
+    evaluate_coverage_density(real_set=train_set, test_set=test_set, batch_size=64, scm=scm)
 
