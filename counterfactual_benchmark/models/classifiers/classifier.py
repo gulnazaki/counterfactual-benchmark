@@ -5,13 +5,14 @@ import pytorch_lightning as pl
 import torch
 import sys
 sys.path.append("../../")
-from datasets.morphomnist.dataset import MorphoMNISTLike 
+from datasets.morphomnist.dataset import MorphoMNISTLike
 
 class Classifier(pl.LightningModule):
     def __init__(self, attr, in_shape = (1, 28, 28), width=16, num_outputs = 1, context_dim = 0 , lr=1e-3):
         super().__init__()
         self.variable = attr
         self.lr = lr
+        # TODO add digit classifier
         self.variables = {"thickness":0, "intensity":1}
         self.attr = self.variables[attr] #select attribute
         in_channels = in_shape[0]
@@ -48,20 +49,20 @@ class Classifier(pl.LightningModule):
             activation,
             nn.Linear(8 * width, num_outputs),
         )
-    
+
     def forward(self, x, y=None):
         x = self.cnn(x)
         x = x.mean(dim=(-2, -1))  # avg pooling
 
         if y is not None:
 
-            #y = y.unsqueeze(1)  
+            #y = y.unsqueeze(1)
           #  print(x.shape, y.shape)
             x = torch.cat([x, y], dim=-1)
 
         return self.fc(x)
-    
-    
+
+
     def training_step(self, batch, batch_idx):
         x, attrs_ = batch
         y = attrs_[:, self.attr] #select attribute to train
@@ -69,38 +70,38 @@ class Classifier(pl.LightningModule):
         if self.variable == "thickness":  #condition on intensity when training the thickness classifier
             cond = attrs_[:,self.variables["intensity"]].view(-1, 1)
             y_hat = self(x , cond)
-        
+
         else:
             y_hat = self(x)
-        
+
         #loss = nn.BCEWithLogitsLoss()(y_hat, y.type(torch.float32).view(-1, 1))
         loss = nn.MSELoss()(y_hat, y.type(torch.float32).view(-1, 1))
         self.log("train_loss", loss, on_step=False, on_epoch=True)
 
         #loss = nn.CrossEntropyLoss()(y_hat, y.type(torch.long))
         return loss
-    
+
     def validation_step(self, batch, batch_idx):
         x, attrs_ = batch
         y = attrs_[:, self.attr]
 
         if self.variable == "thickness":  #condition on intensity when validating the thickness classifier
-            cond = attrs_[:,self.variables["intensity"]].view(-1, 1)  
+            cond = attrs_[:,self.variables["intensity"]].view(-1, 1)
             y_hat = self(x , cond)
 
         else:
             y_hat = self(x)
-        
+
         #loss = nn.BCEWithLogitsLoss()(y_hat, y.type(torch.float32).view(-1, 1))
         loss = nn.MSELoss()(y_hat, y.type(torch.float32).view(-1, 1))
         self.log("val_loss", loss, on_step=False, on_epoch=True)
       #  loss = nn.CrossEntropyLoss()(y_hat, y.type(torch.long))
         return loss
-    
+
     def configure_optimizers(self):
         optimizer = Adam(self.parameters(), lr=self.lr)
         return optimizer
-    
+
 
 #just test code for the classifiers
 if __name__ == "__main__":

@@ -18,7 +18,7 @@ class SCM(nn.Module):
         # load pre-trained model for first file name starting with model name
         for name, model in self.models.items():
             file_name = next((file for file in os.listdir(self.checkpoint_dir) if file.startswith(name)), None)
-            model.load_state_dict(torch.load(self.checkpoint_dir + file_name, map_location=torch.device('cpu'))["state_dict"])
+            model.load_state_dict(torch.load(os.path.join(self.checkpoint_dir, file_name), map_location=torch.device('cpu'))["state_dict"])
 
     def __freeze_models(self):
         for _, model in self.models.items():

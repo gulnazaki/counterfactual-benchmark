@@ -72,7 +72,7 @@
             }
         }
     },
-    
+
     "dataset": "morphomnist",
     "checkpoint_dir": "./checkpoints/"
 }
