@@ -177,4 +177,4 @@ cython_debug/
 
 .pt
 .png
-.ckpt
+lightning_logs/
