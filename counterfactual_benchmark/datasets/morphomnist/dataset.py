@@ -12,6 +12,12 @@ import sys
 sys.path.append("../../")
 from datasets.morphomnist.io import load_idx
 
+MIN_MAX = {
+    "thickness": [0.87598526, 6.255515],
+    "intensity": [66.601204, 254.90317],
+    "image": [0.0, 255.0]
+}
+
 def _get_paths(root_dir, train):
     prefix = "train" if train else "t10k"
     images_filename = prefix + "-images-idx3-ubyte.gz"
@@ -66,19 +72,22 @@ def normalize(data, load=False, save=True, path='./data/norm_params.pt'):
     # normalized_intens = (data.metrics['intensity'] - intens_mean)/intens_std
 
     # return normalized_images, normalized_intens, normalized_thickn
-    min_max = {
-        "thickness": [0.87598526, 6.255515],
-        "intensity": [66.601204, 254.90317],
-        "image": [0.0, 255.0]
-    }
-
     normalized = {}
-    for k, v in min_max.items():
+    for k, v in MIN_MAX.items():
         value = data.images if k == "image" else data.metrics[k]
+        # [min,max] -> [0,1]
         normalized[k] = (value - v[0]) / (v[1] - v[0])
+        # [0,1] -> [-1,1]
         normalized[k] = 2 * normalized[k] - 1
 
     return normalized["image"], normalized["intensity"], normalized["thickness"]
+
+def unnormalize(value, name):
+    # [-1,1] -> [0,1]
+    value = (value + 1) / 2
+    # [0,1] -> [min,max]
+    value = (value * (MIN_MAX[name][1] - MIN_MAX[name][0])) +  MIN_MAX[name][0]
+    return value
 
 class MorphoMNISTLike(Dataset):
     def __init__(self, attribute_size, train=True, normalize_=True, transform=None, data_dir=os.path.join(os.path.dirname(os.path.realpath(__file__)),'data')):
