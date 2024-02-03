@@ -18,7 +18,7 @@ class SCM(nn.Module):
         # load pre-trained model for first file name starting with model name
         for name, model in self.models.items():
             file_name = next((file for file in os.listdir(self.checkpoint_dir) if file.startswith(name)), None)
-            model.load_state_dict(torch.load(self.checkpoint_dir + file_name, map_location=torch.device('cpu'))["state_dict"])
+            model.load_state_dict(torch.load(os.path.join(self.checkpoint_dir, file_name), map_location=torch.device('cpu'))["state_dict"])
 
     def __freeze_models(self):
         for _, model in self.models.items():
@@ -29,7 +29,10 @@ class SCM(nn.Module):
         us = {}
         for var in self.graph_structure.keys():
             if len(self.graph_structure[var]) == 0:
-                us[var] = self.models[var].encode(xs[var], torch.tensor([]).view(xs[var].shape[0], 0))
+                if var =="digit":
+                    us[var] = xs[var]
+                else:
+                    us[var] = self.models[var].encode(xs[var], torch.tensor([]).view(xs[var].shape[0], 0))
             else:
                 us[var] = self.models[var].encode(xs[var], torch.cat([xs[pa] for pa in self.graph_structure[var]], dim=1))
         return us
@@ -40,7 +43,10 @@ class SCM(nn.Module):
         for var in self.graph_structure.keys():
             if repl is None or var not in repl.keys():
                 if len(self.graph_structure[var]) == 0:
-                    xs[var] = self.models[var].decode(us[var], torch.tensor([]).view(us[var].shape[0], 0))
+                    if var =="digit":
+                        xs[var] = us[var]
+                    else:
+                        xs[var] = self.models[var].decode(us[var], torch.tensor([]).view(us[var].shape[0], 0))
                 else:
                     xs[var] = self.models[var].decode(us[var], torch.cat([xs[pa] for pa in self.graph_structure[var]], dim=1))
             else:
