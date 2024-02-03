@@ -25,23 +25,22 @@ if __name__ == "__main__":
         config = load(f)
 
     dataset = config["dataset"]
-    attributes = config["causal_graph"]["image"]
+    attribute_size = config["attribute_size"]
 
     for variable in config["causal_graph"].keys():
         model_config = config["mechanism_models"][variable]
 
         module = import_module(model_config["module"])
         model_class = getattr(module, model_config["model_class"])
-        model = model_class(name=variable, params=model_config["params"])
+        model = model_class(name=variable, params=model_config["params"], attr_size=attribute_size)
 
         train_fn = model_to_script[config["mechanism_models"][variable]["model_type"]]
         train_fn(model,
                  config=model_config["params"],
                  data_class=dataclass_mapping[dataset],
                  graph_structure=config["causal_graph"],
-                 attrs=attributes,
+                 attribute_size=attribute_size,
                  checkpoint_dir=config["checkpoint_dir"],
-                 columns=attributes,
                  normalize_=True,
                  train=True)
 

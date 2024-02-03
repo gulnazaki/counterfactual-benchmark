@@ -2,8 +2,13 @@
     "causal_graph": {
         "thickness": [],
         "intensity": ["thickness"],
-        "digit:": [],
+        "digit": [],
         "image": ["thickness", "intensity", "digit"]
+    },
+    "attribute_size": {
+        "thickness": 1,
+        "intensity": 1,
+        "digit": 10
     },
     "mechanism_models": {
         "thickness": {
@@ -50,21 +55,24 @@
         },
         "image": {
             "model_type": "vae",
-            "model_class": "TMmnistCondVAE",
+            "model_class": "MmnistCondVAE",
             "module": "models.vaes",
             "params": {
-                "n_chan" : [1, 16, 32, 128, 128],
-                "latent_dim" : 32,
-                "beta" : 4,
-                "lr" : 1e-6,
-                "batch_size_train" : 128,
-                "batch_size_val" : 256,
+                "n_chan" : [1, 32, 32, 32],
+                "latent_dim" : 16,
+                "hidden_dim": 128,
+                "beta" : 1,
+                "lr" : 1e-3,
+                "gradient_clip_val": 350,
+                "batch_size_train" : 512,
+                "batch_size_val" : 512,
                 "patience" : 10,
                 "max_epochs" : 1000,
                 "train_val_split" : 0.8
             }
         }
     },
+
     "dataset": "morphomnist",
     "checkpoint_dir": "./checkpoints/"
 }
