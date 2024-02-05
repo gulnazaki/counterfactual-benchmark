@@ -18,6 +18,7 @@ from models.classifiers.classifier import Classifier
 from datasets.morphomnist.dataset import MorphoMNISTLike
 from evaluation.metrics.composition import composition
 from evaluation.metrics.effectiveness import effectiveness
+from evaluation.metrics.utils import save_selected_images
 
 from evaluation.metrics.coverage_density import coverage_density
 from evaluation.embeddings.vgg import vgg
@@ -47,10 +48,19 @@ def evaluate_composition(test_set: Dataset, batch_size: int, cycles: int, scm: n
     test_data_loader = torch.utils.data.DataLoader(test_set, batch_size=batch_size, shuffle=False, num_workers=7)
 
     composition_scores = []
+    images = []
     for i, factual_batch in enumerate(tqdm(test_data_loader)):
-        composition_scores.append(composition(factual_batch, i, method=scm, cycles=cycles))
+        score_batch, image_batch = composition(factual_batch, i, method=scm, cycles=cycles)
+        composition_scores.append(score_batch)
+        images.append(image_batch)
+
+    images = np.concatenate(images)
+    composition_scores = np.concatenate(composition_scores)
+
+    save_selected_images(images, composition_scores, save_dir="composition_samples", lower_better=True)
+
     composition_score = np.mean(composition_scores)
-    print("Composition score:", composition_score)
+    print("Average composition score:", composition_score)
 
     return composition_score
 
