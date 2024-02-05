@@ -23,16 +23,22 @@ def generate_early_stopping_callback(patience=5):
 
 def flatten_list(list):
      return sum(list, [])
-    
+
 def get_config(config_dir, default):
     argParser = argparse.ArgumentParser()
     argParser.add_argument("-n", "--name", help="name of the config file to choose", type=str, default=default)
     args = argParser.parse_args()
     config = load(open(config_dir + args.name + ".json", "r"))
     return config
-    
+
 def override(f):
     return f
 
 def overload(f):
+    return f
+
+def linear_warmup(warmup_iters):
+    def f(iter):
+        return 1.0 if iter > warmup_iters else iter / warmup_iters
+
     return f
