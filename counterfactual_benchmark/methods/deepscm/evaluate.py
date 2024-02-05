@@ -62,7 +62,10 @@ def produce_counterfactuals(factual_batch: torch.Tensor, scm: nn.Module, do_pare
 
 
     #update with the counterfactual parent
-    interventions = {do_parent: torch.cat([intervention_source[id][do_parent] for id in idxs]).view(-1).unsqueeze(1)}
+
+    interventions = {do_parent: torch.cat([intervention_source[id][do_parent] for id in idxs]).view(-1).unsqueeze(1)
+                     if do_parent!="digit" else torch.cat([intervention_source[id][do_parent].unsqueeze(0) for id in idxs])}
+
 
     abducted_noise = scm.encode(**factual_batch)
     counterfactual_batch = scm.decode(interventions, **abducted_noise)
@@ -144,29 +147,32 @@ if __name__ == "__main__":
         evaluate_composition(test_set, batch_size=256, cycles=10, scm=scm)
 
 
-    #########################################################################################################################
-    ## just test code for the produced counterfactuals -> may delete later
-    test_data_loader = torch.utils.data.DataLoader(test_set, batch_size=1, shuffle=False, num_workers=7)
-    iterator = iter(test_data_loader)
-    batch = next(iterator)
-   # counterfactuals = produce_counterfactuals(batch, scm, do_parent="thickness", intervention_source=train_set)
-
-   # cf_image = counterfactuals["image"].squeeze(0).squeeze(0).numpy()
-
-  #  plt.imsave("cf_img.png", cf_image, cmap='gray')
-    ##########################################################################################################################
-    # test the predictors
-    predictors = {atr: Classifier(attr=atr, width=8, num_outputs=config_cls[atr +"_num_out"], context_dim=1)
-                                     if atr=="thickness"
-                                     else Classifier(attr=atr, width=8, num_outputs=config_cls[atr +"_num_out"]) for atr in attribute_size.keys()}
-
-   # load checkpoints of the predictors
-    for key , cls in predictors.items():
-        file_name = next((file for file in os.listdir(config_cls["ckpt_path"]) if file.startswith(key)), None)
-        cls.load_state_dict(torch.load(config_cls["ckpt_path"] + file_name , map_location=torch.device('cpu'))["state_dict"])
-
     if "effectiveness" in args.metrics:
-        evaluate_effectiveness(test_set, batch_size=256, scm=scm, attributes=attribute_size.keys(), do_parent="thickness",
+        #########################################################################################################################
+        ## just test code for the produced counterfactuals -> may delete later
+        test_data_loader = torch.utils.data.DataLoader(test_set, batch_size=1, shuffle=False, num_workers=7)
+        iterator = iter(test_data_loader)
+        batch = next(iterator)
+    # counterfactuals = produce_counterfactuals(batch, scm, do_parent="thickness", intervention_source=train_set)
+
+    # cf_image = counterfactuals["image"].squeeze(0).squeeze(0).numpy()
+
+    #  plt.imsave("cf_img.png", cf_image, cmap='gray')
+        ##########################################################################################################################
+        # test the predictors
+        predictors = {atr: Classifier(attr=atr, width=8, num_outputs=config_cls[atr +"_num_out"], context_dim=1)
+                                        if atr=="thickness"
+                                        else Classifier(attr=atr, width=8, num_outputs=config_cls[atr +"_num_out"]) for atr in attribute_size.keys()}
+
+    # load checkpoints of the predictors
+        for key , cls in predictors.items():
+            file_name = next((file for file in os.listdir(config_cls["ckpt_path"]) if file.startswith(key)), None)
+            print(file_name)
+            cls.load_state_dict(torch.load(config_cls["ckpt_path"] + file_name , map_location=torch.device('cpu'))["state_dict"])
+
+        #print(predictors)
+        for pa in attribute_size.keys():
+            evaluate_effectiveness(test_set, batch_size=256, scm=scm, attributes=list(attribute_size.keys()), do_parent=pa,
                             intervention_source=train_set, predictors=predictors)
 
     if "coverage_density" in args.metrics:
