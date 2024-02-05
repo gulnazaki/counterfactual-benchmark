@@ -9,6 +9,7 @@ import torch.nn as nn
 from torch.utils.data import Dataset
 import os
 import numpy as np
+import argparse
 
 import sys
 sys.path.append("../../")
@@ -90,7 +91,20 @@ def evaluate_effectiveness(test_set: Dataset, batch_size:int , scm: nn.Module, a
     return effectiveness_score
 
 
+def parse_arguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--metrics", '-m',
+                        nargs="+", type=str,
+                        help="Metrics to calculate. "
+                        "Choose one or more of [composition, effectiveness, coverage_density] or use 'all'.",
+                        default=["all"])
+    # parser.add_argument("--config")
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
+    args = parse_arguments()
+
     torch.manual_seed(42)
     config_file = "configs/morphomnist_config.json"
     config_file_cls = "configs/morphomnist_classifier_config.json"
@@ -126,7 +140,8 @@ if __name__ == "__main__":
     train_set = data_class(attribute_size, train=True, transform=transform)
     test_set = data_class(attribute_size, train=False, transform=transform)
 
-    evaluate_composition(test_set, batch_size=256, cycles=10, scm=scm)
+    if "composition" in args.metrics:
+        evaluate_composition(test_set, batch_size=256, cycles=10, scm=scm)
 
 
     #########################################################################################################################
@@ -141,7 +156,6 @@ if __name__ == "__main__":
   #  plt.imsave("cf_img.png", cf_image, cmap='gray')
     ##########################################################################################################################
     # test the predictors
-    import os
     predictors = {atr: Classifier(attr=atr, width=8, num_outputs=config_cls[atr +"_num_out"], context_dim=1)
                                      if atr=="thickness"
                                      else Classifier(attr=atr, width=8, num_outputs=config_cls[atr +"_num_out"]) for atr in attribute_size.keys()}
@@ -151,9 +165,10 @@ if __name__ == "__main__":
         file_name = next((file for file in os.listdir(config_cls["ckpt_path"]) if file.startswith(key)), None)
         cls.load_state_dict(torch.load(config_cls["ckpt_path"] + file_name , map_location=torch.device('cpu'))["state_dict"])
 
-    #print(predictors)
-    evaluate_effectiveness(test_set, batch_size=256, scm=scm, attributes=attribute_size.keys(), do_parent="thickness",
-                           intervention_source=train_set, predictors=predictors)
+    if "effectiveness" in args.metrics:
+        evaluate_effectiveness(test_set, batch_size=256, scm=scm, attributes=attribute_size.keys(), do_parent="thickness",
+                            intervention_source=train_set, predictors=predictors)
 
-    evaluate_coverage_density(real_set=train_set, test_set=test_set, batch_size=64, scm=scm)
+    if "coverage_density" in args.metrics:
+        evaluate_coverage_density(real_set=train_set, test_set=test_set, batch_size=64, scm=scm)
 
