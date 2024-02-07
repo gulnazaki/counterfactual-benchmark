@@ -1,6 +1,6 @@
 """Generic conditional VAE class without specified encoder and decoder archtitecture: to be implemented by subclasses."""
 from torch import nn
-from torch.optim import Adam
+from torch.optim import AdamW
 import pytorch_lightning as pl
 import torch
 import numpy as np
@@ -8,6 +8,7 @@ import numpy as np
 import sys
 sys.path.append("../../")
 from models.structural_equation import StructuralEquation
+from models.utils import linear_warmup
 
 @torch.jit.script
 def sample_gaussian(loc, logscale):
@@ -26,7 +27,7 @@ def gaussian_kl(q_loc, q_logscale, p_loc, p_logscale):
 
 
 class CondVAE(StructuralEquation, pl.LightningModule):
-    def __init__(self, encoder, decoder, likelihood, latent_dim, beta=4, lr=1e-6, name="image_vae"):
+    def __init__(self, encoder, decoder, likelihood, latent_dim, beta=4, lr=1e-3, weight_decay=0.01, name="image_vae"):
         super(CondVAE, self).__init__(latent_dim=latent_dim)
         self.name = name
         self.encoder = encoder
@@ -34,6 +35,7 @@ class CondVAE(StructuralEquation, pl.LightningModule):
         self.likelihood = likelihood
         self.beta = beta
         self.lr = lr
+        self.weight_decay = weight_decay
 
     def __reparameterize(self, mu, log_var):
         """Reparameterization trick"""
@@ -69,8 +71,12 @@ class CondVAE(StructuralEquation, pl.LightningModule):
         return h, mu_u, logvar_u
 
     def configure_optimizers(self):
-        optimizer = Adam(self.parameters(), lr=self.lr)
-        return optimizer
+        optimizer = AdamW(self.parameters(), lr=self.lr, weight_decay=self.weight_decay, betas=[0.9, 0.9])
+        lr_scheduler = torch.optim.lr_scheduler.LambdaLR(
+            optimizer, lr_lambda=linear_warmup(100)
+        )
+
+        return {"optimizer": optimizer, "lr_scheduler": lr_scheduler}
 
     def training_step(self, train_batch, batch_idx):
         x, cond = train_batch

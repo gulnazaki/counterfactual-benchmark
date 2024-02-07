@@ -9,7 +9,11 @@ import torch.nn as nn
 from torch.utils.data import Dataset
 import os
 import numpy as np
+<<<<<<< HEAD
 from matplotlib import pyplot as plt
+=======
+import argparse
+>>>>>>> dc8759f90061c843a31473d9b36eee2e0199fe90
 
 import sys
 sys.path.append("../../")
@@ -18,6 +22,7 @@ from models.classifiers.classifier import Classifier
 from datasets.morphomnist.dataset import MorphoMNISTLike
 from evaluation.metrics.composition import composition
 from evaluation.metrics.effectiveness import effectiveness
+from evaluation.metrics.utils import save_selected_images
 
 from evaluation.metrics.coverage_density import coverage_density
 from evaluation.embeddings.vgg import vgg
@@ -47,10 +52,19 @@ def evaluate_composition(test_set: Dataset, batch_size: int, cycles: int, scm: n
     test_data_loader = torch.utils.data.DataLoader(test_set, batch_size=batch_size, shuffle=False, num_workers=7)
 
     composition_scores = []
+    images = []
     for i, factual_batch in enumerate(tqdm(test_data_loader)):
-        composition_scores.append(composition(factual_batch, i, method=scm, cycles=cycles))
+        score_batch, image_batch = composition(factual_batch, i, method=scm, cycles=cycles)
+        composition_scores.append(score_batch)
+        images.append(image_batch)
+
+    images = np.concatenate(images)
+    composition_scores = np.concatenate(composition_scores)
+
+    save_selected_images(images, composition_scores, save_dir="composition_samples", lower_better=True)
+
     composition_score = np.mean(composition_scores)
-    print("Composition score:", composition_score)
+    print("Average composition score:", composition_score)
 
     return composition_score
 
@@ -63,9 +77,9 @@ def produce_counterfactuals(factual_batch: torch.Tensor, scm: nn.Module, do_pare
    # print(idxs)
     #update with the counterfactual parent
 
-    interventions = {do_parent: torch.cat([intervention_source[id][do_parent] for id in idxs]).view(-1).unsqueeze(1) 
+    interventions = {do_parent: torch.cat([intervention_source[id][do_parent] for id in idxs]).view(-1).unsqueeze(1)
                      if do_parent!="digit" else torch.cat([intervention_source[id][do_parent].unsqueeze(0) for id in idxs])}
-    
+
 
     abducted_noise = scm.encode(**factual_batch)
     counterfactual_batch = scm.decode(interventions, **abducted_noise)
@@ -94,8 +108,25 @@ def evaluate_effectiveness(test_set: Dataset, batch_size:int , scm: nn.Module, a
     return effectiveness_score
 
 
+def parse_arguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--metrics", '-m',
+                        nargs="+", type=str,
+                        help="Metrics to calculate. "
+                        "Choose one or more of [composition, effectiveness, coverage_density] or use 'all'.",
+                        default=["all"])
+    # parser.add_argument("--config")
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
+<<<<<<< HEAD
     #torch.manual_seed(42)
+=======
+    args = parse_arguments()
+
+    torch.manual_seed(42)
+>>>>>>> dc8759f90061c843a31473d9b36eee2e0199fe90
     config_file = "configs/morphomnist_config.json"
     config_file_cls = "configs/morphomnist_classifier_config.json"
 
@@ -118,7 +149,7 @@ if __name__ == "__main__":
 
         models[variable] = model
 
-    scm = SCM(checkpoint_dir=os.path.join(config["checkpoint_dir"], 'trained_scm'),
+    scm = SCM(checkpoint_dir=config["checkpoint_dir"],
               graph_structure=config["causal_graph"],
               **models)
 
@@ -130,36 +161,47 @@ if __name__ == "__main__":
     train_set = data_class(attribute_size, train=True, transform=transform)
     test_set = data_class(attribute_size, train=False, transform=transform)
 
-    evaluate_composition(test_set, batch_size=256, cycles=10, scm=scm)
+    if "composition" in args.metrics:
+        evaluate_composition(test_set, batch_size=256, cycles=10, scm=scm)
 
 
+<<<<<<< HEAD
     #########################################################################################################################
     ## just test code for the produced counterfactuals -> may delete later
     test_data_loader = torch.utils.data.DataLoader(test_set, batch_size=1, shuffle=False, num_workers=7)
     iterator = iter(test_data_loader)
     batch = next(iterator)
    # counterfactuals = produce_counterfactuals(batch, scm, do_parent="digit", intervention_source=train_set)
+=======
+    if "effectiveness" in args.metrics:
+        #########################################################################################################################
+        ## just test code for the produced counterfactuals -> may delete later
+        test_data_loader = torch.utils.data.DataLoader(test_set, batch_size=1, shuffle=False, num_workers=7)
+        iterator = iter(test_data_loader)
+        batch = next(iterator)
+    # counterfactuals = produce_counterfactuals(batch, scm, do_parent="thickness", intervention_source=train_set)
+>>>>>>> dc8759f90061c843a31473d9b36eee2e0199fe90
 
-   # cf_image = counterfactuals["image"].squeeze(0).squeeze(0).numpy()
+    # cf_image = counterfactuals["image"].squeeze(0).squeeze(0).numpy()
 
-  #  plt.imsave("cf_img.png", cf_image, cmap='gray')
-    ##########################################################################################################################
-    # test the predictors
-    import os
-    predictors = {atr: Classifier(attr=atr, width=8, num_outputs=config_cls[atr +"_num_out"], context_dim=1)
-                                     if atr=="thickness"
-                                     else Classifier(attr=atr, width=8, num_outputs=config_cls[atr +"_num_out"]) for atr in attribute_size.keys()}
+    #  plt.imsave("cf_img.png", cf_image, cmap='gray')
+        ##########################################################################################################################
+        # test the predictors
+        predictors = {atr: Classifier(attr=atr, width=8, num_outputs=config_cls[atr +"_num_out"], context_dim=1)
+                                        if atr=="thickness"
+                                        else Classifier(attr=atr, width=8, num_outputs=config_cls[atr +"_num_out"]) for atr in attribute_size.keys()}
 
-   # load checkpoints of the predictors
-    for key , cls in predictors.items():
-        file_name = next((file for file in os.listdir(config_cls["ckpt_path"]) if file.startswith(key)), None)
-        print(file_name)
-        cls.load_state_dict(torch.load(config_cls["ckpt_path"] + file_name , map_location=torch.device('cpu'))["state_dict"])
+    # load checkpoints of the predictors
+        for key , cls in predictors.items():
+            file_name = next((file for file in os.listdir(config_cls["ckpt_path"]) if file.startswith(key)), None)
+            print(file_name)
+            cls.load_state_dict(torch.load(config_cls["ckpt_path"] + file_name , map_location=torch.device('cpu'))["state_dict"])
 
-    #print(predictors)
-    for pa in attribute_size.keys():
-        evaluate_effectiveness(test_set, batch_size=256, scm=scm, attributes=list(attribute_size.keys()), do_parent=pa,
-                           intervention_source=train_set, predictors=predictors)
+        #print(predictors)
+        for pa in attribute_size.keys():
+            evaluate_effectiveness(test_set, batch_size=256, scm=scm, attributes=list(attribute_size.keys()), do_parent=pa,
+                            intervention_source=train_set, predictors=predictors)
 
-    evaluate_coverage_density(real_set=train_set, test_set=test_set, batch_size=64, scm=scm)
+    if "coverage_density" in args.metrics:
+        evaluate_coverage_density(real_set=train_set, test_set=test_set, batch_size=64, scm=scm)
 

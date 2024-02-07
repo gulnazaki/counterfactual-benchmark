@@ -3,6 +3,8 @@
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from json import load
 import argparse
+import torch.nn as nn
+from .weight_averaging import EMA
 
 def freeze_model(model):
     for p in model.parameters():
@@ -21,16 +23,20 @@ def generate_early_stopping_callback(patience=5):
     early_stopping_callback = EarlyStopping(monitor = 'val_loss', min_delta = 0.0, patience=patience, mode = 'min')
     return early_stopping_callback
 
+def generate_ema_callback(decay=0.999):
+    ema_callback=EMA(decay=decay)
+    return ema_callback
+
 def flatten_list(list):
      return sum(list, [])
-    
+
 def get_config(config_dir, default):
     argParser = argparse.ArgumentParser()
     argParser.add_argument("-n", "--name", help="name of the config file to choose", type=str, default=default)
     args = argParser.parse_args()
     config = load(open(config_dir + args.name + ".json", "r"))
     return config
-    
+
 def override(f):
     return f
 
@@ -41,4 +47,12 @@ def linear_warmup(warmup_iters):
     def f(iter):
         return 1.0 if iter > warmup_iters else iter / warmup_iters
 
+<<<<<<< HEAD
     return f
+=======
+    return f
+
+def init_bias(m):
+    if type(m) == nn.Conv2d:
+        nn.init.zeros_(m.bias)
+>>>>>>> dc8759f90061c843a31473d9b36eee2e0199fe90
