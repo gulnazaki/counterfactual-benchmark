@@ -68,11 +68,13 @@
                 "batch_size_val" : 512,
                 "patience" : 10,
                 "max_epochs" : 1000,
-                "train_val_split" : 0.8
+                "train_val_split" : 0.8,
+                "weight_decay": 0.01,
+                "ema": "True"
             }
         }
     },
 
     "dataset": "morphomnist",
-    "checkpoint_dir": "./checkpoints/"
+    "checkpoint_dir": "./checkpoints/trained_scm"
 }
