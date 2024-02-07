@@ -16,14 +16,14 @@ sys.path.append("../../")
 
 from models.classifiers.classifier import Classifier
 from datasets.morphomnist.dataset import MorphoMNISTLike
+from datasets.transforms import ReturnDictTransform
 from evaluation.metrics.composition import composition
 from evaluation.metrics.effectiveness import effectiveness
 from evaluation.metrics.utils import save_selected_images
-
 from evaluation.metrics.coverage_density import coverage_density
 from evaluation.embeddings.vgg import vgg
 
-from datasets.transforms import ReturnDictTransform
+torch.multiprocessing.set_sharing_strategy('file_system')
 
 
 dataclass_mapping = {
@@ -153,11 +153,11 @@ if __name__ == "__main__":
     train_set = data_class(attribute_size, train=True, transform=transform)
     test_set = data_class(attribute_size, train=False, transform=transform)
 
-    if "composition" in args.metrics:
+    if "composition" in args.metrics or "all" in args.metrics:
         evaluate_composition(test_set, batch_size=256, cycles=10, scm=scm)
 
 
-    if "effectiveness" in args.metrics:
+    if "effectiveness" in args.metrics or "all" in args.metrics:
         #########################################################################################################################
         ## just test code for the produced counterfactuals -> may delete later
         test_data_loader = torch.utils.data.DataLoader(test_set, batch_size=1, shuffle=False, num_workers=7)
@@ -185,6 +185,6 @@ if __name__ == "__main__":
             evaluate_effectiveness(test_set, batch_size=256, scm=scm, attributes=list(attribute_size.keys()), do_parent=pa,
                             intervention_source=train_set, predictors=predictors)
 
-    if "coverage_density" in args.metrics:
+    if "coverage_density" in args.metrics or "all" in args.metrics:
         evaluate_coverage_density(real_set=train_set, test_set=test_set, batch_size=64, scm=scm)
 
