@@ -1,8 +1,7 @@
-from torch.functional import F
 from torch import nn
 import torch
 from collections import OrderedDict
-from models.utils import flatten_list
+from models.utils import flatten_list, init_bias
 from models.vaes import CondVAE
 import numpy as np
 
@@ -143,3 +142,4 @@ class MmnistCondVAE(CondVAE):
         likelihood = DGaussNet(latent_dim)
 
         super().__init__(encoder, decoder, likelihood, latent_dim, beta, lr, weight_decay, name)
+        self.apply(init_bias)
