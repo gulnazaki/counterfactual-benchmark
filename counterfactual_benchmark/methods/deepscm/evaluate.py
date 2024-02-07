@@ -141,7 +141,7 @@ if __name__ == "__main__":
 
         models[variable] = model
 
-    scm = SCM(checkpoint_dir=os.path.join(config["checkpoint_dir"], 'trained_scm'),
+    scm = SCM(checkpoint_dir=config["checkpoint_dir"],
               graph_structure=config["causal_graph"],
               **models)
 
