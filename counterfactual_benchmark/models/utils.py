@@ -36,3 +36,9 @@ def override(f):
 
 def overload(f):
     return f
+
+def linear_warmup(warmup_iters):
+    def f(iter):
+        return 1.0 if iter > warmup_iters else iter / warmup_iters
+
+    return f
