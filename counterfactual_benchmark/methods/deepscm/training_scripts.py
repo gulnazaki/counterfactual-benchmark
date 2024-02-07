@@ -36,3 +36,6 @@ def train_vae(vae, config, data_class, graph_structure, attribute_size, checkpoi
                       default_root_dir=checkpoint_dir, max_epochs=config["max_epochs"])
 
     trainer.fit(vae, train_data_loader, val_data_loader)
+
+
+

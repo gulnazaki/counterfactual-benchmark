@@ -9,6 +9,7 @@ import torch.nn as nn
 from torch.utils.data import Dataset
 import os
 import numpy as np
+from matplotlib import pyplot as plt
 
 import sys
 sys.path.append("../../")
@@ -59,7 +60,7 @@ def produce_counterfactuals(factual_batch: torch.Tensor, scm: nn.Module, do_pare
     batch_size, _ , _ , _ = factual_batch["image"].shape
     idxs = torch.randperm(len(intervention_source))[:batch_size] # select random indices from train set to perform interventions
 
-
+   # print(idxs)
     #update with the counterfactual parent
 
     interventions = {do_parent: torch.cat([intervention_source[id][do_parent] for id in idxs]).view(-1).unsqueeze(1) 
@@ -94,7 +95,7 @@ def evaluate_effectiveness(test_set: Dataset, batch_size:int , scm: nn.Module, a
 
 
 if __name__ == "__main__":
-    torch.manual_seed(42)
+    #torch.manual_seed(42)
     config_file = "configs/morphomnist_config.json"
     config_file_cls = "configs/morphomnist_classifier_config.json"
 
@@ -137,7 +138,7 @@ if __name__ == "__main__":
     test_data_loader = torch.utils.data.DataLoader(test_set, batch_size=1, shuffle=False, num_workers=7)
     iterator = iter(test_data_loader)
     batch = next(iterator)
-   # counterfactuals = produce_counterfactuals(batch, scm, do_parent="thickness", intervention_source=train_set)
+   # counterfactuals = produce_counterfactuals(batch, scm, do_parent="digit", intervention_source=train_set)
 
    # cf_image = counterfactuals["image"].squeeze(0).squeeze(0).numpy()
 
