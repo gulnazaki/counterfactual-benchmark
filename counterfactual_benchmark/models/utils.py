@@ -47,12 +47,8 @@ def linear_warmup(warmup_iters):
     def f(iter):
         return 1.0 if iter > warmup_iters else iter / warmup_iters
 
-<<<<<<< HEAD
-    return f
-=======
     return f
 
 def init_bias(m):
     if type(m) == nn.Conv2d:
         nn.init.zeros_(m.bias)
->>>>>>> dc8759f90061c843a31473d9b36eee2e0199fe90
