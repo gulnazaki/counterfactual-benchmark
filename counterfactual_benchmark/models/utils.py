@@ -4,6 +4,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from json import load
 import argparse
 import torch.nn as nn
+import torch
 from .weight_averaging import EMA
 
 def freeze_model(model):
@@ -52,3 +53,15 @@ def linear_warmup(warmup_iters):
 def init_bias(m):
     if type(m) == nn.Conv2d:
         nn.init.zeros_(m.bias)
+        
+        
+def init_weights(layer, std=0.01):
+    name = layer.__class__.__name__
+    if name.startswith('Conv'):
+        torch.nn.init.normal_(layer.weight, mean=0, std=std)
+        if layer.bias is not None:
+            torch.nn.init.constant_(layer.bias, 0)
+
+
+def continuous_feature_map(c: torch.Tensor, size: tuple = (32, 32)):
+    return c.reshape((c.size(0), 1, 1, 1)).repeat(1, 1, *size)
