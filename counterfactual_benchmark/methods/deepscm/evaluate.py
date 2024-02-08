@@ -120,13 +120,9 @@ def parse_arguments():
 
 
 if __name__ == "__main__":
-<<<<<<< HEAD
-    #torch.manual_seed(42)
-=======
     args = parse_arguments()
 
     torch.manual_seed(42)
->>>>>>> dc8759f90061c843a31473d9b36eee2e0199fe90
     config_file = "configs/morphomnist_config.json"
     config_file_cls = "configs/morphomnist_classifier_config.json"
 
@@ -165,14 +161,6 @@ if __name__ == "__main__":
         evaluate_composition(test_set, batch_size=256, cycles=10, scm=scm)
 
 
-<<<<<<< HEAD
-    #########################################################################################################################
-    ## just test code for the produced counterfactuals -> may delete later
-    test_data_loader = torch.utils.data.DataLoader(test_set, batch_size=1, shuffle=False, num_workers=7)
-    iterator = iter(test_data_loader)
-    batch = next(iterator)
-   # counterfactuals = produce_counterfactuals(batch, scm, do_parent="digit", intervention_source=train_set)
-=======
     if "effectiveness" in args.metrics:
         #########################################################################################################################
         ## just test code for the produced counterfactuals -> may delete later
@@ -180,7 +168,6 @@ if __name__ == "__main__":
         iterator = iter(test_data_loader)
         batch = next(iterator)
     # counterfactuals = produce_counterfactuals(batch, scm, do_parent="thickness", intervention_source=train_set)
->>>>>>> dc8759f90061c843a31473d9b36eee2e0199fe90
 
     # cf_image = counterfactuals["image"].squeeze(0).squeeze(0).numpy()
 
