@@ -1,0 +1,240 @@
+"""Generic conditional GAN class without specified encoder and decoder archtitecture: to be implemented by subclasses."""
+from torch import nn
+from torch.optim import Adam
+import pytorch_lightning as pl
+import torch
+import numpy as np
+import torch.nn.functional as F
+from models.structural_equation import StructuralEquation
+import sys
+import os
+
+sys.path.append("../../")
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
+class CondGAN(StructuralEquation, pl.LightningModule):
+    def __init__(self, encoder, decoder, discriminator, latent_dim, lr=1e-4, name="image_gan",
+                 d_updates_per_g_update=3):
+        super(CondGAN, self).__init__(latent_dim=latent_dim)
+
+        self.name = name
+        self.encoder = encoder
+        self.decoder = decoder
+        self.discriminator = discriminator
+        self.lr = lr
+        self.d_updates_per_g_update = d_updates_per_g_update
+        self.automatic_optimization = False
+
+    def encode(self, x, cond):
+        return self.encoder(x, cond)
+
+    def decode(self, u, cond):
+        return self.decoder(u, cond)
+
+    def discriminate(self, x, u, cond):
+        return self.discriminator(x, u, cond)
+
+    def gan_loss(self, y_hat, y):
+        criterion = nn.BCEWithLogitsLoss()
+        loss = criterion(y_hat, y)
+        return loss
+
+    def forward(self, x, cond):
+        z_mean = torch.zeros((len(x), self.latent_dim, 1, 1)).float()
+        z = torch.normal(z_mean, z_mean + 1).to(device)
+        gz = self.decode(z, cond)
+        ex = self.encode(x, cond)
+        return ex, gz
+
+    def forward_discr(self, x, z, cond):
+        return self.discriminate(x, z, cond)
+
+    def configure_optimizers(self):
+        optimizer_E = torch.optim.Adam(list(self.encoder.parameters()) + list(self.decoder.parameters()),
+                                       lr=self.lr, betas=(0.5, 0.999))
+        optimizer_D = torch.optim.Adam(self.discriminator.parameters(),
+                                       lr=self.lr, betas=(0.5, 0.999))
+        return optimizer_E, optimizer_D
+
+    def training_step(self, train_batch, batch_idx):
+        x, cond = train_batch
+        x = x.to(device)
+        cond = cond.to(device)
+
+        optimizer_E, optimizer_D = self.optimizers()
+        valid = torch.autograd.Variable(
+            torch.Tensor(x.size(0), 1).fill_(1.0).to(device),
+            requires_grad=False)
+        fake = torch.autograd.Variable(
+            torch.Tensor(x.size(0), 1).fill_(0.0).to(device),
+            requires_grad=False)
+
+        # sample noise
+        z_mean = torch.zeros((len(x), self.latent_dim, 1, 1)).float()
+        z = torch.normal(z_mean, z_mean + 1).to(device)
+        ex, gz = self.forward(x, cond)
+        D_valid = self.forward_discr(x, ex, cond)  # .sigmoid()
+        D_fake = self.forward_discr(gz, z, cond)  # .sigmoid()
+
+        # train gen and enc
+        if batch_idx % self.d_updates_per_g_update == 0:
+            real_loss = self.gan_loss(D_valid, fake).to(device)
+            fake_loss = self.gan_loss(D_fake, valid)
+            loss_EG = (real_loss + fake_loss) / 2
+            self.toggle_optimizer(optimizer_E)
+            optimizer_E.zero_grad()
+            self.manual_backward(loss_EG)
+            # self.clip_gradients(optimizer_E, gradient_clip_val=0.5, gradient_clip_algorithm="norm")
+            optimizer_E.step()
+            # optimizer_E.zero_grad()
+            self.untoggle_optimizer(optimizer_E)
+            # self.toggle_optimizer(optimizer_D)
+            # self.log("train_gen_loss", loss_EG, on_step=False, on_epoch=True, prog_bar=True)
+
+        # train discr
+        valid = torch.autograd.Variable(
+            torch.Tensor(x.size(0), 1).fill_(1.0).to(device),
+            requires_grad=False)
+        fake = torch.autograd.Variable(
+            torch.Tensor(x.size(0), 1).fill_(0.0).to(device),
+            requires_grad=False)
+        z_mean = torch.zeros((len(x), self.latent_dim, 1, 1)).float()
+        z = torch.normal(z_mean, z_mean + 1).to(device)
+
+        ex, gz = self.forward(x, cond)
+        D_valid = self.forward_discr(x, ex, cond)  # .sigmoid()
+        D_fake = self.forward_discr(gz, z, cond)  # .sigmoid()
+
+        self.toggle_optimizer(optimizer_D)
+        optimizer_D.zero_grad()
+        loss_D_valid = self.gan_loss(D_valid, valid).to(device)
+        self.manual_backward(loss_D_valid)
+        # self.clip_gradients(optimizer_D, gradient_clip_val=0.5, gradient_clip_algorithm="norm")
+        optimizer_D.step()
+        optimizer_D.zero_grad()
+
+        valid = torch.autograd.Variable(
+            torch.Tensor(x.size(0), 1).fill_(1.0).to(device),
+            requires_grad=False
+        )
+
+        fake = torch.autograd.Variable(
+            torch.Tensor(x.size(0), 1).fill_(0.0).to(device),
+            requires_grad=False
+        )
+
+        # sample noise
+        z_mean = torch.zeros((len(x), self.latent_dim, 1, 1)).float()
+        z = torch.normal(z_mean, z_mean + 1).to(device)
+
+        ex, gz = self.forward(x, cond)
+        D_valid = self.forward_discr(x, ex, cond)  # .sigmoid()
+        D_fake = self.forward_discr(gz, z, cond)  # .sigmoid()
+        loss_D_fake = self.gan_loss(D_fake, fake).to(device)
+        self.manual_backward(loss_D_fake)
+        # self.clip_gradients(optimizer_D, gradient_clip_val=0.5, gradient_clip_algorithm="norm")
+        # loss = loss_D_fake + loss_D_valid
+        # self.manual_backward(loss)
+        optimizer_D.step()
+        optimizer_D.zero_grad()
+        self.untoggle_optimizer(optimizer_D)
+
+        if batch_idx % self.d_updates_per_g_update == 0:
+            loss_EG = loss_EG
+            self.log("train_loss", loss_EG, on_step=False, on_epoch=True, prog_bar=True)
+            return loss_EG
+        else:
+            return
+
+    def validation_step(self, train_batch):
+        self.encoder.eval()
+        x, cond = train_batch
+        x = x.to(device)
+        cond = cond.to(device)
+        valid = torch.autograd.Variable(
+            torch.Tensor(x.size(0), 1).fill_(1.0).to(device),
+            requires_grad=False
+        )
+        fake = torch.autograd.Variable(
+            torch.Tensor(x.size(0), 1).fill_(0.0).to(device),
+            requires_grad=False
+        )
+        z_mean = torch.zeros((len(x), self.latent_dim, 1, 1)).float()
+        z = torch.normal(z_mean, z_mean + 1).to(device)
+        ex, gz = self.forward(x, cond)
+        D_valid = self.forward_discr(x, ex, cond)  # .sigmoid()
+        D_fake = self.forward_discr(gz, z, cond)  # .sigmoid()
+        real_loss = self.gan_loss(D_valid, fake)
+        fake_loss = self.gan_loss(D_fake, valid)
+
+        loss_EG = (real_loss + fake_loss) / 2
+
+        self.log("val_loss", loss_EG, on_step=False, on_epoch=True, prog_bar=True)
+
+        epoch = self.current_epoch
+        n_show = 10
+        path = os.getcwd()
+        image_output_path = path.replace('methods/deepscm', 'gantraining')
+        if not os.path.exists(path):
+            os.mkdir(image_output_path)
+        save_images_every = 2
+
+        if save_images_every and (epoch + 1) % save_images_every == 0:
+            with torch.no_grad():
+                reals = []
+                geners = []
+                recons = []
+                # generate images from same class as real ones
+
+                for i in range(n_show):
+                    images = x[i].to(device)
+                    attrs = cond[i].to(device)
+
+                    attrs = attrs.reshape((1, attrs.shape[0]))
+
+                    images = images.reshape((1, 1, images.shape[1], images.shape[2]))
+
+                    images = images.reshape((-1, 1, 32, 32)).float().to(device)
+
+                    z_mean = torch.zeros((len(images), 512, 1, 1)).float()
+                    z = torch.normal(z_mean, z_mean + 1)
+
+                    z = z.to(device)
+
+                    gener = self.decode(z, attrs).reshape(1, 32, 32).cpu().numpy()
+                    recon = self.decode(self.encode(images, attrs), attrs).reshape(1, 32, 32).cpu().numpy()
+                    real = images.cpu().numpy()
+                    recons.append(recon)
+                    geners.append(gener)
+                    reals.append(real)
+
+                import matplotlib.pyplot as plt
+
+                fig, ax = plt.subplots(3, n_show, figsize=(15, 5))
+                fig.subplots_adjust(wspace=0.05, hspace=0)
+                plt.rcParams.update({'font.size': 20})
+                fig.suptitle('Epoch {}'.format(epoch + 1))
+                fig.text(0.04, 0.75, 'G(z, c)', ha='left')
+                fig.text(0.04, 0.5, 'x', ha='left')
+                fig.text(0.04, 0.25, 'G(E(x, c), c)', ha='left')
+
+                for i in range(n_show):
+                    ax[0, i].imshow(geners[i][0], cmap='gray', vmin=-1, vmax=1)
+                    ax[0, i].axis('off')
+                    ax[1, i].imshow(reals[i][0][0], cmap='gray', vmin=-1, vmax=1)
+                    ax[1, i].axis('off')
+                    ax[2, i].imshow(recons[i][0]
+                                    , cmap='gray', vmin=-1, vmax=1)
+                    ax[2, i].axis('off')
+
+                plt.savefig(f'{image_output_path}/epoch-{epoch + 1}.png', format='png')
+                plt.close()
+
+            return loss_EG
+
+
+
+
+
