@@ -12,7 +12,7 @@ import torch.nn.functional as F
 from torch import Tensor, nn
 from torch.functional import F
 from collections import OrderedDict
-from models.utils import flatten_list
+from models.utils import init_bias
 from models.vaes import CondHVAE
 
 import sys
@@ -437,13 +437,15 @@ class DGaussNet(nn.Module):
 
 class MmnistCondHVAE(CondHVAE):
         
-    def __init__(self, attr_size, params, name="hvae"):
+    def __init__(self, attr_size, params, name="hvae_img"):
+
         params["context_dim"] = sum(attr_size.values())
         encoder = Encoder(params)
         decoder = Decoder(params)
         likelihood = DGaussNet(params)
 
         super().__init__(encoder, decoder, likelihood, params, name)
+        self.apply(init_bias)
 
 
 from json import load
