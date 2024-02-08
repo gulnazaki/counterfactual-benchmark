@@ -81,7 +81,7 @@
                 "gradient_clip_val": 350,
                 "batch_size_train" : 32,
                 "batch_size_val" : 32,
-                "patience" : 50,
+                "patience" : 100,
                 "max_epochs" : 1000,
                 "train_val_split" : 0.8,
                 "ema": "True"
