@@ -5,6 +5,7 @@ from torch.optim import AdamW
 import pytorch_lightning as pl
 import torch
 import numpy as np
+import json
 
 import sys
 sys.path.append("../../")
@@ -42,7 +43,7 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
         self.weight_decay = params["wd"]
         self.beta = params["beta"]
 
-        self.cond_prior = params["cond_prior"]
+        self.cond_prior =  json.loads(params["cond_prior"].lower())
         self.free_bits = params["kl_free_bits"]
         self.register_buffer("log2", torch.tensor(2.0).log())
 
@@ -71,8 +72,14 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
         kl_pp = kl_pp / np.prod(x.shape[1:])  # per pixel
         kl_pp = kl_pp.mean()  # / self.log2
         nll_pp = nll_pp.mean()  # / self.log2
+
         nelbo = nll_pp + beta * kl_pp  # negative elbo (free energy)
-        return dict(elbo=nelbo, nll=nll_pp, kl=kl_pp)
+
+        if torch.isnan(nelbo).sum() == 0:
+            return dict(elbo=nelbo, nll=nll_pp, kl=kl_pp)
+
+        else: 
+            return dict(elbo=None, nll=None, kl=None)
     
 
     def sample(
@@ -144,10 +151,22 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
         cond = self.expand_parents(cond)
         out = self.forward(x, cond)  #model(batch["x"], batch["pa"], beta=args.beta)
 
-        nelbo_loss = out["elbo"]
+        nelbo_loss = out #["elbo"]
 
-        self.log("train_nelbo_loss", nelbo_loss, on_step=False, on_epoch=True, prog_bar=True)
-        return nelbo_loss
+      #  nll_nan = torch.isnan(out["nll"]).sum()
+      #  kl_nan = torch.isnan(out["kl"]).sum()
+
+        for key , value in nelbo_loss.items(): 
+            self.log(key, value, on_step=False, on_epoch=True, prog_bar=True)
+        
+        return nelbo_loss["elbo"]
+        
+
+       # if nll_nan == 0 and kl_nan == 0:
+       #     return nelbo_loss["elbo"]
+        
+       # else:
+       #     return None
 
     
     def validation_step(self, val_batch, batch_idx):
@@ -158,6 +177,9 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
         out = self.forward(x, cond)  #model(batch["x"], batch["pa"], beta=args.beta)
 
         nelbo_loss = out["elbo"]
+
+      #  for key , value in nelbo_loss.items(): 
+      #      self.log(key, value, on_step=False, on_epoch=True, prog_bar=True)
 
         self.log("val_loss", nelbo_loss, on_step=False, on_epoch=True, prog_bar=True)
         return nelbo_loss
@@ -177,10 +199,11 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
 
     def encode(self, x, cond):
         cond =  self.expand_parents(cond)
+       
 
         z = self.abduct(x, cond)
 
-        if self.params["cond_prior"]:
+        if self.cond_prior:
             z = [z[i]['z'] for i in range(len(z))]
 
       #  rec_loc, rec_scale = self.forward_latents(z, parents=cond, return_loc=True) 
