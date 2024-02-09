@@ -19,7 +19,8 @@ from datasets.morphomnist.dataset import MorphoMNISTLike
 from datasets.transforms import ReturnDictTransform
 from evaluation.metrics.composition import composition
 from evaluation.metrics.effectiveness import effectiveness
-from evaluation.metrics.utils import save_selected_images
+from evaluation.metrics.utils import save_selected_images, save_plots
+
 from evaluation.metrics.coverage_density import coverage_density
 from evaluation.embeddings.vgg import vgg
 
@@ -29,6 +30,23 @@ torch.multiprocessing.set_sharing_strategy('file_system')
 dataclass_mapping = {
     "morphomnist": MorphoMNISTLike
 }
+
+def produce_qualitative_samples(dataset, scm, parents, intervention_source):
+    data_loader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=True, num_workers=7)
+
+    for i , batch in tqdm(enumerate(data_loader)):
+        if i % 500 == 0:
+            res = [batch["image"].squeeze(0).squeeze(0)]
+            #dataset[i]["image"]  = dataset[i]["image"].unsqueeze(0)
+            #print(dataset[i]["image"].shape)
+
+            for do_parent in parents:
+                counterfactual = produce_counterfactuals(batch, scm, do_parent, intervention_source)
+                res.append(counterfactual["image"].squeeze(0).squeeze(0))
+
+            save_plots(res, i)
+    return
+
 
 
 def evaluate_coverage_density(real_set: Dataset, test_set: Dataset, batch_size: int, scm: nn.Module):
@@ -152,6 +170,9 @@ if __name__ == "__main__":
 
     train_set = data_class(attribute_size, train=True, transform=transform)
     test_set = data_class(attribute_size, train=False, transform=transform)
+
+    produce_qualitative_samples(dataset=test_set, scm=scm, parents=list(attribute_size.keys()), intervention_source=train_set)
+
 
     if "composition" in args.metrics or "all" in args.metrics:
         evaluate_composition(test_set, batch_size=256, cycles=10, scm=scm)
