@@ -9,11 +9,8 @@ import torch.nn as nn
 from torch.utils.data import Dataset
 import os
 import numpy as np
-<<<<<<< HEAD
-from matplotlib import pyplot as plt
-=======
+import matplotlib.pyplot as plt
 import argparse
->>>>>>> dc8759f90061c843a31473d9b36eee2e0199fe90
 
 import sys
 sys.path.append("../../")
@@ -92,7 +89,6 @@ def evaluate_effectiveness(test_set: Dataset, batch_size:int , scm: nn.Module, a
 
     test_data_loader = torch.utils.data.DataLoader(test_set, batch_size=batch_size, shuffle=False, num_workers=7)
 
-    # composition
     effectiveness_scores = {attr_key: [] for attr_key in attributes}
     for factual_batch in tqdm(test_data_loader):
         counterfactuals = produce_counterfactuals(factual_batch, scm, do_parent, intervention_source)
@@ -122,8 +118,8 @@ def parse_arguments():
 if __name__ == "__main__":
     args = parse_arguments()
 
-    torch.manual_seed(42)
-    config_file = "configs/morphomnist_config.json"
+   # torch.manual_seed(42)
+    config_file = "configs/morphomnist_hvae_config.json"
     config_file_cls = "configs/morphomnist_classifier_config.json"
 
     with open(config_file_cls, 'r') as f1:
@@ -157,21 +153,21 @@ if __name__ == "__main__":
     train_set = data_class(attribute_size, train=True, transform=transform)
     test_set = data_class(attribute_size, train=False, transform=transform)
 
-    if "composition" in args.metrics:
+    if "composition" in args.metrics or "all" in args.metrics:
         evaluate_composition(test_set, batch_size=256, cycles=10, scm=scm)
 
 
-    if "effectiveness" in args.metrics:
+    if "effectiveness" in args.metrics or "all" in args.metrics:
         #########################################################################################################################
         ## just test code for the produced counterfactuals -> may delete later
-        test_data_loader = torch.utils.data.DataLoader(test_set, batch_size=1, shuffle=False, num_workers=7)
-        iterator = iter(test_data_loader)
-        batch = next(iterator)
-    # counterfactuals = produce_counterfactuals(batch, scm, do_parent="thickness", intervention_source=train_set)
+       # test_data_loader = torch.utils.data.DataLoader(test_set, batch_size=1, shuffle=False, num_workers=7)
+       # iterator = iter(test_data_loader)
+      #  batch = next(iterator)
+      #  counterfactuals = produce_counterfactuals(batch, scm, do_parent="digit", intervention_source=train_set)
 
-    # cf_image = counterfactuals["image"].squeeze(0).squeeze(0).numpy()
-
-    #  plt.imsave("cf_img.png", cf_image, cmap='gray')
+      #  cf_image = counterfactuals["image"].squeeze(0).squeeze(0).numpy()
+      #  plt.imsave("cf_img{}.png".format("thickeness"), cf_image, cmap='gray')
+      #  plt.imsave("f_img.png", batch["image"].squeeze(0).squeeze(0).numpy(), cmap="gray")
         ##########################################################################################################################
         # test the predictors
         predictors = {atr: Classifier(attr=atr, width=8, num_outputs=config_cls[atr +"_num_out"], context_dim=1)
@@ -189,6 +185,6 @@ if __name__ == "__main__":
             evaluate_effectiveness(test_set, batch_size=256, scm=scm, attributes=list(attribute_size.keys()), do_parent=pa,
                             intervention_source=train_set, predictors=predictors)
 
-    if "coverage_density" in args.metrics:
+    if "coverage_density" in args.metrics or "all" in args.metrics:
         evaluate_coverage_density(real_set=train_set, test_set=test_set, batch_size=64, scm=scm)
 

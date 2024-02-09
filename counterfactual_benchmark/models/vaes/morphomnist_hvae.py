@@ -437,14 +437,15 @@ class DGaussNet(nn.Module):
 
 class MmnistCondHVAE(CondHVAE):
         
-    def __init__(self, attr_size, params, name="hvae_img"):
+    def __init__(self, attr_size, params, name="hvae"):
 
         params["context_dim"] = sum(attr_size.values())
         encoder = Encoder(params)
         decoder = Decoder(params)
         likelihood = DGaussNet(params)
+        self.name = name 
 
-        super().__init__(encoder, decoder, likelihood, params, name)
+        super().__init__(encoder, decoder, likelihood, params, self.name)
         self.apply(init_bias)
 
 
@@ -481,6 +482,7 @@ if __name__ == "__main__":
 
 
     model = MmnistCondHVAE(attribute_size, params, name="hvae")
+    print(model.name)
 
    # conv = model.decoder.blocks[0].prior.conv
    # inp = torch.zeros(1, 256, 1, 1)
