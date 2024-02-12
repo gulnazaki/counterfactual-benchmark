@@ -20,20 +20,21 @@ dataclass_mapping = {
 
 if __name__ == "__main__":
     torch.manual_seed(42)
-    config_file = "configs/morphomnist_config.json"
+    config_file = "configs/morphomnist_hvae_config.json"
     with open(config_file, 'r') as f:
         config = load(f)
 
     dataset = config["dataset"]
     attribute_size = config["attribute_size"]
 
-    for variable in config["causal_graph"].keys():
+    for variable in ["image"]:#config["causal_graph"].keys():
         model_config = config["mechanism_models"][variable]
-
+      
         module = import_module(model_config["module"])
         model_class = getattr(module, model_config["model_class"])
-        model = model_class(name=variable, params=model_config["params"], attr_size=attribute_size)
-
+        model = model_class(params=model_config["params"], attr_size=attribute_size)
+     
+        
         train_fn = model_to_script[config["mechanism_models"][variable]["model_type"]]
         train_fn(model,
                  config=model_config["params"],

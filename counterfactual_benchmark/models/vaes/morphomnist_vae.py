@@ -1,8 +1,7 @@
-from torch.functional import F
 from torch import nn
 import torch
 from collections import OrderedDict
-from models.utils import flatten_list
+from models.utils import flatten_list, init_bias
 from models.vaes import CondVAE
 import numpy as np
 
@@ -83,13 +82,13 @@ class Decoder(nn.Module):
         return self.mu.repeat(cond.shape[0], 1), self.var.repeat(cond.shape[0], 1)
 
 class DGaussNet(nn.Module):
-    def __init__(self):
+    def __init__(self, latent_dim):
         super().__init__()
         self.x_loc = nn.Conv2d(
-            16, 1, kernel_size=1, stride=1
+            latent_dim, 1, kernel_size=1, stride=1
         )
         self.x_logscale = nn.Conv2d(
-            16, 1, kernel_size=1, stride=1
+            latent_dim, 1, kernel_size=1, stride=1
         )
 
     def forward(self, h):
@@ -136,9 +135,11 @@ class MmnistCondVAE(CondVAE):
         n_chan = params["n_chan"]
         beta = params["beta"]
         lr = params["lr"]
+        weight_decay = params["weight_decay"]
 
         encoder = Encoder(cond_dim, latent_dim, hidden_dim, n_chan=n_chan)
-        decoder = Decoder(cond_dim, latent_dim, hidden_dim)
-        likelihood = DGaussNet()
+        decoder = Decoder(cond_dim, latent_dim, hidden_dim, n_chan=n_chan[::-1][:-1] + [latent_dim])
+        likelihood = DGaussNet(latent_dim)
 
-        super().__init__(encoder, decoder, likelihood, latent_dim, beta, lr, name)
+        super().__init__(encoder, decoder, likelihood, latent_dim, beta, lr, weight_decay, name)
+        self.apply(init_bias)
