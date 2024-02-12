@@ -62,7 +62,7 @@ def evaluate_coverage_density(real_set: Dataset, test_set: Dataset, batch_size: 
     return coverage_density(real_images, generated_images=counterfactual_images, k = 5, embedding_fn=vgg, pretrained=True)
 
 
-def evaluate_composition(test_set: Dataset, batch_size: int, cycles: int, scm: nn.Module):
+def evaluate_composition(test_set: Dataset, batch_size: int, cycles: int, scm: nn.Module, save_dir: str = "composition_samples"):
     test_data_loader = torch.utils.data.DataLoader(test_set, batch_size=batch_size, shuffle=False, num_workers=7)
 
     composition_scores = []
@@ -75,7 +75,9 @@ def evaluate_composition(test_set: Dataset, batch_size: int, cycles: int, scm: n
     images = np.concatenate(images)
     composition_scores = np.concatenate(composition_scores)
 
-    save_selected_images(images, composition_scores, save_dir="composition_samples", lower_better=True)
+
+    os.makedirs(save_dir, exist_ok=True)
+    save_selected_images(images, composition_scores, save_dir=save_dir, lower_better=True)
 
     composition_score = np.mean(composition_scores)
     print("Average composition score:", composition_score)
