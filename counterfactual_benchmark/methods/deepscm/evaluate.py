@@ -9,6 +9,7 @@ import torch.nn as nn
 from torch.utils.data import Dataset
 import os
 import numpy as np
+import matplotlib.pyplot as plt
 import argparse
 
 import sys
@@ -17,15 +18,14 @@ sys.path.append("../../")
 from models.classifiers.classifier import Classifier
 from datasets.morphomnist.dataset import MorphoMNISTLike
 from datasets.transforms import ReturnDictTransform
+
 from evaluation.metrics.composition import composition
+from evaluation.metrics.coverage_density import coverage_density
+from evaluation.embeddings.vgg import vgg
 from evaluation.metrics.effectiveness import effectiveness
 from evaluation.metrics.utils import save_selected_images, save_plots
 
-from evaluation.metrics.coverage_density import coverage_density
-from evaluation.embeddings.vgg import vgg
-
 torch.multiprocessing.set_sharing_strategy('file_system')
-
 
 dataclass_mapping = {
     "morphomnist": MorphoMNISTLike
@@ -90,7 +90,6 @@ def produce_counterfactuals(factual_batch: torch.Tensor, scm: nn.Module, do_pare
     batch_size, _ , _ , _ = factual_batch["image"].shape
     idxs = torch.randperm(len(intervention_source))[:batch_size] # select random indices from train set to perform interventions
 
-
     #update with the counterfactual parent
 
     interventions = {do_parent: torch.cat([intervention_source[id][do_parent] for id in idxs]).view(-1).unsqueeze(1)
@@ -108,7 +107,6 @@ def evaluate_effectiveness(test_set: Dataset, batch_size:int , scm: nn.Module, a
 
     test_data_loader = torch.utils.data.DataLoader(test_set, batch_size=batch_size, shuffle=False, num_workers=7)
 
-    # composition
     effectiveness_scores = {attr_key: [] for attr_key in attributes}
     for factual_batch in tqdm(test_data_loader):
         counterfactuals = produce_counterfactuals(factual_batch, scm, do_parent, intervention_source)
@@ -183,14 +181,14 @@ if __name__ == "__main__":
     if "effectiveness" in args.metrics or "all" in args.metrics:
         #########################################################################################################################
         ## just test code for the produced counterfactuals -> may delete later
-        test_data_loader = torch.utils.data.DataLoader(test_set, batch_size=1, shuffle=False, num_workers=7)
-        iterator = iter(test_data_loader)
-        batch = next(iterator)
-    # counterfactuals = produce_counterfactuals(batch, scm, do_parent="thickness", intervention_source=train_set)
+       # test_data_loader = torch.utils.data.DataLoader(test_set, batch_size=1, shuffle=False, num_workers=7)
+       # iterator = iter(test_data_loader)
+      #  batch = next(iterator)
+      #  counterfactuals = produce_counterfactuals(batch, scm, do_parent="digit", intervention_source=train_set)
 
-    # cf_image = counterfactuals["image"].squeeze(0).squeeze(0).numpy()
-
-    #  plt.imsave("cf_img.png", cf_image, cmap='gray')
+      #  cf_image = counterfactuals["image"].squeeze(0).squeeze(0).numpy()
+      #  plt.imsave("cf_img{}.png".format("thickeness"), cf_image, cmap='gray')
+      #  plt.imsave("f_img.png", batch["image"].squeeze(0).squeeze(0).numpy(), cmap="gray")
         ##########################################################################################################################
         # test the predictors
         predictors = {atr: Classifier(attr=atr, width=8, num_outputs=config_cls[atr +"_num_out"], context_dim=1)
