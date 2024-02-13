@@ -126,26 +126,26 @@ def evaluate_effectiveness(test_set: Dataset, batch_size:int , scm: nn.Module, a
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--config", '-c', type=str, help="Config file for experiment.", default="./configs/morphomnist_config.json")
+    parser.add_argument("--classifier-config", '-clf', type=str, help="Classifier config file.", default="./configs/morphomnist_classifier_config.json")
     parser.add_argument("--metrics", '-m',
                         nargs="+", type=str,
                         help="Metrics to calculate. "
                         "Choose one or more of [composition, effectiveness, coverage_density] or use 'all'.",
                         default=["all"])
-    # parser.add_argument("--config")
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = parse_arguments()
-
     torch.manual_seed(42)
-    config_file = "configs/morphomnist_config.json"
-    config_file_cls = "configs/morphomnist_classifier_config.json"
 
-    with open(config_file_cls, 'r') as f1:
-        config_cls = load(f1)
+    assert os.path.isfile(args.classifier_config), f"{args.classifier_config} is not a file"
+    with open(args.classifier_config, 'r') as f:
+        config_cls = load(f)
 
-    with open(config_file, 'r') as f:
+    assert os.path.isfile(args.config), f"{args.config} is not a file"
+    with open(args.config, 'r') as f:
         config = load(f)
 
     dataset = config["dataset"]
