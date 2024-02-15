@@ -7,6 +7,8 @@ def save_selected_images(images, scores, save_dir, lower_better=True, n_best=10,
     sort_ids = np.argsort(scores)
     images_sorted = images[sort_ids] if lower_better else images[sort_ids][::-1]
 
+    plt.imsave(os.path.join(save_dir, f"a.png"), images_sorted[0].transpose(1, 2, 0))
+    return
     for i in range(n_best):
         plt.imsave(os.path.join(save_dir, f"best_{i}.png"), images_sorted[i][0], cmap='gray')
 
@@ -21,7 +23,7 @@ def save_selected_images(images, scores, save_dir, lower_better=True, n_best=10,
 
 
 def save_plots(images, fig_idx):
-    fig, axs = plt.subplots(1, len(images), figsize=(20, 5)) 
+    fig, axs = plt.subplots(1, len(images), figsize=(20, 5))
     titles = ["factual", "do(thickness)", "do(intensity)", "do(digit)"]
     for i, img in enumerate(images):
         axs[i].imshow(img, cmap='gray')
@@ -32,5 +34,5 @@ def save_plots(images, fig_idx):
 
     plt.savefig("qualitative_samples/images_plot_{}.png".format(fig_idx))
 
-    plt.close()  
+    plt.close()
     return
