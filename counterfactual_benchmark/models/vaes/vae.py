@@ -37,18 +37,6 @@ class CondVAE(StructuralEquation, pl.LightningModule):
         self.lr = lr
         self.weight_decay = weight_decay
 
-    def encode(self, x, cond, logvar=False):
-        mu_u, logvar_u = self.encoder(x, cond)
-        if logvar:
-            return mu_u, logvar_u
-        else:
-            return mu_u
-
-    def decode(self, u, cond):
-        h = self.decoder(u, cond)
-        x = self.likelihood.sample(h)
-        return x
-
     def _vae_loss(self, h, x, mu, logvar, prior_mu, prior_var, beta):
         nll_pp = self.likelihood.nll(h, x)
         kl_pp = gaussian_kl(mu, logvar, prior_mu, prior_var)
@@ -62,6 +50,38 @@ class CondVAE(StructuralEquation, pl.LightningModule):
         # u = self.__reparameterize(mu_u, logvar_u)
         h = self.decoder(u, cond)
         return h, mu_u, logvar_u
+
+
+    def abduct(self, x, parents):
+        q_loc, q_logscale = self.encoder(x, cond=parents)  # q(z|x,pa)
+        z = sample_gaussian(q_loc, q_logscale)
+        return [z.detach()]
+
+
+    def forward_latents(self, latents, parents, return_loc = False):
+        h = self.decoder(cond=parents, u=latents[0])
+        return self.likelihood.sample(h, return_loc)
+
+    def encode(self, x, cond):
+        z = self.abduct(x, cond)
+
+        rec_loc, rec_scale = self.forward_latents(z, parents=cond, return_loc=True)
+        # abduct exogenous noise u
+        # t_u = 1
+        # rec_scale = rec_scale * t_u
+        eps = (x - rec_loc) / rec_scale.clamp(min=1e-12)
+
+        return  z , eps
+
+
+    def decode(self, u, cond):
+        z , e  = u
+        t_u = 0.1     #temp parameter
+        cf_loc, cf_scale = self.forward_latents(z, parents=cond, return_loc=True)
+
+        cf_scale = cf_scale * t_u
+        x = torch.clamp(cf_loc + cf_scale * e, min=-1, max=1)
+        return x
 
     def configure_optimizers(self):
         optimizer = AdamW(self.parameters(), lr=self.lr, weight_decay=self.weight_decay, betas=[0.9, 0.9])

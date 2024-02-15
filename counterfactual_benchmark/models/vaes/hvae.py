@@ -201,20 +201,26 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
         cond =  self.expand_parents(cond)
        
 
-        z = self.abduct(x, cond)
+        z = self.abduct(x, cond, t=0.1)
 
         if self.cond_prior:
             z = [z[i]['z'] for i in range(len(z))]
 
-      #  rec_loc, rec_scale = self.forward_latents(z, parents=cond, return_loc=True) 
+        rec_loc, rec_scale = self.forward_latents(z, parents=cond, return_loc=True) 
         # abduct exogenous noise u
-      #  u = (x - rec_loc) / rec_scale.clamp(min=1e-12)
+      #  t_u = 0.1
+      #  rec_scale = rec_scale * t_u
+        eps = (x - rec_loc) / rec_scale.clamp(min=1e-12)
 
-        return  z 
+        return  z , eps
 
     
     def decode(self, u, cond):
+        z , e  = u
+        t_u = 0.1 ##temp parameter
         cond =  self.expand_parents(cond)
-       # h = self.forward_latents()
-        x, _ = self.forward_latents(u, parents=cond)
+        cf_loc, cf_scale = self.forward_latents(z, parents=cond, return_loc=True)
+
+        cf_scale = cf_scale * t_u
+        x = torch.clamp(cf_loc + cf_scale * e, min=-1, max=1)
         return x
