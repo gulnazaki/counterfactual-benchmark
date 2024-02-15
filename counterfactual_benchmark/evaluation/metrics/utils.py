@@ -30,7 +30,10 @@ def save_plots(images, fig_idx):
     fig, axs = plt.subplots(1, len(images), figsize=(20, 5))
     titles = ["factual", "do(thickness)", "do(intensity)", "do(digit)"]
     for i, img in enumerate(images):
-        axs[i].imshow(img, cmap='gray')
+        if img.shape[0] == 3:
+            axs[i].imshow(img.transpose(1, 2, 0))
+        else:
+            axs[i].imshow(img[0], cmap='gray')
         axs[i].set_title(titles[i])
         axs[i].axis('off')  # Turn off axis
         plt.tight_layout()

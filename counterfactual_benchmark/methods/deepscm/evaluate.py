@@ -40,13 +40,11 @@ def produce_qualitative_samples(dataset, scm, parents, intervention_source):
 
     for i , batch in tqdm(enumerate(data_loader)):
         if i % 500 == 0:
-            res = [batch["image"].squeeze(0).squeeze(0)]
-            #dataset[i]["image"]  = dataset[i]["image"].unsqueeze(0)
-            #print(dataset[i]["image"].shape)
+            res = [batch["image"].squeeze(0)]
 
             for do_parent in parents:
                 counterfactual = produce_counterfactuals(batch, scm, do_parent, intervention_source)
-                res.append(counterfactual["image"].squeeze(0).squeeze(0))
+                res.append(counterfactual["image"].squeeze(0))
 
             save_plots(res, i)
     return
