@@ -26,16 +26,21 @@ def save_selected_images(images, scores, save_dir, lower_better=True, n_best=10,
 
     return
 
-def save_plots(images, fig_idx):
+def save_plots(images, fig_idx, parents):
     fig, axs = plt.subplots(1, len(images), figsize=(20, 5))
-    titles = ["factual", "do(thickness)", "do(intensity)", "do(digit)"]
+    titles = ["factual"]
+
+    for do_parent in parents:
+        titles.append("do(" + do_parent + ")")
+    
     for i, img in enumerate(images):
         if img.shape[0] == 3:
-            axs[i].imshow(img.transpose(1, 2, 0))
+           # print(img.shape)
+            axs[i].imshow(img.permute(1, 2, 0))
         else:
             axs[i].imshow(img[0], cmap='gray')
         axs[i].set_title(titles[i])
-        axs[i].axis('off')  # Turn off axis
+        axs[i].axis('off') 
         plt.tight_layout()
      #   plt.title()
 

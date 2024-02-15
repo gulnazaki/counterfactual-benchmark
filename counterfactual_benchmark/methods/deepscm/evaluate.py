@@ -47,7 +47,7 @@ def produce_qualitative_samples(dataset, scm, parents, intervention_source):
                 counterfactual = produce_counterfactuals(batch, scm, do_parent, intervention_source)
                 res.append(counterfactual["image"].squeeze(0))
 
-            save_plots(res, i)
+            save_plots(res, i, parents)
     return
 
 
@@ -127,13 +127,13 @@ def evaluate_effectiveness(test_set: Dataset, unnormalize_fn, batch_size:int , s
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", '-c', type=str, help="Config file for experiment.", default="./configs/morphomnist_config.json")
-    parser.add_argument("--classifier-config", '-clf', type=str, help="Classifier config file.", default="./configs/morphomnist_classifier_config.json")
+    parser.add_argument("--config", '-c', type=str, help="Config file for experiment.", default="./configs/celeba_vae_config.json")
+    parser.add_argument("--classifier-config", '-clf', type=str, help="Classifier config file.", default="./configs/celeba_classifier_config.json")
     parser.add_argument("--metrics", '-m',
                         nargs="+", type=str,
                         help="Metrics to calculate. "
                         "Choose one or more of [composition, effectiveness, coverage_density] or use 'all'.",
-                        default=["all"])
+                        default=["effectiveness"])
     parser.add_argument("--cycles", '-cc', type=int, help="Composition cycles.", default=10)
     parser.add_argument("--coverage-density-on-train", '-cvtrain', action='store_true', help="Whether to compute coverage & density against the training set")
     parser.add_argument("--qualitative", action='store_true', help="Whether to produce qualitative samples of interventions")
@@ -169,7 +169,7 @@ if __name__ == "__main__":
 
     batch_size = config["mechanism_models"]["image"]["params"]["batch_size_val"]
 
-    scm = SCM(checkpoint_dir=config["checkpoint_dir"],
+    scm = SCM(checkpoint_dir="/storage/th.melistas/celeba_checkpoints",
               graph_structure=config["causal_graph"],
               **models)
 
@@ -205,7 +205,7 @@ if __name__ == "__main__":
         for key , cls in predictors.items():
             file_name = next((file for file in os.listdir(config_cls["ckpt_path"]) if file.startswith(key)), None)
             print(file_name)
-            cls.load_state_dict(torch.load(config_cls["ckpt_path"] + file_name , map_location=torch.device('cpu'))["state_dict"])
+            cls.load_state_dict(torch.load(config_cls["ckpt_path"] + file_name , map_location=torch.device('cuda'))["state_dict"])
 
         #print(predictors)
         for pa in attribute_size.keys():

@@ -1,3 +1,4 @@
+from torchmetrics.classification import BinaryAccuracy
 
 def effectiveness(counterfactual_batch, unnormalize_fn, predictors):
    # print(counterfactual_batch["intensity"].shape)
@@ -5,11 +6,13 @@ def effectiveness(counterfactual_batch, unnormalize_fn, predictors):
     predictions = {key: clfs(counterfactual_batch["image"], counterfactual_batch["intensity"])
                    if key=="thickness"
                    else clfs(counterfactual_batch["image"]) for key , clfs in predictors.items()} #predicted values
-
-#acc = (targets['digit'].argmax(-1).numpy() == preds['digit'].argmax(-1).numpy()).mean()
-
-    result = {key:(unnormalize_fn(targets[key], key) - unnormalize_fn(predictions[key], key)).abs().mean().detach().numpy()
+    
+    if "digit" in list(targets.keys()):
+        result = {key:(unnormalize_fn(targets[key], key) - unnormalize_fn(predictions[key], key)).abs().mean().detach().numpy()
               if key!="digit" else  (targets[key].argmax(-1).numpy() == predictions[key].argmax(-1).numpy()).mean()
               for key in targets}
+    
+    else: #celeba attributes
+        result = {key: BinaryAccuracy()(predictions[key].detach(), targets[key].detach()) for key in targets}
 
     return result

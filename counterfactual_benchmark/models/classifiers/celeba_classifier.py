@@ -2,7 +2,7 @@ from torch.optim import Adam
 import torch.nn as nn
 import pytorch_lightning as pl
 import torch
-from torchmetrics import Accuracy
+from torchmetrics.classification import BinaryAccuracy
 import torch.nn.functional as F
 import sys
 sys.path.append("../../")
@@ -13,7 +13,7 @@ class CelebaClassifier(pl.LightningModule):
         super().__init__()
         self.variable = attr
 
-        self.accuracy = Accuracy("binary") #for the  digit
+        self.accuracy = BinaryAccuracy()
 
         self.lr = lr
         # TODO add digit classifier
