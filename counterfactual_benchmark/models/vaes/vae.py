@@ -37,13 +37,6 @@ class CondVAE(StructuralEquation, pl.LightningModule):
         self.lr = lr
         self.weight_decay = weight_decay
 
-    def __reparameterize(self, mu, log_var):
-        """Reparameterization trick"""
-        std = torch.exp(0.5 * log_var)
-        eps = torch.randn_like(std)
-        u = eps * std + mu
-        return u
-
     def encode(self, x, cond, logvar=False):
         mu_u, logvar_u = self.encoder(x, cond)
         if logvar:
