@@ -168,6 +168,8 @@ if __name__ == "__main__":
 
         models[variable] = model
 
+    batch_size = config["mechanism_models"]["image"]["params"]["batch_size_val"]
+
     scm = SCM(checkpoint_dir=config["checkpoint_dir"],
               graph_structure=config["causal_graph"],
               **models)
@@ -185,7 +187,7 @@ if __name__ == "__main__":
 
 
     if "composition" in args.metrics or "all" in args.metrics:
-        evaluate_composition(test_set, unnormalize_fn, batch_size=256, cycles=args.cycles, scm=scm)
+        evaluate_composition(test_set, unnormalize_fn, batch_size, cycles=args.cycles, scm=scm)
 
 
     if "effectiveness" in args.metrics or "all" in args.metrics:
@@ -202,7 +204,7 @@ if __name__ == "__main__":
 
         #print(predictors)
         for pa in attribute_size.keys():
-            evaluate_effectiveness(test_set, unnormalize_fn, batch_size=256, scm=scm, attributes=list(attribute_size.keys()), do_parent=pa,
+            evaluate_effectiveness(test_set, unnormalize_fn, batch_size, scm=scm, attributes=list(attribute_size.keys()), do_parent=pa,
                             intervention_source=train_set, predictors=predictors)
 
     if "coverage_density" in args.metrics or "all" in args.metrics:
