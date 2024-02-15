@@ -17,6 +17,7 @@ sys.path.append("../../")
 
 from models.classifiers.classifier import Classifier
 from datasets.morphomnist.dataset import MorphoMNISTLike
+from datasets.celeba.dataset import Celeba
 from datasets.transforms import ReturnDictTransform
 
 from evaluation.metrics.composition import composition
@@ -28,7 +29,8 @@ from evaluation.metrics.utils import save_selected_images, save_plots
 torch.multiprocessing.set_sharing_strategy('file_system')
 
 dataclass_mapping = {
-    "morphomnist": MorphoMNISTLike
+    "morphomnist": MorphoMNISTLike,
+    "celeba": Celeba
 }
 
 def produce_qualitative_samples(dataset, scm, parents, intervention_source):
@@ -151,6 +153,8 @@ if __name__ == "__main__":
 
     models = {}
     for variable in config["causal_graph"].keys():
+        if variable not in config["mechanism_models"]:
+            continue
         model_config = config["mechanism_models"][variable]
 
         module = import_module(model_config["module"])

@@ -17,7 +17,7 @@ class SCM(nn.Module):
     def __load_parameters(self):
         # load pre-trained model for first file name starting with model name
         for name, model in self.models.items():
-            
+
             file_name = next((file for file in os.listdir(self.checkpoint_dir) if file.startswith(name)), None)
             print(file_name)
 
@@ -34,7 +34,7 @@ class SCM(nn.Module):
         us = {}
         for var in self.graph_structure.keys():
             if len(self.graph_structure[var]) == 0:
-                if var =="digit":
+                if var not in self.models:
                     us[var] = xs[var]
                 else:
                     us[var] = self.models[var].encode(xs[var], torch.tensor([]).view(xs[var].shape[0], 0))
@@ -48,7 +48,7 @@ class SCM(nn.Module):
         for var in self.graph_structure.keys():
             if repl is None or var not in repl.keys():
                 if len(self.graph_structure[var]) == 0:
-                    if var =="digit":
+                    if var not in self.models:
                         xs[var] = us[var]
                     else:
                         xs[var] = self.models[var].decode(us[var], torch.tensor([]).view(us[var].shape[0], 0))
