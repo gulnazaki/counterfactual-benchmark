@@ -90,17 +90,16 @@ def unnormalize(value, name):
     return value
 
 class MorphoMNISTLike(Dataset):
-    def __init__(self, attribute_size, split='train', normalize_=True, transform=None, data_dir=os.path.join(os.path.dirname(os.path.realpath(__file__)),'data')):
-        self.has_valid_set = False
+    def __init__(self, attribute_size, train=True, normalize_=True, transform=None, data_dir=os.path.join(os.path.dirname(os.path.realpath(__file__)),'data')):
         self.root_dir = data_dir
-        self.train = True if split == 'train' else False
+        self.train = train
         self.transform = transform
         self.pad = transforms.Pad(padding=2)
 
         # digit is loaded from labels
         columns = [att for att in attribute_size.keys() if att != 'digit']
 
-        images, labels, metrics_df = load_morphomnist_like(data_dir, self.train, columns)
+        images, labels, metrics_df = load_morphomnist_like(data_dir, train, columns)
         # .copy() removes annoying warning
         self.images = self.pad(torch.as_tensor(images.copy(), dtype=torch.float32))
         self.labels = F.one_hot(torch.as_tensor(labels.copy(), dtype=torch.long), num_classes=10)
