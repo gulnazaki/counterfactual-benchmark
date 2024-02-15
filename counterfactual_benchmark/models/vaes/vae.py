@@ -45,7 +45,7 @@ class CondVAE(StructuralEquation, pl.LightningModule):
         return loss
 
     def forward(self, x, cond):
-        mu_u, logvar_u = self.encode(x, cond, logvar=True)
+        mu_u, logvar_u = self.encoder(x, cond)
         u = sample_gaussian(mu_u, logvar_u)
         # u = self.__reparameterize(mu_u, logvar_u)
         h = self.decoder(u, cond)
