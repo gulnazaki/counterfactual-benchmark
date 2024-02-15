@@ -40,14 +40,21 @@ class CondGAN(StructuralEquation, pl.LightningModule):
         criterion = nn.BCEWithLogitsLoss()
         loss = criterion(y_hat, y)
         return loss
+    
+    def mse_loss(self, x, xr):
+        loss = torch.square(x - xr).mean()
+        return loss
 
-    def forward(self, x, cond):
-        z_mean = torch.zeros((len(x), self.latent_dim, 1, 1)).float()
-        z = torch.normal(z_mean, z_mean + 1).to(device)
-        gz = self.decode(z, cond)
+
+
+    def forward_enc(self, x, cond):
         ex = self.encode(x, cond)
-        return ex, gz
-
+        return ex
+    
+    def forward_dec(self, u, cond):
+        gu = self.decode(u, cond)
+        return gu
+    
     def forward_discr(self, x, z, cond):
         return self.discriminate(x, z, cond)
 
@@ -59,6 +66,8 @@ class CondGAN(StructuralEquation, pl.LightningModule):
         return optimizer_E, optimizer_D
 
     def training_step(self, train_batch, batch_idx):
+        torch.manual_seed(batch_idx)
+    
         x, cond = train_batch
         x = x.to(device)
         cond = cond.to(device)
@@ -74,7 +83,8 @@ class CondGAN(StructuralEquation, pl.LightningModule):
         # sample noise
         z_mean = torch.zeros((len(x), self.latent_dim, 1, 1)).float()
         z = torch.normal(z_mean, z_mean + 1).to(device)
-        ex, gz = self.forward(x, cond)
+        ex = self.forward_enc(x, cond)
+        gz = self.forward(z, cond)
         D_valid = self.forward_discr(x, ex, cond)
         D_fake = self.forward_discr(gz, z, cond)
 
@@ -90,7 +100,6 @@ class CondGAN(StructuralEquation, pl.LightningModule):
             optimizer_E.step()
             self.untoggle_optimizer(optimizer_E)
 
-
         # train discr
         self.toggle_optimizer(optimizer_D)
         
@@ -101,7 +110,8 @@ class CondGAN(StructuralEquation, pl.LightningModule):
         z_mean = torch.zeros((len(x), self.latent_dim, 1, 1)).float()
         z = torch.normal(z_mean, z_mean + 1).to(device)
 
-        ex, gz = self.forward(x, cond)
+        ex = self.forward_enc(x, cond)
+        gz = self.forward(z, cond)
         D_valid = self.forward_discr(x, ex, cond)
         loss_D_valid = self.gan_loss(D_valid, valid).to(device)
         
@@ -118,7 +128,7 @@ class CondGAN(StructuralEquation, pl.LightningModule):
         z_mean = torch.zeros((len(x), self.latent_dim, 1, 1)).float()
         z = torch.normal(z_mean, z_mean + 1).to(device)
         
-        ex, gz = self.forward(x, cond)
+        ex, gz = self.forward(x, cond, z)
         D_valid = self.forward_discr(x, ex, cond)
         D_fake = self.forward_discr(gz, z, cond) 
         loss_D_fake = self.gan_loss(D_fake, fake).to(device)
