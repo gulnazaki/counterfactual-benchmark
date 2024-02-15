@@ -55,6 +55,5 @@ if __name__ == "__main__":
                  graph_structure=config["causal_graph"],
                  attribute_size=attribute_size,
                  checkpoint_dir=config["checkpoint_dir"],
-                 normalize_=True,
-                 train=True)
+                 normalize_=True)
 

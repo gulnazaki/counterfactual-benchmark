@@ -174,7 +174,7 @@ if __name__ == "__main__":
 
     transform = ReturnDictTransform(attribute_size)
 
-    train_set = data_class(attribute_size, split='train', train=True, transform=transform)
+    train_set = data_class(attribute_size, split='train', transform=transform)
     test_set = data_class(attribute_size, split='test', transform=transform)
 
     # produce_qualitative_samples(dataset=test_set, scm=scm, parents=list(attribute_size.keys()), intervention_source=train_set)

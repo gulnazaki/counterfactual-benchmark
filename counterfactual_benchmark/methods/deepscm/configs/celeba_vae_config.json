@@ -24,7 +24,6 @@
                 "batch_size_val" : 256,
                 "patience" : 10,
                 "max_epochs" : 1000,
-                "train_val_split" : 0.8,
                 "weight_decay": 0.01,
                 "ema": "True"
             }
