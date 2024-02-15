@@ -32,6 +32,3 @@ def coverage_density(real_images, generated_images, k = 5, embedding_fn=vgg, pre
     print ('Density: ', metrics['density'])
     print ('Precision: ', metrics['precision'])
     print ('Recall: ', metrics['recall'])
-
-
-

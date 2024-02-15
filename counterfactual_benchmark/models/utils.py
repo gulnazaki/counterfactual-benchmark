@@ -12,7 +12,7 @@ def freeze_model(model):
         p.requires_grad = False
     return model
 
-def generate_checkpoint_callback(model_name, dir_path, monitor=None):
+def generate_checkpoint_callback(model_name, dir_path, monitor="val_loss"):
     checkpoint_callback = ModelCheckpoint(
     dirpath=dir_path,
     filename= model_name + '-{epoch:02d}',

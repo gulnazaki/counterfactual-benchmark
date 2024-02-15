@@ -119,13 +119,25 @@ class DGaussNet(nn.Module):
             ),
         )
         return -1.0 * log_probs.mean(dim=(1, 2, 3))
+    
 
-    def sample(self, h):
+    def sample(
+        self, h, return_loc: bool = True, t=None): 
+        if return_loc:
+            x, logscale = self.forward(h)
+        else:
+            loc, logscale = self.forward(h, t)
+            x = loc + torch.exp(logscale) * torch.randn_like(loc)
+        x = torch.clamp(x, min=-1.0, max=1.0)
+        return x, logscale.exp()
+
+
+    ''' def sample(self, h):
         loc, logscale = self.forward(h)
         x = loc + torch.exp(logscale) * torch.randn_like(loc)
         x = torch.clamp(x, min=-1.0, max=1.0)
         return x
-
+    '''
 class MmnistCondVAE(CondVAE):
     def __init__(self, params, attr_size, name="image_vae"):
         # dimensionality of the conditional data
