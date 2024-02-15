@@ -1,0 +1,11 @@
+{   "Smiling_num_out":1,
+    "Eyeglasses_num_out":1,
+    "ckpt_path" : "./checkpoints/trained_classifiers/",
+    "in_shape" : [3, 128, 128] ,
+    "patience" : 10,
+    "batch_size_train" : 128,
+    "batch_size_val" : 128,
+    "lr" : 1e-4,
+    "max_epochs" : 1000,
+    "train_val_split" : 0.8
+}

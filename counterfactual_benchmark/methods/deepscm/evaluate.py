@@ -16,6 +16,7 @@ import sys
 sys.path.append("../../")
 
 from models.classifiers.classifier import Classifier
+from models.classifiers.celeba_classifier import CelebaClassifier
 from datasets.morphomnist.dataset import MorphoMNISTLike
 from datasets.celeba.dataset import Celeba
 from datasets.transforms import ReturnDictTransform
@@ -183,21 +184,16 @@ if __name__ == "__main__":
 
 
     if "effectiveness" in args.metrics or "all" in args.metrics:
-        #########################################################################################################################
-        ## just test code for the produced counterfactuals -> may delete later
-       # test_data_loader = torch.utils.data.DataLoader(test_set, batch_size=1, shuffle=False, num_workers=7)
-       # iterator = iter(test_data_loader)
-      #  batch = next(iterator)
-      #  counterfactuals = produce_counterfactuals(batch, scm, do_parent="digit", intervention_source=train_set)
-
-      #  cf_image = counterfactuals["image"].squeeze(0).squeeze(0).numpy()
-      #  plt.imsave("cf_img{}.png".format("thickeness"), cf_image, cmap='gray')
-      #  plt.imsave("f_img.png", batch["image"].squeeze(0).squeeze(0).numpy(), cmap="gray")
-        ##########################################################################################################################
-        # test the predictors
-        predictors = {atr: Classifier(attr=atr, width=8, num_outputs=config_cls[atr +"_num_out"], context_dim=1)
+        if dataset == "morphomnist":
+            predictors = {atr: Classifier(attr=atr, width=8, num_outputs=config_cls[atr +"_num_out"], context_dim=1)
                                         if atr=="thickness"
                                         else Classifier(attr=atr, width=8, num_outputs=config_cls[atr +"_num_out"]) for atr in attribute_size.keys()}
+            
+
+        else:
+             predictors = {atr: CelebaClassifier(attr=atr, width=64, 
+                                          num_outputs=config_cls[atr +"_num_out"], lr=config_cls["lr"]) for atr in attribute_size.keys()}
+
 
     # load checkpoints of the predictors
         for key , cls in predictors.items():
@@ -212,4 +208,3 @@ if __name__ == "__main__":
 
     if "coverage_density" in args.metrics or "all" in args.metrics:
         evaluate_coverage_density(real_set=train_set, test_set=test_set, batch_size=64, scm=scm)
-
