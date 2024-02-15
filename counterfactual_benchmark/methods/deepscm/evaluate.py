@@ -135,6 +135,9 @@ def parse_arguments():
                         help="Metrics to calculate. "
                         "Choose one or more of [composition, effectiveness, coverage_density] or use 'all'.",
                         default=["all"])
+    parser.add_argument("--cycles", '-cc', type=int, help="Composition cycles.", default=10)
+    parser.add_argument("--coverage-density-on-train", '-cvtrain', action='store_true', help="Whether to compute coverage & density against the training set")
+    parser.add_argument("--qualitative", action='store_true', help="Whether to produce qualitative samples of interventions")
     return parser.parse_args()
 
 
@@ -177,31 +180,21 @@ if __name__ == "__main__":
     train_set = data_class(attribute_size, split='train', transform=transform)
     test_set = data_class(attribute_size, split='test', transform=transform)
 
-    # produce_qualitative_samples(dataset=test_set, scm=scm, parents=list(attribute_size.keys()), intervention_source=train_set)
+    if args.qualitative:
+        produce_qualitative_samples(dataset=test_set, scm=scm, parents=list(attribute_size.keys()), intervention_source=train_set)
 
 
     if "composition" in args.metrics or "all" in args.metrics:
-        evaluate_composition(test_set, unnormalize_fn, batch_size=256, cycles=10, scm=scm)
+        evaluate_composition(test_set, unnormalize_fn, batch_size=256, cycles=args.cycles, scm=scm)
 
 
     if "effectiveness" in args.metrics or "all" in args.metrics:
-        #########################################################################################################################
-        ## just test code for the produced counterfactuals -> may delete later
-       # test_data_loader = torch.utils.data.DataLoader(test_set, batch_size=1, shuffle=False, num_workers=7)
-       # iterator = iter(test_data_loader)
-      #  batch = next(iterator)
-      #  counterfactuals = produce_counterfactuals(batch, scm, do_parent="digit", intervention_source=train_set)
-
-      #  cf_image = counterfactuals["image"].squeeze(0).squeeze(0).numpy()
-      #  plt.imsave("cf_img{}.png".format("thickeness"), cf_image, cmap='gray')
-      #  plt.imsave("f_img.png", batch["image"].squeeze(0).squeeze(0).numpy(), cmap="gray")
-        ##########################################################################################################################
         # test the predictors
         predictors = {atr: Classifier(attr=atr, width=8, num_outputs=config_cls[atr +"_num_out"], context_dim=1)
                                         if atr=="thickness"
                                         else Classifier(attr=atr, width=8, num_outputs=config_cls[atr +"_num_out"]) for atr in attribute_size.keys()}
 
-    # load checkpoints of the predictors
+        # load checkpoints of the predictors
         for key , cls in predictors.items():
             file_name = next((file for file in os.listdir(config_cls["ckpt_path"]) if file.startswith(key)), None)
             print(file_name)
@@ -213,5 +206,6 @@ if __name__ == "__main__":
                             intervention_source=train_set, predictors=predictors)
 
     if "coverage_density" in args.metrics or "all" in args.metrics:
-        evaluate_coverage_density(real_set=train_set, test_set=test_set, batch_size=64, scm=scm)
+        real_set = train_set if args.coverage_density_on_train else test_set
+        evaluate_coverage_density(real_set, test_set=test_set, batch_size=64, scm=scm)
 
