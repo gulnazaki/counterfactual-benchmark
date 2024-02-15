@@ -26,8 +26,9 @@ def unnormalize(value, name):
     return value.to(torch.uint8)
 
 class Celeba(Dataset):
-    def __init__(self, attribute_size, split='train', transform=None, data_dir='/storage/th.melistas/'):
+    def __init__(self, attribute_size, split='train', normalize_=True, transform=None, data_dir='/storage/th.melistas/'):
         super().__init__()
+        self.has_valid_set = True
         self.transform = transform
         self.data = load_data(data_dir, split)
 
