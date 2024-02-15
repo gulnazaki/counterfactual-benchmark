@@ -15,13 +15,14 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class CondGAN(StructuralEquation, pl.LightningModule):
-    def __init__(self, encoder, decoder, discriminator, latent_dim, d_updates_per_g_update, gradient_clip_val, lr=1e-4, name="image_gan"):
+    def __init__(self, encoder, decoder, discriminator, latent_dim, d_updates_per_g_update, gradient_clip_val, finetune, lr=1e-4, name="image_gan"):
         super(CondGAN, self).__init__(latent_dim=latent_dim)
 
         self.name = name
         self.encoder = encoder
         self.decoder = decoder
         self.discriminator = discriminator
+        self.finetune = finetune
         self.lr = lr
         self.d_updates_per_g_update = d_updates_per_g_update
         self.gradient_clip_val = gradient_clip_val
@@ -67,117 +68,155 @@ class CondGAN(StructuralEquation, pl.LightningModule):
 
     
     def training_step(self, train_batch, batch_idx):
-        torch.manual_seed(batch_idx)
-        
-        x, cond = train_batch
-        x = x.to(device)
-        cond = cond.to(device)
-
-        optimizer_E, optimizer_D = self.optimizers()
-        valid = torch.autograd.Variable(
-            torch.Tensor(x.size(0), 1).fill_(1.0).to(device),
-            requires_grad=False)
-        fake = torch.autograd.Variable(
-            torch.Tensor(x.size(0), 1).fill_(0.0).to(device),
-            requires_grad=False)
-
-        # sample noise
-        z_mean = torch.zeros((len(x), self.latent_dim, 1, 1)).float()
-        z = torch.normal(z_mean, z_mean + 1).to(device)
-        ex = self.forward_enc(x, cond)
-        gz = self.forward_dex(z, cond)
-        D_valid = self.forward_discr(x, ex, cond)
-        D_fake = self.forward_discr(gz, z, cond)
-
-        # train gen and enc
-        if batch_idx % self.d_updates_per_g_update == 0:
-            real_loss = self.gan_loss(D_valid, fake).to(device)
-            fake_loss = self.gan_loss(D_fake, valid)
-            loss_EG = (real_loss + fake_loss) / 2
+        if self.finetune == 1:
+            optimizer_E, optimizer_D = self.optimizers()
             self.toggle_optimizer(optimizer_E)
+            self.untoggle_optimizer(optimizer_D)
+            x, cond = train_batch
+            x = x.to(device)
+            cond = cond.to(device)
+            self.encoder.eval()
+            self.decoder.train()
+            optimizer_E , _ = self.optimizers()
             optimizer_E.zero_grad()
-            self.manual_backward(loss_EG)
-            #self.clip_gradients(optimizer_E, gradient_clip_val=self.gradient_clip_val, gradient_clip_algorithm="norm")
+            ex = self.forward_enc(x,cond)
+            gu = self.forward_dec(ex, cond)
+            
+            loss = self.mse_loss(x, gu)
+            latent = torch.square(ex).mean()
+            loss = loss + latent
+            self.manual_backward(loss)
             optimizer_E.step()
-            self.untoggle_optimizer(optimizer_E)
-
-        # train discr
-        self.toggle_optimizer(optimizer_D)
-        
-        valid = torch.autograd.Variable(
-            torch.Tensor(x.size(0), 1).fill_(1.0).to(device),
-            requires_grad=False)
-        # sample noise
-        z_mean = torch.zeros((len(x), self.latent_dim, 1, 1)).float()
-        z = torch.normal(z_mean, z_mean + 1).to(device)
-
-        ex = self.forward_enc(x, cond)
-        gz = self.forward_dex(z, cond)
-        D_valid = self.forward_discr(x, ex, cond)
-        loss_D_valid = self.gan_loss(D_valid, valid).to(device)
-        
-        optimizer_D.zero_grad()
-        self.manual_backward(loss_D_valid)
-        #self.clip_gradients(optimizer_E, gradient_clip_val=self.gradient_clip_val, gradient_clip_algorithm="norm")
-        optimizer_D.step()
-        
-        
-        fake = torch.autograd.Variable(
-            torch.Tensor(x.size(0), 1).fill_(0.0).to(device),
-            requires_grad=False)
-        # sample noise
-        z_mean = torch.zeros((len(x), self.latent_dim, 1, 1)).float()
-        z = torch.normal(z_mean, z_mean + 1).to(device)
-        
-        ex = self.forward_enc(x, cond)
-        gz = self.forward_dex(z, cond)
-        D_valid = self.forward_discr(x, ex, cond)
-        D_fake = self.forward_discr(gz, z, cond) 
-        loss_D_fake = self.gan_loss(D_fake, fake).to(device)
-        
-        optimizer_D.zero_grad()
-        self.manual_backward(loss_D_fake)
-        #self.clip_gradients(optimizer_E, gradient_clip_val=self.gradient_clip_val, gradient_clip_algorithm="norm")
-        optimizer_D.step()
-        self.untoggle_optimizer(optimizer_D)
-
-        if batch_idx % self.d_updates_per_g_update == 0:
-            loss_EG = loss_EG
-            self.log("train_loss", loss_EG, on_step=False, on_epoch=True, prog_bar=True)
-            return loss_EG
+            
+            self.log("train_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
+            return loss
         else:
-            return
+            
+            torch.manual_seed(batch_idx)
+            
+            x, cond = train_batch
+            x = x.to(device)
+            cond = cond.to(device)
+
+            optimizer_E, optimizer_D = self.optimizers()
+            valid = torch.autograd.Variable(
+                torch.Tensor(x.size(0), 1).fill_(1.0).to(device),
+                requires_grad=False)
+            fake = torch.autograd.Variable(
+                torch.Tensor(x.size(0), 1).fill_(0.0).to(device),
+                requires_grad=False)
+
+            # sample noise
+            z_mean = torch.zeros((len(x), self.latent_dim, 1, 1)).float()
+            z = torch.normal(z_mean, z_mean + 1).to(device)
+            ex = self.forward_enc(x, cond)
+            gz = self.forward_dec(z, cond)
+            D_valid = self.forward_discr(x, ex, cond)
+            D_fake = self.forward_discr(gz, z, cond)
+
+            # train gen and enc
+            if batch_idx % self.d_updates_per_g_update == 0:
+                real_loss = self.gan_loss(D_valid, fake).to(device)
+                fake_loss = self.gan_loss(D_fake, valid)
+                loss_EG = (real_loss + fake_loss) / 2
+                self.toggle_optimizer(optimizer_E)
+                optimizer_E.zero_grad()
+                self.manual_backward(loss_EG)
+                #self.clip_gradients(optimizer_E, gradient_clip_val=self.gradient_clip_val, gradient_clip_algorithm="norm")
+                optimizer_E.step()
+                self.untoggle_optimizer(optimizer_E)
+
+            # train discr
+            self.toggle_optimizer(optimizer_D)
+            
+            valid = torch.autograd.Variable(
+                torch.Tensor(x.size(0), 1).fill_(1.0).to(device),
+                requires_grad=False)
+            # sample noise
+            z_mean = torch.zeros((len(x), self.latent_dim, 1, 1)).float()
+            z = torch.normal(z_mean, z_mean + 1).to(device)
+
+            ex = self.forward_enc(x, cond)
+            gz = self.forward_dec(z, cond)
+            D_valid = self.forward_discr(x, ex, cond)
+            loss_D_valid = self.gan_loss(D_valid, valid).to(device)
+            
+            optimizer_D.zero_grad()
+            self.manual_backward(loss_D_valid)
+            #self.clip_gradients(optimizer_E, gradient_clip_val=self.gradient_clip_val, gradient_clip_algorithm="norm")
+            optimizer_D.step()
+            
+            
+            fake = torch.autograd.Variable(
+                torch.Tensor(x.size(0), 1).fill_(0.0).to(device),
+                requires_grad=False)
+            # sample noise
+            z_mean = torch.zeros((len(x), self.latent_dim, 1, 1)).float()
+            z = torch.normal(z_mean, z_mean + 1).to(device)
+            
+            ex = self.forward_enc(x, cond)
+            gz = self.forward_dec(z, cond)
+            D_valid = self.forward_discr(x, ex, cond)
+            D_fake = self.forward_discr(gz, z, cond) 
+            loss_D_fake = self.gan_loss(D_fake, fake).to(device)
+            
+            optimizer_D.zero_grad()
+            self.manual_backward(loss_D_fake)
+            #self.clip_gradients(optimizer_E, gradient_clip_val=self.gradient_clip_val, gradient_clip_algorithm="norm")
+            optimizer_D.step()
+            self.untoggle_optimizer(optimizer_D)
+
+            if batch_idx % self.d_updates_per_g_update == 0:
+                loss_EG = loss_EG
+                self.log("train_loss", loss_EG, on_step=False, on_epoch=True, prog_bar=True)
+                return loss_EG
+            else:
+                return
 
 
     def validation_step(self, train_batch):
-        self.encoder.eval()
-        x, cond = train_batch
-        x = x.to(device)
-        cond = cond.to(device)
+        if self.finetune==1:
+            self.encoder.eval()
+            x, cond = train_batch
+            x = x.to(device)
+            cond = cond.to(device)
+            ex = self.forward_enc(x,cond)
+            gu = self.forward_dec(ex, cond)
+            loss = self.mse_loss(x, gu)
+            latent = torch.square(gu).mean()
+            loss = loss + latent
         
-        valid = torch.autograd.Variable(
-            torch.Tensor(x.size(0), 1).fill_(1.0).to(device),
-            requires_grad=False)
-        fake = torch.autograd.Variable(
-            torch.Tensor(x.size(0), 1).fill_(0.0).to(device),
-            requires_grad=False)
-        #sample noise
-        z_mean = torch.zeros((len(x), self.latent_dim, 1, 1)).float()
-        z = torch.normal(z_mean, z_mean + 1).to(device)
-        
-        ex = self.forward_enc(x, cond)
-        gz = self.forward_dex(z, cond)
-        D_valid = self.forward_discr(x, ex, cond)
-        D_fake = self.forward_discr(gz, z, cond)
-        real_loss = self.gan_loss(D_valid, fake)
-        fake_loss = self.gan_loss(D_fake, valid)
-        
-        if self.current_epoch < 50:
-            loss_EG = 555555
+            self.log("val_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
         else:
-            loss_EG = (real_loss + fake_loss) / 2
-       
-        self.log("val_loss", loss_EG, on_step=False, on_epoch=True, prog_bar=True)
+            x, cond = train_batch
+            x = x.to(device)
+            cond = cond.to(device)
+            
+            valid = torch.autograd.Variable(
+                torch.Tensor(x.size(0), 1).fill_(1.0).to(device),
+                requires_grad=False)
+            fake = torch.autograd.Variable(
+                torch.Tensor(x.size(0), 1).fill_(0.0).to(device),
+                requires_grad=False)
+            #sample noise
+            z_mean = torch.zeros((len(x), self.latent_dim, 1, 1)).float()
+            z = torch.normal(z_mean, z_mean + 1).to(device)
+            
+            ex = self.forward_enc(x, cond)
+            gz = self.forward_dec(z, cond)
+            D_valid = self.forward_discr(x, ex, cond)
+            D_fake = self.forward_discr(gz, z, cond)
+            real_loss = self.gan_loss(D_valid, fake)
+            fake_loss = self.gan_loss(D_fake, valid)
+            
+            if self.current_epoch < 50:
+                loss = 555555
+            else:
+                loss = (real_loss + fake_loss) / 2
+        
+            self.log("val_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
+
+
 
 
         epoch = self.current_epoch
@@ -235,4 +274,4 @@ class CondGAN(StructuralEquation, pl.LightningModule):
                 plt.savefig(f'{image_output_path}/epoch-{epoch + 1}.png', format='png')
                 plt.close()
 
-        return loss_EG
+        return loss

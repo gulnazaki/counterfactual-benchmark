@@ -195,6 +195,7 @@ class MmnistCondGAN(CondGAN):
         num_continuous = params["num_continuous"]
         n_chan_enc = params["n_chan_enc"]
         n_chan_gen = params["n_chan_gen"]
+        finetune= params["finetune"]
         lr = params["lr"]
         d_updates_per_g_update = params["d_updates_per_g_update"]
         gradient_clip_val = params["gradient_clip_val"]
@@ -204,6 +205,6 @@ class MmnistCondGAN(CondGAN):
         decoder = Decoder(latent_dim, num_continuous, n_chan=n_chan_gen)
         discriminator = Discriminator(num_continuous)
 
-        super().__init__(encoder, decoder, discriminator, latent_dim, d_updates_per_g_update, gradient_clip_val, lr, name)
+        super().__init__(encoder, decoder, discriminator, latent_dim, d_updates_per_g_update, gradient_clip_val,finetune, lr, name)
 
 
