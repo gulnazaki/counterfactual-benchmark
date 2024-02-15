@@ -65,9 +65,10 @@ class CondGAN(StructuralEquation, pl.LightningModule):
                                        lr=self.lr, betas=(0.5, 0.999))
         return optimizer_E, optimizer_D
 
+    
     def training_step(self, train_batch, batch_idx):
         torch.manual_seed(batch_idx)
-    
+        
         x, cond = train_batch
         x = x.to(device)
         cond = cond.to(device)
@@ -84,7 +85,7 @@ class CondGAN(StructuralEquation, pl.LightningModule):
         z_mean = torch.zeros((len(x), self.latent_dim, 1, 1)).float()
         z = torch.normal(z_mean, z_mean + 1).to(device)
         ex = self.forward_enc(x, cond)
-        gz = self.forward(z, cond)
+        gz = self.forward_dex(z, cond)
         D_valid = self.forward_discr(x, ex, cond)
         D_fake = self.forward_discr(gz, z, cond)
 
@@ -111,7 +112,7 @@ class CondGAN(StructuralEquation, pl.LightningModule):
         z = torch.normal(z_mean, z_mean + 1).to(device)
 
         ex = self.forward_enc(x, cond)
-        gz = self.forward(z, cond)
+        gz = self.forward_dex(z, cond)
         D_valid = self.forward_discr(x, ex, cond)
         loss_D_valid = self.gan_loss(D_valid, valid).to(device)
         
@@ -128,7 +129,8 @@ class CondGAN(StructuralEquation, pl.LightningModule):
         z_mean = torch.zeros((len(x), self.latent_dim, 1, 1)).float()
         z = torch.normal(z_mean, z_mean + 1).to(device)
         
-        ex, gz = self.forward(x, cond, z)
+        ex = self.forward_enc(x, cond)
+        gz = self.forward_dex(z, cond)
         D_valid = self.forward_discr(x, ex, cond)
         D_fake = self.forward_discr(gz, z, cond) 
         loss_D_fake = self.gan_loss(D_fake, fake).to(device)
@@ -163,14 +165,18 @@ class CondGAN(StructuralEquation, pl.LightningModule):
         z_mean = torch.zeros((len(x), self.latent_dim, 1, 1)).float()
         z = torch.normal(z_mean, z_mean + 1).to(device)
         
-        ex, gz = self.forward(x, cond)
+        ex = self.forward_enc(x, cond)
+        gz = self.forward_dex(z, cond)
         D_valid = self.forward_discr(x, ex, cond)
         D_fake = self.forward_discr(gz, z, cond)
         real_loss = self.gan_loss(D_valid, fake)
         fake_loss = self.gan_loss(D_fake, valid)
-
-        loss_EG = (real_loss + fake_loss) / 2
-
+        
+        if self.current_epoch < 50:
+            loss_EG = 555555
+        else:
+            loss_EG = (real_loss + fake_loss) / 2
+       
         self.log("val_loss", loss_EG, on_step=False, on_epoch=True, prog_bar=True)
 
 
@@ -230,8 +236,3 @@ class CondGAN(StructuralEquation, pl.LightningModule):
                 plt.close()
 
         return loss_EG
-
-
-
-
-
