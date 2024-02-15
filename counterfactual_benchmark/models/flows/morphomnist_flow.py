@@ -6,7 +6,7 @@ from normflows.flows import AutoregressiveRationalQuadraticSpline, MaskedAffineA
 from normflows.flows import affine
 
 class ThicknessFlow(GCondFlow):
-    def __init__(self, params, name="thickness", **kwargs):
+    def __init__(self, params, name="thickness_flow", **kwargs):
         lr = params.get('lr', 1e-6)
         n_layers = params.get('n_layers', 3)
         super().__init__(name, lr, n_layers)
@@ -44,7 +44,7 @@ class ThicknessFlow(GCondFlow):
         return loss
 
 class IntensityFlow(GCondFlow):
-    def __init__(self, params, name="intensity", **kwargs):
+    def __init__(self, params, name="intensity_flow", **kwargs):
         lr = params.get('lr', 1e-6)
         n_layers = params.get('n_layers', 3)
         super().__init__(name, lr, n_layers)
@@ -61,7 +61,7 @@ class IntensityFlow(GCondFlow):
         self.flow = CondFlow(base, layers)
 
 class DigitFlow(GCondFlow):
-    def __init__(self, params, name="digit", **kwargs):
+    def __init__(self, params, name="digit_flow", **kwargs):
         lr = params.get('lr', 1e-6)
         n_layers = params.get('n_layers', 3)
         super().__init__(name, lr, n_layers)

@@ -433,17 +433,17 @@ class DGaussNet(nn.Module):
         x = torch.clamp(x, min=-1.0, max=1.0)
         return x, logscale.exp()
 
-    
+
 
 class MmnistCondHVAE(CondHVAE):
-        
-    def __init__(self, attr_size, params, name="hvae"):
+
+    def __init__(self, attr_size, params, name="image_hvae"):
 
         params["context_dim"] = sum(attr_size.values())
         encoder = Encoder(params)
         decoder = Decoder(params)
         likelihood = DGaussNet(params)
-        self.name = name 
+        self.name = name
 
         super().__init__(encoder, decoder, likelihood, params, self.name)
         self.apply(init_bias)
@@ -452,7 +452,7 @@ class MmnistCondHVAE(CondHVAE):
 from json import load
 
 if __name__ == "__main__":
-    
+
     attribute_size = {
         "thickness": 1,
         "intensity": 1,
