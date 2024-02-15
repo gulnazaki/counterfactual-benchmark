@@ -80,5 +80,5 @@
     },
 
     "dataset": "morphomnist",
-    "checkpoint_dir": "./checkpoints/"
+    "checkpoint_dir": "./checkpoints/gancheckpoints/"
 }
