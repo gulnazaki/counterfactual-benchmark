@@ -7,8 +7,8 @@ import numpy as np
 
 
 class Encoder(nn.Module):
-    def __init__(self, cond_dim, latent_dim, hidden_dim, n_chan=[1, 32, 32, 32], stride=[2, 2, 2],
-                 kernel_size=[5, 3, 3], padding=[1, 1, 1]):
+    def __init__(self, cond_dim, latent_dim, hidden_dim, n_chan=[3, 32, 64, 128, 256, 256], stride=[2, 2, 2, 2, 1],
+                 kernel_size=[3, 3, 3, 3, 1], padding=[1, 1, 1, 1, 0]):
         super().__init__()
         self.n_chan = n_chan
         self.cond_dim = cond_dim
@@ -24,7 +24,7 @@ class Encoder(nn.Module):
                 ('enc' + str(i+1) + 'leaky_relu', activation_fn)] for i in range(len(n_chan) - 1)
             ]))
             )
-        self.fc = nn.Sequential(nn.Linear(n_chan[-1] * 4 * 4, self.hidden_dim), activation_fn)
+        self.fc = nn.Sequential(nn.Linear(n_chan[-1] * 8 * 8, self.hidden_dim), activation_fn)
         self.embed = nn.Sequential(nn.Linear(self.hidden_dim + self.cond_dim, self.hidden_dim), activation_fn)
         # latent encoding
         self.mu = nn.Linear(self.hidden_dim, self.latent_dim)
@@ -32,6 +32,10 @@ class Encoder(nn.Module):
 
     def forward(self, x, cond):
         batch, _, _, _ = x.shape
+        # print(x.shape)
+        # for l in self.conv:
+        #     x = l(x)
+        #     print(x.shape)
         x = self.conv(x).reshape(batch, -1)
         x = self.fc(x)
         hidden = self.embed(torch.cat((x, cond), dim=-1))
@@ -42,8 +46,8 @@ class Encoder(nn.Module):
         return mu, logvar
 
 class Decoder(nn.Module):
-    def __init__(self, cond_dim, latent_dim, hidden_dim, n_chan=[32, 32, 32, 16], stride=[1, 1, 1],
-                 kernel_size=[3, 3, 5], padding=[1, 1, 2]):
+    def __init__(self, cond_dim, latent_dim, hidden_dim, n_chan=[256, 256, 128, 64, 32, 16], stride=[1, 1, 1, 1, 1],
+                 kernel_size=[3, 3, 3, 3, 3], padding=[1, 1, 1, 1, 1]):
         super().__init__()
         self.n_chan = n_chan
         self.latent_dim = latent_dim
@@ -58,13 +62,13 @@ class Decoder(nn.Module):
         self.fc = nn.Sequential(
             nn.Linear(self.latent_dim + self.cond_dim, self.hidden_dim),
             activation_fn,
-            nn.Linear(self.hidden_dim, self.n_chan[0] * 4 * 4),
+            nn.Linear(self.hidden_dim, self.n_chan[0] * 8 * 8),
             activation_fn
         )
         # decoder
         self.conv = torch.nn.Sequential(
             OrderedDict(flatten_list([[
-                ('dec' + str(i+1) + 'upsample', nn.Upsample(scale_factor=2, mode="nearest")),
+                ('dec' + str(i+1) + 'upsample', nn.Upsample(scale_factor=2 if i < len(n_chan) - 2 else 1, mode="nearest")),
                 ('dec' + str(i+1), nn.Conv2d(in_channels=self.n_chan[i], out_channels=self.n_chan[i+1],
                                                       kernel_size=kernel_size[i], stride=stride[i], padding=padding[i])),
                 ('dec' + str(i+1) + 'relu', activation_fn)] for i in range(len(n_chan) - 1)
@@ -74,7 +78,11 @@ class Decoder(nn.Module):
     def forward(self, u, cond):
         x = torch.cat([u, cond], dim=1)
         x = self.fc(x)
-        x = x.view(-1, self.n_chan[0], 4, 4)
+        x = x.view(-1, self.n_chan[0], 8, 8)
+        # print(x.shape)
+        # for l in self.conv:
+        #     x = l(x)
+        #     print(x.shape)
         x = self.conv(x)
         return x
 
@@ -85,10 +93,10 @@ class DGaussNet(nn.Module):
     def __init__(self, latent_dim):
         super().__init__()
         self.x_loc = nn.Conv2d(
-            latent_dim, 1, kernel_size=1, stride=1
+            latent_dim, 3, kernel_size=1, stride=1
         )
         self.x_logscale = nn.Conv2d(
-            latent_dim, 1, kernel_size=1, stride=1
+            latent_dim, 3, kernel_size=1, stride=1
         )
 
     def forward(self, h):
