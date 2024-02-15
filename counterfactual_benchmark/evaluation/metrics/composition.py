@@ -1,12 +1,11 @@
 import numpy as np
-from datasets.morphomnist.dataset import unnormalize
 
-def composition(factual_batch, num_batch, method, cycles=10):
-    images = [unnormalize(factual_batch["image"], name="image")]
+def composition(factual_batch, unnormalize_fn, method, cycles=10):
+    images = [unnormalize_fn(factual_batch["image"], name="image")]
     for _ in range(cycles):
         abducted_noise = method.encode(**factual_batch)
         counterfactual_batch = method.decode(**abducted_noise)
-        images.append(unnormalize(counterfactual_batch["image"], name="image"))
+        images.append(unnormalize_fn(counterfactual_batch["image"], name="image"))
         factual_batch = counterfactual_batch
 
     # TODO loop on different embeddings

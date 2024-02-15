@@ -25,12 +25,14 @@ from evaluation.metrics.coverage_density import coverage_density
 from evaluation.embeddings.vgg import vgg
 from evaluation.metrics.effectiveness import effectiveness
 from evaluation.metrics.utils import save_selected_images, save_plots
+from datasets.morphomnist.dataset import unnormalize as unnormalize_morphomnist
+from datasets.celeba.dataset import unnormalize as unnormalize_celeba
 
 torch.multiprocessing.set_sharing_strategy('file_system')
 
 dataclass_mapping = {
-    "morphomnist": MorphoMNISTLike,
-    "celeba": Celeba
+    "morphomnist": (MorphoMNISTLike, unnormalize_morphomnist),
+    "celeba": (Celeba, unnormalize_celeba)
 }
 
 def produce_qualitative_samples(dataset, scm, parents, intervention_source):
@@ -64,13 +66,13 @@ def evaluate_coverage_density(real_set: Dataset, test_set: Dataset, batch_size: 
     return coverage_density(real_images, generated_images=counterfactual_images, k = 5, embedding_fn=vgg, pretrained=True)
 
 
-def evaluate_composition(test_set: Dataset, batch_size: int, cycles: int, scm: nn.Module, save_dir: str = "composition_samples"):
+def evaluate_composition(test_set: Dataset, unnormalize_fn, batch_size: int, cycles: int, scm: nn.Module, save_dir: str = "composition_samples"):
     test_data_loader = torch.utils.data.DataLoader(test_set, batch_size=batch_size, shuffle=False, num_workers=7)
 
     composition_scores = []
     images = []
-    for i, factual_batch in enumerate(tqdm(test_data_loader)):
-        score_batch, image_batch = composition(factual_batch, i, method=scm, cycles=cycles)
+    for factual_batch in tqdm(test_data_loader):
+        score_batch, image_batch = composition(factual_batch, unnormalize_fn, method=scm, cycles=cycles)
         composition_scores.append(score_batch)
         images.append(image_batch)
 
@@ -104,7 +106,7 @@ def produce_counterfactuals(factual_batch: torch.Tensor, scm: nn.Module, do_pare
     return counterfactual_batch
 
 
-def evaluate_effectiveness(test_set: Dataset, batch_size:int , scm: nn.Module, attributes: List, do_parent:str,
+def evaluate_effectiveness(test_set: Dataset, unnormalize_fn, batch_size:int , scm: nn.Module, attributes: List, do_parent:str,
                            intervention_source: Dataset, predictors: Dict[str, Classifier]):
 
     test_data_loader = torch.utils.data.DataLoader(test_set, batch_size=batch_size, shuffle=False, num_workers=7)
@@ -112,7 +114,7 @@ def evaluate_effectiveness(test_set: Dataset, batch_size:int , scm: nn.Module, a
     effectiveness_scores = {attr_key: [] for attr_key in attributes}
     for factual_batch in tqdm(test_data_loader):
         counterfactuals = produce_counterfactuals(factual_batch, scm, do_parent, intervention_source)
-        e_score = effectiveness(counterfactuals, predictors)
+        e_score = effectiveness(counterfactuals, unnormalize_fn, predictors)
 
         for attr in attributes:
             effectiveness_scores[attr].append(e_score[attr])
@@ -168,18 +170,18 @@ if __name__ == "__main__":
               **models)
 
     dataset = config["dataset"]
-    data_class = dataclass_mapping[dataset]
+    data_class, unnormalize_fn = dataclass_mapping[dataset]
 
     transform = ReturnDictTransform(attribute_size)
 
-    train_set = data_class(attribute_size, train=True, transform=transform)
-    test_set = data_class(attribute_size, train=False, transform=transform)
+    train_set = data_class(attribute_size, split='train', train=True, transform=transform)
+    test_set = data_class(attribute_size, split='test', transform=transform)
 
-   # produce_qualitative_samples(dataset=test_set, scm=scm, parents=list(attribute_size.keys()), intervention_source=train_set)
+    # produce_qualitative_samples(dataset=test_set, scm=scm, parents=list(attribute_size.keys()), intervention_source=train_set)
 
 
     if "composition" in args.metrics or "all" in args.metrics:
-        evaluate_composition(test_set, batch_size=256, cycles=10, scm=scm)
+        evaluate_composition(test_set, unnormalize_fn, batch_size=256, cycles=10, scm=scm)
 
 
     if "effectiveness" in args.metrics or "all" in args.metrics:
@@ -207,7 +209,7 @@ if __name__ == "__main__":
 
         #print(predictors)
         for pa in attribute_size.keys():
-            evaluate_effectiveness(test_set, batch_size=256, scm=scm, attributes=list(attribute_size.keys()), do_parent=pa,
+            evaluate_effectiveness(test_set, unnormalize_fn, batch_size=256, scm=scm, attributes=list(attribute_size.keys()), do_parent=pa,
                             intervention_source=train_set, predictors=predictors)
 
     if "coverage_density" in args.metrics or "all" in args.metrics:
