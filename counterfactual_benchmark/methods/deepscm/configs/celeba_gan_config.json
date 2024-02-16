@@ -1,0 +1,36 @@
+{
+    "causal_graph": {
+        "Smiling": [],
+        "Eyeglasses": [],
+        "image": ["Smiling", "Eyeglasses"]
+    },
+    "attribute_size": {
+        "Smiling": 1,
+        "Eyeglasses": 1
+    },
+    "mechanism_models": {
+        "image": {
+            "model_type": "gan",
+            "model_class": "CelebaCondGAN",
+            "module": "models.gans",
+            "params": {
+                "n_chan": [1, 32, 32, 32],
+                "n_chan_enc": [2, 64, 128, 256, 512],
+                "n_chan_gen": [256, 512, 256, 128, 64],
+                "latent_dim": 512,
+                "num_continuous": 2,
+                "d_updates_per_g_update":3,
+                "gradient_clip_val": 0.5,
+                "finetune": 0,
+                "lr": 1e-4,
+                "batch_size_train": 100,
+                "batch_size_val": 100,
+                "patience": 200,
+                "max_epochs": 1000
+            }
+        }
+    },
+
+    "dataset": "celeba",
+    "checkpoint_dir": "./checkpoints_celeba/trained_scm"
+}

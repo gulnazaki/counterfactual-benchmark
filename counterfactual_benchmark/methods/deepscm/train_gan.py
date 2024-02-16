@@ -7,6 +7,7 @@ import sys
 
 sys.path.append("../../")
 from datasets.morphomnist.dataset import MorphoMNISTLike
+from datasets.celeba.dataset import Celeba
 
 model_to_script = {
     "flow": train_flow,
@@ -14,13 +15,16 @@ model_to_script = {
 }
 
 dataclass_mapping = {
-    "morphomnist": MorphoMNISTLike
+    "morphomnist": MorphoMNISTLike,
+    "celeba": Celeba
 }
 
 if __name__ == "__main__":
+    args = parse_arguments()
     torch.manual_seed(42)
-    config_file = "configs/morphomnist_gan_config.json"
-    with open(config_file, 'r') as f:
+
+    assert os.path.isfile(args.config), f"{args.config} is not a file"
+    with open(args.config, 'r') as f:
         config = load(f)
 
     dataset = config["dataset"]
