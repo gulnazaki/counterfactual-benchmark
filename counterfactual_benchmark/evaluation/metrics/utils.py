@@ -26,12 +26,12 @@ def save_selected_images(images, scores, save_dir, lower_better=True, n_best=10,
 
     return
 
-def save_plots(images, fig_idx, parents):
+def save_plots(images, fig_idx, parents, counterfactual):
     fig, axs = plt.subplots(1, len(images), figsize=(20, 5))
     titles = ["factual"]
 
     for do_parent in parents:
-        titles.append("do(" + do_parent + ")")
+        titles.append("do(" + do_parent  + "=" + str(int(counterfactual[do_parent].long())) + ")")
     
     for i, img in enumerate(images):
         if img.shape[0] == 3:
