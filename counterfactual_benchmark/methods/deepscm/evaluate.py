@@ -40,14 +40,14 @@ def produce_qualitative_samples(dataset, scm, parents, intervention_source):
     data_loader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=True, num_workers=7)
 
     for i , batch in tqdm(enumerate(data_loader)):
-        if i % 500 == 0:
+        if i % 10 == 0:
             res = [batch["image"].squeeze(0)]
 
             for do_parent in parents:
                 counterfactual = produce_counterfactuals(batch, scm, do_parent, intervention_source)
                 res.append(counterfactual["image"].squeeze(0))
 
-            save_plots(res, i, parents)
+            save_plots(res, i, parents, counterfactual)
     return
 
 
@@ -98,7 +98,6 @@ def produce_counterfactuals(factual_batch: torch.Tensor, scm: nn.Module, do_pare
     interventions = {do_parent: torch.cat([intervention_source[id][do_parent] for id in idxs]).view(-1).unsqueeze(1)
                      if do_parent!="digit" else torch.cat([intervention_source[id][do_parent].unsqueeze(0) for id in idxs])}
 
-
     abducted_noise = scm.encode(**factual_batch)
     counterfactual_batch = scm.decode(interventions, **abducted_noise)
 
@@ -142,7 +141,7 @@ def parse_arguments():
 
 if __name__ == "__main__":
     args = parse_arguments()
-    torch.manual_seed(42)
+   # torch.manual_seed(42)
 
     assert os.path.isfile(args.classifier_config), f"{args.classifier_config} is not a file"
     with open(args.classifier_config, 'r') as f:
