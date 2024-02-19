@@ -15,7 +15,7 @@
             "module": "models.gans",
             "params": {
                 "n_chan": [1, 32, 32, 32],
-                "n_chan_enc": [2, 64, 128, 256, 512],
+                "n_chan_enc": [3, 64, 128, 256, 256, 512, 512],
                 "n_chan_gen": [256, 512, 256, 128, 64],
                 "latent_dim": 512,
                 "num_continuous": 2,

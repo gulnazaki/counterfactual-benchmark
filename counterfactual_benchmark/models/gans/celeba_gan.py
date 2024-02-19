@@ -18,17 +18,21 @@ from models.gans import CondGAN
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
+
+
+#Layer F K S BN D A
+#Conv2D 64 (2,2) (1,1) Y 0.0 LReLU
+#Conv2D 128 (7,7) (2,2) Y 0.0 LReLU
+#Conv2D 256 (5,5) (2,2) Y 0.0 LReLU
+#Conv2D 256 (7,7) (2,2) Y 0.0 LReLU
+#Conv2D 512 (4,4) (1,1) Y 0.0 LReLU
+#Conv2D 512 (1,1) (1,1) Y 0.0 Linea
+
 class Encoder(nn.Module):
-    def __init__(self, latent_dim, num_continuous, n_chan=[2, 64, 128, 256, 512], stride=[2, 2, 2, 2, 2],
-                 kernel_size=[3, 4, 4, 4, 1], padding=[1, 1, 1, 1]):
+    def __init__(self, latent_dim, num_continuous, n_chan=[3, 64, 128, 256, 256, 512, 512], stride=[1, 2, 2, 2, 1, 1],
+                 kernel_size=[2, 7, 5, 7, 4, 1], padding=[1, 1, 1, 1, 1, 1, 1]):
         super().__init__()
 
-        self.digit_embedding = nn.Sequential(
-            nn.Embedding(10, 256),
-            nn.Unflatten(1, (1, 16, 16)),
-            nn.Upsample(size=(32, 32)),
-            nn.Tanh()
-        )
         self.num_continuous = num_continuous
 
         n_chan[0] = n_chan[0] + num_continuous
@@ -53,18 +57,21 @@ class Encoder(nn.Module):
     # 1 intensity
     # 2 - 11 digit
     def forward(self, x: torch.Tensor, cond):
-        # cond[:,0:10] this is digit
-        # cond[:, 10:12] this is intensity and flow
-        processed_digit = self.digit_embedding(cond[:, 2:12].argmax(1))
+        
         attr1 = cond[:, 0]
         attr2 = cond[:, 1]
+        print (attr1.shape)
 
-        attr1 = continuous_feature_map(attr1)
-        attr2 = continuous_feature_map(attr2)
+        attr1 = continuous_feature_map(attr1, size=(x.shape[2], x.shape[3]))
+        attr2 = continuous_feature_map(attr2, size=(x.shape[2], x.shape[3]))
+        print (attr1.shape)
+        print (x.shape)
+        
 
-        features = torch.concat((x, processed_digit, attr1, attr2), dim=1)
+        features = torch.concat((x, attr1, attr2), dim=1)  
+        
         features = self.layers(features)
-
+        
         return features
 
 
