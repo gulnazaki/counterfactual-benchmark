@@ -75,8 +75,8 @@ class CondGAN(StructuralEquation, pl.LightningModule):
             x, cond = train_batch
             x = x.to(device)
             cond = cond.to(device)
-            self.encoder.eval()
-            self.decoder.train()
+            self.encoder.train()
+            self.decoder.eval()
             optimizer_E , _ = self.optimizers()
             optimizer_E.zero_grad()
             ex = self.forward_enc(x,cond)
