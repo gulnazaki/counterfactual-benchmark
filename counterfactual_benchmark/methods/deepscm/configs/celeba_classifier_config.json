@@ -1,6 +1,6 @@
 {   "Smiling_num_out":1,
     "Eyeglasses_num_out":1,
-    "ckpt_path" : "./checkpoints/trained_classifiers/",
+    "ckpt_path" : "./checkpoints_celeba/trained_classifiers/",
     "in_shape" : [3, 128, 128] ,
     "patience" : 10,
     "batch_size_train" : 128,

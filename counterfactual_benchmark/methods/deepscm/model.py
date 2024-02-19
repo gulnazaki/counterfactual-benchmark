@@ -16,14 +16,13 @@ class SCM(nn.Module):
 
     def __load_parameters(self):
         # load pre-trained model for first file name starting with model name
-        for name, model in self.models.items():
-
-            file_name = next((file for file in os.listdir(self.checkpoint_dir) if file.startswith(name)), None)
-            print(file_name)
+        for model in self.models.values():
+            file_name = next((file for file in os.listdir(self.checkpoint_dir) if file.startswith(model.name)), None)
 
             device = "cuda" #if file_name.startswith("hvae") else "cpu" #evaluate hvae on gpu
            # print(device)
             model.load_state_dict(torch.load(os.path.join(self.checkpoint_dir, file_name), map_location=torch.device(device))["state_dict"])
+            model.to(device)
 
     def __freeze_models(self):
         for _, model in self.models.items():

@@ -18,7 +18,7 @@ def coverage_density(real_images, generated_images, k = 5, embedding_fn=vgg, pre
 
     for type_ in images:
         for image in tqdm(images[type_]):
-            rgb_batch = np.repeat(image, 3, axis=1)
+            rgb_batch = np.repeat(image, 3, axis=1) if image.shape[1] == 1 else image
             input = transform224(rgb_batch)
             if torch.cuda.is_available():
                 input = input.to("cuda")
