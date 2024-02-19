@@ -29,8 +29,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 #Conv2D 512 (1,1) (1,1) Y 0.0 Linea
 
 class Encoder(nn.Module):
-    def __init__(self, latent_dim, num_continuous, n_chan=[3, 64, 128, 256, 256, 512, 512], stride=[1, 2, 2, 2, 1, 1],
-                 kernel_size=[2, 7, 5, 7, 4, 1], padding=[1, 1, 1, 1, 1, 1, 1]):
+    def __init__(self, latent_dim, num_continuous, n_chan=[3, 64, 128, 256, 256, 512, 512], stride=[1, 2, 2, 2, 2, 2],
+                 kernel_size=[2, 7, 5, 7, 4, 2], padding=[0, 0, 0, 0, 0, 0, 0]):
         super().__init__()
 
         self.num_continuous = num_continuous
@@ -53,31 +53,28 @@ class Encoder(nn.Module):
                              stride=stride[-1])
         self.layers.append(lastconv)
 
-    # 0 thickness
-    # 1 intensity
-    # 2 - 11 digit
+
     def forward(self, x: torch.Tensor, cond):
-        
         attr1 = cond[:, 0]
         attr2 = cond[:, 1]
-        print (attr1.shape)
-
         attr1 = continuous_feature_map(attr1, size=(x.shape[2], x.shape[3]))
         attr2 = continuous_feature_map(attr2, size=(x.shape[2], x.shape[3]))
-        print (attr1.shape)
-        print (x.shape)
-        
-
+  
         features = torch.concat((x, attr1, attr2), dim=1)  
-        
         features = self.layers(features)
         
         return features
 
-
+#Layer F K S BN D A
+#Conv2DT 512 (4,4) (1,1) Y 0.0 LReLU
+#Conv2DT 256 (7,7) (2,2) Y 0.0 LReLU
+#Conv2DT 256 (5,5) (2,2) Y 0.0 LReLU
+#Conv2DT 128 (7,7) (2,2) Y 0.0 LReLU
+#Conv2DT 64 (2,2) (1,1) Y 0.0 LReLU
+#Conv2D 3 (1,1) (1,1) Y 0.0 Sigmoid
 class Decoder(nn.Module):
-    def __init__(self, latent_dim, num_continuous, n_chan=[256, 512, 256, 128, 64], stride=[1, 2, 2, 2, 1],
-                 kernel_size=[3, 4, 3, 3, 4], padding=[0, 0, 1, 1]):
+    def __init__(self, latent_dim, num_continuous, n_chan=[512, 256, 256, 128, 64, 3], stride=[1, 2, 2, 2, 1, 1],
+                 kernel_size=[4, 7, 5, 7, 2, 1], padding=[0, 0, 0, 0, 0, 0]):
         super().__init__()
 
         self.num_continuous = num_continuous
@@ -85,7 +82,6 @@ class Decoder(nn.Module):
         self.n_chan = n_chan
         n_chan[0] = n_chan[0] + latent_dim + num_continuous
 
-        self.digit_embedding = nn.Embedding(10, 256)
 
         activation_fn = nn.LeakyReLU(0.2)
         self.layers = nn.Sequential(
@@ -102,15 +98,17 @@ class Decoder(nn.Module):
         self.layers.append(tahn)
 
     def forward(self, u, cond):
-        size = self.n_chan[0] - self.latent_dim - self.num_continuous
-        processed_digit = cond[:, 2:12].matmul(self.digit_embedding.weight).reshape((-1, size, 1, 1))
+      
         attr1 = cond[:, 0]
         attr2 = cond[:, 1]
         attr1 = continuous_feature_map(attr1, size=(1, 1))
         attr2 = continuous_feature_map(attr2, size=(1, 1))
-        features = torch.concat((u, processed_digit, attr1, attr2), dim=1)
+     
+        features = torch.concat((u, attr1, attr2), dim=1)
+    
+      
         features = self.layers(features)
-
+        
         return features
 
 
