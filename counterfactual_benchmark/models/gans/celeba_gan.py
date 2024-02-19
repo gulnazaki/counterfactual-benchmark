@@ -73,14 +73,14 @@ class Encoder(nn.Module):
 #Conv2DT 64 (2,2) (1,1) Y 0.0 LReLU
 #Conv2D 3 (1,1) (1,1) Y 0.0 Sigmoid
 class Decoder(nn.Module):
-    def __init__(self, latent_dim, num_continuous, n_chan=[512, 256, 256, 128, 64, 3], stride=[1, 2, 2, 2, 1, 1],
-                 kernel_size=[4, 7, 5, 7, 2, 1], padding=[0, 0, 0, 0, 0, 0]):
+    def __init__(self, latent_dim, num_continuous, n_chan=[512 ,512, 256, 256, 128, 64, 3], stride=[1, 2, 2, 2, 1, 2],
+                 kernel_size=[4, 7, 5, 7, 2, 2], padding=[1, 1, 1, 1, 1, 0]):
         super().__init__()
 
         self.num_continuous = num_continuous
         self.latent_dim = latent_dim
         self.n_chan = n_chan
-        n_chan[0] = n_chan[0] + latent_dim + num_continuous
+        n_chan[0] = n_chan[0] + num_continuous
 
 
         activation_fn = nn.LeakyReLU(0.2)
@@ -92,7 +92,7 @@ class Decoder(nn.Module):
                  ('gen' + str(i + 1) + 'leaky_relu', activation_fn)] for i in range(len(n_chan) - 1)
             ]))
         )
-        lastconv = nn.ConvTranspose2d(in_channels=64, out_channels=1, kernel_size=kernel_size[-1], stride=stride[-1])
+        lastconv = nn.ConvTranspose2d(in_channels=3, out_channels=1, kernel_size=kernel_size[-1], stride=stride[-1])
         tahn = nn.Tanh()
         self.layers.append(lastconv)
         self.layers.append(tahn)
@@ -103,12 +103,12 @@ class Decoder(nn.Module):
         attr2 = cond[:, 1]
         attr1 = continuous_feature_map(attr1, size=(1, 1))
         attr2 = continuous_feature_map(attr2, size=(1, 1))
+    
      
         features = torch.concat((u, attr1, attr2), dim=1)
-    
-      
+         
         features = self.layers(features)
-        
+
         return features
 
 
@@ -117,12 +117,7 @@ class Discriminator(nn.Module):
         super().__init__()
 
         self.num_continuous = num_continuous
-        self.digit_embedding = nn.Sequential(
-            nn.Embedding(10, 256),
-            nn.Unflatten(1, (1, 16, 16)),
-            nn.Upsample(size=(32, 32)),
-            nn.Tanh()
-        )
+
         self.dz = nn.Sequential(
             nn.Dropout2d(0.2),
             nn.Conv2d(512, 512, (1, 1), (1, 1)),
@@ -133,19 +128,19 @@ class Discriminator(nn.Module):
         )
         self.dx = nn.Sequential(
             nn.Dropout2d(0.2),
-            nn.Conv2d(1 + self.num_continuous + 1, 32, (5, 5), (1, 1)),
+            nn.Conv2d(1 + self.num_continuous + 2, 64, (5, 5), (1, 1)),
             nn.LeakyReLU(0.1),
             nn.Dropout2d(0.2),
-            nn.BatchNorm2d(32),
-            nn.Conv2d(32, 64, (4, 4), (2, 2)),
-            nn.LeakyReLU(0.1),
             nn.BatchNorm2d(64),
-            nn.Dropout2d(0.5),
-            nn.Conv2d(64, 128, (4, 4), (1, 1)),
+            nn.Conv2d(64, 128, (4, 4), (2, 2)),
             nn.LeakyReLU(0.1),
             nn.BatchNorm2d(128),
             nn.Dropout2d(0.5),
-            nn.Conv2d(128, 256, (4, 4), (2, 2)),
+            nn.Conv2d(128, 256, (4, 4), (1, 1)),
+            nn.LeakyReLU(0.1),
+            nn.BatchNorm2d(256),
+            nn.Dropout2d(0.5),
+            nn.Conv2d(256, 256, (4, 4), (2, 2)),
             nn.LeakyReLU(0.1),
             nn.BatchNorm2d(256),
             nn.Dropout2d(0.5),
@@ -168,25 +163,20 @@ class Discriminator(nn.Module):
         return next(self.parameters()).device
 
     def forward(self, x, u, cond):
-        processed_digit = self.digit_embedding(cond[:, 2:12].argmax(1))
-        # processed_digit = self.digit_embedding(c["digit"].argmax(1))
+
         attr1 = cond[:, 0]
         attr2 = cond[:, 1]
-        attr1 = continuous_feature_map(attr1)
-        attr2 = continuous_feature_map(attr2)
-        # processed_continuous = {
-        #     k: continuous_feature_map(v, size=(28, 28))
-        #     for k, v in c.items()
-        #     if k != "digit"
-        # }
-        features = torch.concat((x, processed_digit, attr1, attr2), dim=1)
-        # features = torch.concat([X, processed_digit] + [
-        #     processed_continuous[k]
-        #     for k in sorted(processed_continuous.keys())], dim=1)
-        dx = self.dx(features)
-        dz = self.dz(u)
-        z = self.dxz(torch.concat([dx, dz], dim=1)).reshape((-1, 1))
+        attr1 = continuous_feature_map(attr1, size=(x.shape[2], x.shape[3]))
+        attr2 = continuous_feature_map(attr2, size=(x.shape[2], x.shape[3]))
+        
 
+        features = torch.concat((x, attr1, attr2), dim=1)
+        
+        dx = self.dx(features)
+     
+        dz = self.dz(u)
+        #z = self.dxz(torch.concat([dx, dz], dim=1)).reshape((-1, 1))
+        
         return self.dxz(torch.concat([dx, dz], dim=1)).reshape((-1, 1))
 
 
