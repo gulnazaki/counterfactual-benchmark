@@ -465,7 +465,7 @@ if __name__ == "__main__":
 
     params = config["mechanism_models"]["image"]["params"]
 
-    train_set = Celeba(attribute_size=attribute_size, train=True)
+    train_set = Celeba(attribute_size=attribute_size, split=True)
 
     tr_data_loader = torch.utils.data.DataLoader(train_set, batch_size=1, shuffle=False, num_workers=7)
     iterator = iter(tr_data_loader)

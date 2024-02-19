@@ -156,8 +156,9 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
       #  nll_nan = torch.isnan(out["nll"]).sum()
       #  kl_nan = torch.isnan(out["kl"]).sum()
 
-        for key , value in nelbo_loss.items(): 
-            self.log(key, value, on_step=False, on_epoch=True, prog_bar=True)
+        for key , value in nelbo_loss.items():
+            if value!=None :
+                self.log(key, value, on_step=False, on_epoch=True, prog_bar=True)
         
         return nelbo_loss["elbo"]
         
@@ -180,8 +181,8 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
 
       #  for key , value in nelbo_loss.items(): 
       #      self.log(key, value, on_step=False, on_epoch=True, prog_bar=True)
-
-        self.log("val_loss", nelbo_loss, on_step=False, on_epoch=True, prog_bar=True)
+        if nelbo_loss!=None:
+            self.log("val_loss", nelbo_loss, on_step=False, on_epoch=True, prog_bar=True)
         return nelbo_loss
 
 
