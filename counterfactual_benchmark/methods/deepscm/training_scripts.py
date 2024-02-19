@@ -6,7 +6,7 @@ sys.path.append("../../")
 from datasets.transforms import SelectParentAttributesTransform
 from models.utils import generate_checkpoint_callback, generate_early_stopping_callback, generate_ema_callback
 
-def get_dataloaders(data_class, attribute_size, transform, config, **kwargs):
+def get_dataloaders(data_class, attribute_size, config, transform=None, **kwargs):
     data = data_class(attribute_size=attribute_size, transform=transform, split='train', **kwargs)
 
     if data.has_valid_set:
@@ -31,7 +31,7 @@ def train_flow(flow, config, data_class, graph_structure, attribute_size, checkp
 
 
 def train_vae(vae, config, data_class, graph_structure, attribute_size, checkpoint_dir, **kwargs):
-    train_data_loader, val_data_loader = get_dataloaders(data_class, attribute_size, transform, config, **kwargs)
+    train_data_loader, val_data_loader = get_dataloaders(data_class, attribute_size, config, **kwargs)
 
     callbacks = [
         generate_checkpoint_callback(vae.name, checkpoint_dir),
