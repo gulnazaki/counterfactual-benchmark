@@ -36,7 +36,7 @@ dataclass_mapping = {
     "celeba": (Celeba, unnormalize_celeba)
 }
 
-def produce_qualitative_samples(dataset, scm, parents, intervention_source):
+def produce_qualitative_samples(dataset, scm, parents, intervention_source, unnormalize_fn):
     data_loader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=True, num_workers=7)
 
     for i , batch in tqdm(enumerate(data_loader)):
@@ -47,7 +47,7 @@ def produce_qualitative_samples(dataset, scm, parents, intervention_source):
                 counterfactual = produce_counterfactuals(batch, scm, do_parent, intervention_source)
                 res.append(counterfactual)
 
-            save_plots(res, i, parents, counterfactual)
+            save_plots(res, i, parents, counterfactual, unnormalize_fn)
     return
 
 
@@ -88,7 +88,8 @@ def evaluate_composition(test_set: Dataset, unnormalize_fn, batch_size: int, cyc
     return composition_score
 
 
-def produce_counterfactuals(factual_batch: torch.Tensor, scm: nn.Module, do_parent:str, intervention_source: Dataset, device: str = 'cuda'):
+def produce_counterfactuals(factual_batch: torch.Tensor, scm: nn.Module, do_parent:str, intervention_source: Dataset,
+                            force_change: bool = True, device: str = 'cuda'):
     factual_batch = {k: v.to(device) for k, v in factual_batch.items()}
 
     batch_size, _ , _ , _ = factual_batch["image"].shape
@@ -133,7 +134,7 @@ def parse_arguments():
                         nargs="+", type=str,
                         help="Metrics to calculate. "
                         "Choose one or more of [composition, effectiveness, coverage_density] or use 'all'.",
-                        default=["effectiveness"])
+                        default=["all"])
     parser.add_argument("--cycles", '-cc', type=int, help="Composition cycles.", default=10)
     parser.add_argument("--coverage-density-on-train", '-cvtrain', action='store_true', help="Whether to compute coverage & density against the training set")
     parser.add_argument("--qualitative", action='store_true', help="Whether to produce qualitative samples of interventions")
@@ -169,7 +170,7 @@ if __name__ == "__main__":
 
     batch_size = config["mechanism_models"]["image"]["params"]["batch_size_val"]
 
-    scm = SCM(checkpoint_dir="/storage/th.melistas/celeba_checkpoints",
+    scm = SCM(checkpoint_dir=config["checkpoint_dir"],
               graph_structure=config["causal_graph"],
               **models)
 
@@ -182,7 +183,8 @@ if __name__ == "__main__":
     test_set = data_class(attribute_size, split='test', transform=transform)
 
     if args.qualitative:
-        produce_qualitative_samples(dataset=test_set, scm=scm, parents=list(attribute_size.keys()), intervention_source=train_set)
+        produce_qualitative_samples(dataset=test_set, scm=scm, parents=list(attribute_size.keys()),
+                                    intervention_source=train_set, unnormalize_fn=unnormalize_fn)
 
 
     if "composition" in args.metrics or "all" in args.metrics:

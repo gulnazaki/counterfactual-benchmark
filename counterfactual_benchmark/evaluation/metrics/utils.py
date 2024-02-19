@@ -26,7 +26,7 @@ def save_selected_images(images, scores, save_dir, lower_better=True, n_best=10,
 
     return
 
-def save_plots(data, fig_idx, parents, counterfactual):
+def save_plots(data, fig_idx, parents, counterfactual, unnormalize_fn):
     fig, axs = plt.subplots(1, len(data), figsize=(20, 5))
     titles = ["factual" + " " + " ".join([f"{v} = {data[0][v].long().item()}" for v in data[0].keys() if v != "image"])]
 
@@ -34,7 +34,7 @@ def save_plots(data, fig_idx, parents, counterfactual):
         titles.append("do(" + do_parent  + "=" + str(int(counterfactual[do_parent].long())) + ")")
 
     for i, datum in enumerate(data):
-        img = datum["image"].cpu().squeeze(0)
+        img = unnormalize_fn(datum["image"].cpu().squeeze(0), name="image")
         if img.shape[0] == 3:
             axs[i].imshow(img.permute(1, 2, 0))
         else:
