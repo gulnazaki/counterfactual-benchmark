@@ -6,13 +6,13 @@ def effectiveness(counterfactual_batch, unnormalize_fn, predictors):
     predictions = {key: clfs(counterfactual_batch["image"], counterfactual_batch["intensity"])
                    if key=="thickness"
                    else clfs(counterfactual_batch["image"]) for key , clfs in predictors.items()} #predicted values
-    
+
     if "digit" in list(targets.keys()):
         result = {key:(unnormalize_fn(targets[key], key) - unnormalize_fn(predictions[key], key)).abs().mean().detach().numpy()
               if key!="digit" else  (targets[key].argmax(-1).numpy() == predictions[key].argmax(-1).numpy()).mean()
               for key in targets}
-    
+
     else: #celeba attributes
-        result = {key: BinaryAccuracy()(predictions[key].detach(), targets[key].detach()) for key in targets}
+        result = {key: BinaryAccuracy()(predictions[key].detach().cpu(), targets[key].detach().cpu()) for key in targets}
 
     return result

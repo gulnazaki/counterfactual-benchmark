@@ -1,6 +1,6 @@
 import torch
 import numpy as np
-from typing import Dict, Tuple, List
+from typing import Dict, List
 from json import load
 from importlib import import_module
 from model import SCM
@@ -9,8 +9,8 @@ import torch.nn as nn
 from torch.utils.data import Dataset
 import os
 import numpy as np
-import matplotlib.pyplot as plt
 import argparse
+import random
 
 import sys
 sys.path.append("../../")
@@ -41,24 +41,24 @@ def produce_qualitative_samples(dataset, scm, parents, intervention_source):
 
     for i , batch in tqdm(enumerate(data_loader)):
         if i % 10 == 0:
-            res = [batch["image"].squeeze(0)]
+            res = [batch]
 
             for do_parent in parents:
                 counterfactual = produce_counterfactuals(batch, scm, do_parent, intervention_source)
-                res.append(counterfactual["image"].squeeze(0))
+                res.append(counterfactual)
 
             save_plots(res, i, parents, counterfactual)
     return
 
 
 
-def evaluate_coverage_density(real_set: Dataset, test_set: Dataset, batch_size: int, scm: nn.Module):
+def evaluate_coverage_density(real_set: Dataset, test_set: Dataset, batch_size: int, scm: nn.Module, attributes: List[str]):
     real_data_loader = torch.utils.data.DataLoader(real_set, batch_size=batch_size, shuffle=False, num_workers=7)
     test_data_loader = torch.utils.data.DataLoader(test_set, batch_size=batch_size, shuffle=False, num_workers=7)
 
     counterfactual_images = []
     for factual_batch in tqdm(test_data_loader):
-        counterfactual_batch =  produce_counterfactuals(factual_batch, scm, do_parent='thickness', intervention_source=real_set)
+        counterfactual_batch =  produce_counterfactuals(factual_batch, scm, do_parent=random.choice(attributes), intervention_source=real_set)
         counterfactual_images.append(counterfactual_batch['image'])
 
     real_images = [batch["image"] for batch in real_data_loader]
@@ -88,15 +88,16 @@ def evaluate_composition(test_set: Dataset, unnormalize_fn, batch_size: int, cyc
     return composition_score
 
 
-def produce_counterfactuals(factual_batch: torch.Tensor, scm: nn.Module, do_parent:str, intervention_source: Dataset):
+def produce_counterfactuals(factual_batch: torch.Tensor, scm: nn.Module, do_parent:str, intervention_source: Dataset, device: str = 'cuda'):
+    factual_batch = {k: v.to(device) for k, v in factual_batch.items()}
 
     batch_size, _ , _ , _ = factual_batch["image"].shape
     idxs = torch.randperm(len(intervention_source))[:batch_size] # select random indices from train set to perform interventions
 
     #update with the counterfactual parent
 
-    interventions = {do_parent: torch.cat([intervention_source[id][do_parent] for id in idxs]).view(-1).unsqueeze(1)
-                     if do_parent!="digit" else torch.cat([intervention_source[id][do_parent].unsqueeze(0) for id in idxs])}
+    interventions = {do_parent: torch.cat([intervention_source[id][do_parent] for id in idxs]).view(-1).unsqueeze(1).to(device)
+                     if do_parent!="digit" else torch.cat([intervention_source[id][do_parent].unsqueeze(0).to(device) for id in idxs])}
 
     abducted_noise = scm.encode(**factual_batch)
     counterfactual_batch = scm.decode(interventions, **abducted_noise)
@@ -104,7 +105,7 @@ def produce_counterfactuals(factual_batch: torch.Tensor, scm: nn.Module, do_pare
     return counterfactual_batch
 
 
-def evaluate_effectiveness(test_set: Dataset, unnormalize_fn, batch_size:int , scm: nn.Module, attributes: List, do_parent:str,
+def evaluate_effectiveness(test_set: Dataset, unnormalize_fn, batch_size:int , scm: nn.Module, attributes: List[str], do_parent:str,
                            intervention_source: Dataset, predictors: Dict[str, Classifier]):
 
     test_data_loader = torch.utils.data.DataLoader(test_set, batch_size=batch_size, shuffle=False, num_workers=7)
@@ -193,10 +194,10 @@ if __name__ == "__main__":
             predictors = {atr: Classifier(attr=atr, width=8, num_outputs=config_cls[atr +"_num_out"], context_dim=1)
                                         if atr=="thickness"
                                         else Classifier(attr=atr, width=8, num_outputs=config_cls[atr +"_num_out"]) for atr in attribute_size.keys()}
-            
+
 
         else:
-             predictors = {atr: CelebaClassifier(attr=atr, width=64, 
+             predictors = {atr: CelebaClassifier(attr=atr, width=64,
                                           num_outputs=config_cls[atr +"_num_out"], lr=config_cls["lr"]) for atr in attribute_size.keys()}
 
 
@@ -205,6 +206,7 @@ if __name__ == "__main__":
             file_name = next((file for file in os.listdir(config_cls["ckpt_path"]) if file.startswith(key)), None)
             print(file_name)
             cls.load_state_dict(torch.load(config_cls["ckpt_path"] + file_name , map_location=torch.device('cuda'))["state_dict"])
+            cls.to('cuda')
 
         #print(predictors)
         for pa in attribute_size.keys():
@@ -213,5 +215,5 @@ if __name__ == "__main__":
 
     if "coverage_density" in args.metrics or "all" in args.metrics:
         real_set = train_set if args.coverage_density_on_train else test_set
-        evaluate_coverage_density(real_set, test_set=test_set, batch_size=64, scm=scm)
+        evaluate_coverage_density(real_set, test_set=test_set, batch_size=64, scm=scm, attributes=list(attribute_size.keys()))
 

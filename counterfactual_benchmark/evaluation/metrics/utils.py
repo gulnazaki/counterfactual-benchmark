@@ -26,23 +26,22 @@ def save_selected_images(images, scores, save_dir, lower_better=True, n_best=10,
 
     return
 
-def save_plots(images, fig_idx, parents, counterfactual):
-    fig, axs = plt.subplots(1, len(images), figsize=(20, 5))
-    titles = ["factual"]
+def save_plots(data, fig_idx, parents, counterfactual):
+    fig, axs = plt.subplots(1, len(data), figsize=(20, 5))
+    titles = ["factual" + " " + " ".join([f"{v} = {data[0][v].long().item()}" for v in data[0].keys() if v != "image"])]
 
     for do_parent in parents:
         titles.append("do(" + do_parent  + "=" + str(int(counterfactual[do_parent].long())) + ")")
-    
-    for i, img in enumerate(images):
+
+    for i, datum in enumerate(data):
+        img = datum["image"].cpu().squeeze(0)
         if img.shape[0] == 3:
-           # print(img.shape)
             axs[i].imshow(img.permute(1, 2, 0))
         else:
             axs[i].imshow(img[0], cmap='gray')
         axs[i].set_title(titles[i])
-        axs[i].axis('off') 
+        axs[i].axis('off')
         plt.tight_layout()
-     #   plt.title()
 
     plt.savefig("qualitative_samples/images_plot_{}.png".format(fig_idx))
 

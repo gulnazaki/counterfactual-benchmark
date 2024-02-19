@@ -24,6 +24,7 @@ class SCM(nn.Module):
             device = "cuda" #if file_name.startswith("hvae") else "cpu" #evaluate hvae on gpu
            # print(device)
             model.load_state_dict(torch.load(os.path.join(self.checkpoint_dir, file_name), map_location=torch.device(device))["state_dict"])
+            model.to(device)
 
     def __freeze_models(self):
         for _, model in self.models.items():

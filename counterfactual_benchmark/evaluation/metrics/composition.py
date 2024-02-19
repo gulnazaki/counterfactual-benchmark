@@ -1,11 +1,13 @@
 import numpy as np
 
-def composition(factual_batch, unnormalize_fn, method, cycles=10):
-    images = [unnormalize_fn(factual_batch["image"], name="image")]
+def composition(factual_batch, unnormalize_fn, method, cycles=10, device='cuda'):
+    factual_batch = {k: v.to(device) for k, v in factual_batch.items()}
+    images = [unnormalize_fn(factual_batch["image"].cpu(), name="image")]
+
     for _ in range(cycles):
         abducted_noise = method.encode(**factual_batch)
         counterfactual_batch = method.decode(**abducted_noise)
-        images.append(unnormalize_fn(counterfactual_batch["image"], name="image"))
+        images.append(unnormalize_fn(counterfactual_batch["image"].cpu(), name="image"))
         factual_batch = counterfactual_batch
 
     # TODO loop on different embeddings
