@@ -18,7 +18,7 @@ def save_selected_images(images, scores, save_dir, lower_better=True, n_best=10,
         save_image(images_sorted[i], os.path.join(save_dir, f"best_{i}.png"))
 
     for i in range(n_worst):
-        save_image(images_sorted[-i], os.path.join(save_dir, f"worst_{i}.png"))
+        save_image(images_sorted[-i - 1], os.path.join(save_dir, f"worst_{i}.png"))
 
     total = scores.shape[0]
     for i in range(n_median):
