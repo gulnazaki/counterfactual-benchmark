@@ -23,8 +23,8 @@
                 "gradient_clip_val": 0.5,
                 "finetune": 0,
                 "lr": 1e-4,
-                "batch_size_train": 100,
-                "batch_size_val": 100,
+                "batch_size_train": 128,
+                "batch_size_val": 256,
                 "patience": 200,
                 "max_epochs": 1000
             }
@@ -32,5 +32,5 @@
     },
 
     "dataset": "celeba",
-    "checkpoint_dir": "./checkpoints_celeba/trained_scm"
+    "checkpoint_dir": "./checkpoints_celeba/trained_scm_without_sigmoid_tanh"
 }

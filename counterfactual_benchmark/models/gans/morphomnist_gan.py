@@ -12,7 +12,7 @@ from typing import Dict
 import numpy as np
 from collections import OrderedDict
 # from datasets.morphomnist.dataset import MorphoMNISTLike
-from models.utils import flatten_list, continuous_feature_map, init_weights
+from models.utils import flatten_list, continuous_feature_map, init_weights, init_bias
 from models.gans import CondGAN
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -204,6 +204,13 @@ class MmnistCondGAN(CondGAN):
         encoder = Encoder(latent_dim, num_continuous, n_chan=n_chan_enc)
         decoder = Decoder(latent_dim, num_continuous, n_chan=n_chan_gen)
         discriminator = Discriminator(num_continuous)
+        
+        encoder.apply(init_weights)
+        decoder.apply(init_weights)
+        discriminator.apply(init_weights)
+        encoder.apply(init_bias)
+        decoder.apply(init_bias)
+        discriminator.apply(init_bias)
 
         super().__init__(encoder, decoder, discriminator, latent_dim, d_updates_per_g_update, gradient_clip_val,finetune, lr, name)
 

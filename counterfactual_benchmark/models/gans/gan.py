@@ -223,7 +223,7 @@ class CondGAN(StructuralEquation, pl.LightningModule):
         n_show = 10
         save_images_every = 2
         path = os.getcwd()
-        image_output_path = path.replace('methods/deepscm', 'gantraining')
+        image_output_path = path.replace('methods/deepscm', 'gantraining_without_sigmoid_tanh')
         if not os.path.exists(image_output_path):
             os.mkdir(image_output_path)
 
@@ -235,19 +235,27 @@ class CondGAN(StructuralEquation, pl.LightningModule):
                 # generate images from same class as real ones
                 for i in range(n_show):       
                     images = x[i].to(device)
-                    images = images.reshape((1, 1, images.shape[1], images.shape[2]))
-                    images = images.reshape((-1, 1, 32, 32)).float().to(device)
+                    images = torch.unsqueeze(images, 0).float().to(device)
+                    
                     
                     attrs = cond[i].to(device)
                     attrs = attrs.reshape((1, attrs.shape[0]))
+             
                     
                     z_mean = torch.zeros((len(images), 512, 1, 1)).float()
                     z = torch.normal(z_mean, z_mean + 1)
                     z = z.to(device)
-
-                    gener = self.decode(z, attrs).reshape(1, 32, 32).cpu().numpy()
-                    recon = self.decode(self.encode(images, attrs), attrs).reshape(1, 32, 32).cpu().numpy()
+                    
+                    gener = self.decode(z, attrs)
+                    gener = gener.reshape(gener.shape[1], gener.shape[2], gener.shape[3]).cpu().numpy()
+                    # Normalize the image data to the [0, 1] range
+                    gener = (gener+1)/2
+                    recon = self.decode(self.encode(images, attrs), attrs)
+                    recon = recon.reshape(recon.shape[1], recon.shape[2], recon.shape[3]).cpu().numpy()
+                    # Normalize the image data to the [0, 1] range
+                    recon = (recon+1)/2
                     real = images.cpu().numpy()
+                    
                     recons.append(recon)
                     geners.append(gener)
                     reals.append(real)
@@ -262,14 +270,29 @@ class CondGAN(StructuralEquation, pl.LightningModule):
                 fig.text(0.04, 0.5, 'x', ha='left')
                 fig.text(0.04, 0.25, 'G(E(x, c), c)', ha='left')
 
-                for i in range(n_show):
-                    ax[0, i].imshow(geners[i][0], cmap='gray', vmin=-1, vmax=1)
-                    ax[0, i].axis('off')
-                    ax[1, i].imshow(reals[i][0][0], cmap='gray', vmin=-1, vmax=1)
-                    ax[1, i].axis('off')
-                    ax[2, i].imshow(recons[i][0]
-                                    , cmap='gray', vmin=-1, vmax=1)
-                    ax[2, i].axis('off')
+
+                
+                if  geners[1].shape[0]==3:
+                    for i in range(n_show):
+                        geners[i] = np.transpose(geners[i], (1, 2, 0))
+                        ax[0, i].imshow(geners[i])
+                        ax[0, i].axis('off')
+                        real = reals[i][0]
+                        real = np.transpose(real, (1, 2, 0))
+                        ax[1, i].imshow(real)
+                        ax[1, i].axis('off')
+                        recons[i] = np.transpose(recons[i], (1, 2, 0))
+                        ax[2, i].imshow(recons[i])
+                        ax[2, i].axis('off')
+                    
+                else:
+                    for i in range(n_show):
+                        ax[0, i].imshow(geners[i][0], cmap='gray', vmin=-1, vmax=1)
+                        ax[0, i].axis('off')
+                        ax[1, i].imshow(reals[i][0][0], cmap='gray', vmin=-1, vmax=1)
+                        ax[1, i].axis('off')
+                        ax[2, i].imshow(recons[i][0], cmap='gray', vmin=-1, vmax=1)
+                        ax[2, i].axis('off')
 
                 plt.savefig(f'{image_output_path}/epoch-{epoch + 1}.png', format='png')
                 plt.close()
