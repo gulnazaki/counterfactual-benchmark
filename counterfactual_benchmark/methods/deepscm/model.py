@@ -28,6 +28,7 @@ class SCM(nn.Module):
         for _, model in self.models.items():
             for param in model.parameters():
                 param.requires_grad = False
+            model.eval()
 
     def encode(self, **xs):
         us = {}
