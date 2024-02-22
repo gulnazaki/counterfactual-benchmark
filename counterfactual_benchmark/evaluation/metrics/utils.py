@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+import torch
 
 
 def save_image(img, path):
@@ -26,12 +27,19 @@ def save_selected_images(images, scores, save_dir, lower_better=True, n_best=10,
 
     return
 
-def save_plots(data, fig_idx, parents, counterfactual, unnormalize_fn):
-    fig, axs = plt.subplots(1, len(data), figsize=(20, 5))
-    titles = ["factual" + " " + " ".join([f"{v} = {data[0][v].long().item()}" for v in data[0].keys() if v != "image"])]
+def to_value(tensor, name):
+    value = tensor.item() if tensor.shape[1] == 1 else torch.argmax(tensor, dim=1).item()
+    if name in ['Smiling', 'Eyeglasses']:
+        return "True" if value == 1.0 else "False"
+    else:
+        return round(value, 2)
 
-    for do_parent in parents:
-        titles.append("do(" + do_parent  + "=" + str(int(counterfactual[do_parent].long())) + ")")
+def save_plots(data, fig_idx, parents, unnormalize_fn):
+    fig, axs = plt.subplots(1, len(data), figsize=(20, 5))
+    titles = ["factual" + " (" + ", ".join([f"{v} = {to_value(data[0][v], v)}" for v in data[0].keys() if v != "image"]) + ")"]
+
+    for idx, do_parent in enumerate(parents):
+        titles.append(f"do({do_parent} = {to_value(data[idx+1][do_parent], do_parent)})")
 
     for i, datum in enumerate(data):
         img = unnormalize_fn(datum["image"].cpu().squeeze(0), name="image")
