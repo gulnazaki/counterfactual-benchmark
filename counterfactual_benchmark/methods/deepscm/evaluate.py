@@ -31,6 +31,8 @@ from datasets.celeba.dataset import unnormalize as unnormalize_celeba
 
 torch.multiprocessing.set_sharing_strategy('file_system')
 
+rng = np.random.default_rng()
+
 dataclass_mapping = {
     "morphomnist": (MorphoMNISTLike, unnormalize_morphomnist),
     "celeba": (Celeba, unnormalize_celeba)
@@ -40,14 +42,15 @@ def produce_qualitative_samples(dataset, scm, parents, intervention_source, unno
     data_loader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=True, num_workers=7)
 
     for i , batch in tqdm(enumerate(data_loader)):
-        if i % 10 == 0:
+        if i % 100 == 0:
             res = [batch]
 
             for do_parent in parents:
-                counterfactual = produce_counterfactuals(batch, scm, do_parent, intervention_source)
+                counterfactual = produce_counterfactuals(batch, scm, do_parent, intervention_source,
+                                                         force_change=True, possible_values=dataset.possible_values)
                 res.append(counterfactual)
 
-            save_plots(res, i, parents, counterfactual, unnormalize_fn)
+            save_plots(res, i, parents, unnormalize_fn)
     return
 
 
@@ -58,7 +61,8 @@ def evaluate_coverage_density(real_set: Dataset, test_set: Dataset, batch_size: 
 
     counterfactual_images = []
     for factual_batch in tqdm(test_data_loader):
-        counterfactual_batch =  produce_counterfactuals(factual_batch, scm, do_parent=random.choice(attributes), intervention_source=real_set)
+        counterfactual_batch =  produce_counterfactuals(factual_batch, scm, do_parent=random.choice(attributes), intervention_source=real_set,
+                                                        force_change=True, possible_values=test_set.possible_values)
         counterfactual_images.append(counterfactual_batch['image'])
 
     real_images = [batch["image"] for batch in real_data_loader]
@@ -89,7 +93,7 @@ def evaluate_composition(test_set: Dataset, unnormalize_fn, batch_size: int, cyc
 
 
 def produce_counterfactuals(factual_batch: torch.Tensor, scm: nn.Module, do_parent:str, intervention_source: Dataset,
-                            force_change: bool = True, device: str = 'cuda'):
+                            force_change: bool = False, possible_values = None, device: str = 'cuda'):
     factual_batch = {k: v.to(device) for k, v in factual_batch.items()}
 
     batch_size, _ , _ , _ = factual_batch["image"].shape
@@ -97,8 +101,18 @@ def produce_counterfactuals(factual_batch: torch.Tensor, scm: nn.Module, do_pare
 
     #update with the counterfactual parent
 
-    interventions = {do_parent: torch.cat([intervention_source[id][do_parent] for id in idxs]).view(-1).unsqueeze(1).to(device)
-                     if do_parent!="digit" else torch.cat([intervention_source[id][do_parent].unsqueeze(0).to(device) for id in idxs])}
+    if force_change:
+        possible_values = possible_values[do_parent]
+        values = factual_batch[do_parent].cpu()
+        if do_parent != "digit":
+            interventions = {do_parent: torch.cat([torch.tensor(np.random.choice(possible_values[possible_values!=value])).unsqueeze(0)
+                                                for value in values]).view(-1).unsqueeze(1).to(device)}
+        else:
+            interventions = {do_parent: torch.cat([torch.tensor(rng.choice(possible_values[torch.where((possible_values != value).any(dim=1))], axis=0))
+                                                for value in values]).unsqueeze(0).to(device)}
+    else:
+        interventions = {do_parent: torch.cat([intervention_source[id][do_parent] for id in idxs]).view(-1).unsqueeze(1).to(device)
+                        if do_parent!="digit" else torch.cat([intervention_source[id][do_parent].unsqueeze(0).to(device) for id in idxs])}
 
     abducted_noise = scm.encode(**factual_batch)
     counterfactual_batch = scm.decode(interventions, **abducted_noise)
@@ -113,7 +127,8 @@ def evaluate_effectiveness(test_set: Dataset, unnormalize_fn, batch_size:int , s
 
     effectiveness_scores = {attr_key: [] for attr_key in attributes}
     for factual_batch in tqdm(test_data_loader):
-        counterfactuals = produce_counterfactuals(factual_batch, scm, do_parent, intervention_source)
+        counterfactuals = produce_counterfactuals(factual_batch, scm, do_parent, intervention_source,
+                                                  force_change=True, possible_values=test_set.possible_values)
         e_score = effectiveness(counterfactuals, unnormalize_fn, predictors)
 
         for attr in attributes:
