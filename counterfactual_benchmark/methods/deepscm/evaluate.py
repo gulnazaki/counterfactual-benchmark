@@ -108,8 +108,8 @@ def produce_counterfactuals(factual_batch: torch.Tensor, scm: nn.Module, do_pare
             interventions = {do_parent: torch.cat([torch.tensor(np.random.choice(possible_values[possible_values!=value])).unsqueeze(0)
                                                 for value in values]).view(-1).unsqueeze(1).to(device)}
         else:
-            interventions = {do_parent: torch.cat([torch.tensor(rng.choice(possible_values[torch.where((possible_values != value).any(dim=1))], axis=0))
-                                                for value in values]).unsqueeze(0).to(device)}
+            interventions = {do_parent: torch.cat([torch.tensor(rng.choice(possible_values[torch.where((possible_values != value).any(dim=1))], axis=0)).unsqueeze(0)
+                                                for value in values]).to(device)}
     else:
         interventions = {do_parent: torch.cat([intervention_source[id][do_parent] for id in idxs]).view(-1).unsqueeze(1).to(device)
                         if do_parent!="digit" else torch.cat([intervention_source[id][do_parent].unsqueeze(0).to(device) for id in idxs])}
