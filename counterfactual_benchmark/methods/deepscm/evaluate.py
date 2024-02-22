@@ -66,7 +66,7 @@ def evaluate_coverage_density(real_set: Dataset, test_set: Dataset, batch_size: 
         counterfactual_images.append(counterfactual_batch['image'])
 
     real_images = [batch["image"] for batch in real_data_loader]
-    return coverage_density(real_images, generated_images=counterfactual_images, k = 5, embedding_fn=vgg, pretrained=True)
+    return coverage_density(real_images, generated_images=counterfactual_images, k = 5, embedding_fn=vgg, pretrained=False)
 
 
 def evaluate_composition(test_set: Dataset, unnormalize_fn, batch_size: int, cycles: int, scm: nn.Module, save_dir: str = "composition_samples"):

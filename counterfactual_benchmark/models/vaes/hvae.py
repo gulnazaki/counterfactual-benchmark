@@ -75,7 +75,7 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
 
         nelbo = nll_pp + beta * kl_pp  # negative elbo (free energy)
 
-        if torch.isnan(nelbo).sum() == 0:
+        if torch.isnan(nelbo).sum() == 0 and kl_pp < 350:
             return dict(elbo=nelbo, nll=nll_pp, kl=kl_pp)
 
         else: 
@@ -213,14 +213,24 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
       #  rec_scale = rec_scale * t_u
         eps = (x - rec_loc) / rec_scale.clamp(min=1e-12)
 
-        return  z , eps
+        return  z , eps, cond , x
+    
 
     
     def decode(self, u, cond):
-        z , e  = u
+        z , e , f_pa, obs = u
         t_u = 0.1 ##temp parameter
-        cond =  self.expand_parents(cond)
-        cf_loc, cf_scale = self.forward_latents(z, parents=cond, return_loc=True)
+      #  f_pa = self.expand_parents(f_pa)
+        cf_pa =  self.expand_parents(cond)
+
+        if self.cond_prior:
+            cf_z = self.abduct(x=obs, parents=f_pa, cf_parents=cf_pa, alpha=0.65, t=0.1)
+            cf_loc, cf_scale = self.forward_latents(cf_z, parents=cf_pa, return_loc = True)
+        
+        
+        else:
+            cf_loc, cf_scale = self.forward_latents(z, parents=cf_pa, return_loc=True)
+
 
         cf_scale = cf_scale * t_u
         x = torch.clamp(cf_loc + cf_scale * e, min=-1, max=1)
