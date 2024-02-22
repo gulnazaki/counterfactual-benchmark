@@ -227,7 +227,7 @@ class CondGAN(StructuralEquation, pl.LightningModule):
         n_show = 10
         save_images_every = 1
         path = os.getcwd()
-        image_output_path = path.replace('methods/deepscm', 'gantraining_morpho_finetune')
+        image_output_path = path.replace('methods/deepscm', 'gantraining_celeba_finetune')
         if not os.path.exists(image_output_path):
             os.mkdir(image_output_path)
 
@@ -276,9 +276,15 @@ class CondGAN(StructuralEquation, pl.LightningModule):
 
                 
                 if  geners[1].shape[0]==3:
-                    gener = gener.reshape(gener.shape[1], gener.shape[2], gener.shape[3]).cpu().numpy()
-                    recon = recon.reshape(recon.shape[1], recon.shape[2], recon.shape[3]).cpu().numpy()
-                    real = real[0]
+                    print (gener.shape)
+                    real = real
+                    print (real.shape)
+                    import time
+                    #time.sleep(44)
+                    
+                    #gener = gener.reshape(gener.shape[1], gener.shape[2], gener.shape[3]).cpu().numpy()
+                    #recon = recon.reshape(recon.shape[1], recon.shape[2], recon.shape[3]).cpu().numpy()
+                    #real = real[0]
                     recons.append(recon)
                     geners.append(gener)
                     reals.append(real)
