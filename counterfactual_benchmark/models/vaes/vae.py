@@ -1,6 +1,6 @@
 """Generic conditional VAE class without specified encoder and decoder archtitecture: to be implemented by subclasses."""
 from torch import nn
-from torch.optim import AdamW
+from torch.optim import Adam, AdamW
 import pytorch_lightning as pl
 import torch
 import numpy as np
@@ -84,7 +84,8 @@ class CondVAE(StructuralEquation, pl.LightningModule):
         return x
 
     def configure_optimizers(self):
-        optimizer = AdamW(self.parameters(), lr=self.lr, weight_decay=self.weight_decay, betas=[0.9, 0.9])
+        optimizer = AdamW(self.parameters(), lr=self.lr, weight_decay=self.weight_decay, betas=[0.9, 0.9]) if self.weight_decay > 0 else \
+            Adam(self.parameters(), lr=self.lr)
         lr_scheduler = torch.optim.lr_scheduler.LambdaLR(
             optimizer, lr_lambda=linear_warmup(100)
         )

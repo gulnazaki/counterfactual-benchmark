@@ -21,10 +21,12 @@ class Encoder(nn.Module):
             OrderedDict(flatten_list([
                 [('enc' + str(i+1), nn.Conv2d(in_channels=n_chan[i], out_channels=n_chan[i+1],
                                               kernel_size=kernel_size[i], stride=stride[i], padding=padding[i])),
-                ('enc' + str(i+1) + 'leaky_relu', activation_fn)] for i in range(len(n_chan) - 1)
+                ('enc' + str(i+1) + 'activation_fn', activation_fn),
+                ('enc' + str(i+1) + 'batchnorm', nn.BatchNorm2d(n_chan[i+1]) if i < len(n_chan) - 2 else nn.Identity()),
+                ('enc' + str(i+1) + 'dropout', nn.Dropout2d(0.25) if i < len(n_chan) - 2 else nn.Dropout2d(0.0))] for i in range(len(n_chan) - 1)
             ]))
             )
-        self.fc = nn.Sequential(nn.Linear(n_chan[-1] * 8 * 8, self.hidden_dim), activation_fn)
+        self.fc = nn.Sequential(nn.Linear(n_chan[-1] * 4 * 4, self.hidden_dim), activation_fn)
         self.embed = nn.Sequential(nn.Linear(self.hidden_dim + self.cond_dim, self.hidden_dim), activation_fn)
         # latent encoding
         self.mu = nn.Linear(self.hidden_dim, self.latent_dim)
@@ -57,13 +59,12 @@ class Decoder(nn.Module):
         self.register_buffer("mu", torch.zeros(1, latent_dim))
         self.register_buffer("var", torch.ones(1, latent_dim))
 
-        activation_fn = nn.ReLU()
+        activation_fns = [nn.LeakyReLU(), nn.LeakyReLU(), nn.LeakyReLU(), nn.LeakyReLU(), nn.Sigmoid()]
 
         self.fc = nn.Sequential(
             nn.Linear(self.latent_dim + self.cond_dim, self.hidden_dim),
-            activation_fn,
-            nn.Linear(self.hidden_dim, self.n_chan[0] * 8 * 8),
-            activation_fn
+            nn.ReLU(),
+            nn.Linear(self.hidden_dim, self.n_chan[0] * 4 * 4)
         )
         # decoder
         self.conv = torch.nn.Sequential(
@@ -71,14 +72,16 @@ class Decoder(nn.Module):
                 ('dec' + str(i+1) + 'upsample', nn.Upsample(scale_factor=2 if i < len(n_chan) - 2 else 1, mode="nearest")),
                 ('dec' + str(i+1), nn.Conv2d(in_channels=self.n_chan[i], out_channels=self.n_chan[i+1],
                                                       kernel_size=kernel_size[i], stride=stride[i], padding=padding[i])),
-                ('dec' + str(i+1) + 'relu', activation_fn)] for i in range(len(n_chan) - 1)
+                ('dec' + str(i+1) + 'activation_fn', activation_fns[i]),
+                ('dec' + str(i+1) + 'batchnorm', nn.BatchNorm2d(n_chan[i+1])),
+                ('dec' + str(i+1) + 'dropout', nn.Dropout2d(0.25) if i < len(n_chan) - 2 else nn.Dropout2d(0.0))] for i in range(len(n_chan) - 1)
             ]))
         )
 
     def forward(self, u, cond):
         x = torch.cat([u, cond], dim=1)
         x = self.fc(x)
-        x = x.view(-1, self.n_chan[0], 8, 8)
+        x = x.view(-1, self.n_chan[0], 4, 4)
         # print(x.shape)
         # for l in self.conv:
         #     x = l(x)
