@@ -50,9 +50,14 @@ class CondGAN(StructuralEquation, pl.LightningModule):
     
     def mse_loss(self, x, xr):
         loss = torch.square(x - xr).mean()
+        loss = torch.sqrt(loss)
         return loss
 
-
+ 
+    def l1(self, z, ex):
+        criterion = nn.L1Loss()
+        loss = criterion(z,ex)
+        return loss
 
     def forward_enc(self, x, cond):
         ex = self.encode(x, cond)
@@ -86,7 +91,9 @@ class CondGAN(StructuralEquation, pl.LightningModule):
             ex = self.forward_enc(x,cond)
             gu = self.forward_dec(ex, cond)
             loss = self.mse_loss(x, gu)
-            latent = torch.square(ex).mean()
+            z_mean = torch.zeros((len(x), self.latent_dim, 1, 1)).float()
+            z = torch.normal(z_mean, z_mean + 1).to(device)
+            latent = self.l1(z, ex)
             loss = loss + latent
             self.manual_backward(loss)
             optimizer_E.step()
@@ -187,7 +194,9 @@ class CondGAN(StructuralEquation, pl.LightningModule):
             ex = self.forward_enc(x,cond)
             gu = self.forward_dec(ex, cond)
             loss = self.mse_loss(x, gu)
-            latent = torch.square(gu).mean()
+            z_mean = torch.zeros((len(x), self.latent_dim, 1, 1)).float()
+            z = torch.normal(z_mean, z_mean + 1).to(device)
+            latent = self.l1(z, ex)
             loss = loss + latent
         
             self.log("val_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
@@ -225,9 +234,9 @@ class CondGAN(StructuralEquation, pl.LightningModule):
 
         epoch = self.current_epoch
         n_show = 10
-        save_images_every = 1
+        save_images_every = 10
         path = os.getcwd()
-        image_output_path = path.replace('methods/deepscm', 'gantraining_celeba_finetune')
+        image_output_path = path.replace('methods/deepscm', 'gantraining')
         if not os.path.exists(image_output_path):
             os.mkdir(image_output_path)
 
@@ -275,16 +284,7 @@ class CondGAN(StructuralEquation, pl.LightningModule):
 
 
                 
-                if  geners[1].shape[0]==3:
-                    print (gener.shape)
-                    real = real
-                    print (real.shape)
-                    import time
-                    #time.sleep(44)
-                    
-                    #gener = gener.reshape(gener.shape[1], gener.shape[2], gener.shape[3]).cpu().numpy()
-                    #recon = recon.reshape(recon.shape[1], recon.shape[2], recon.shape[3]).cpu().numpy()
-                    #real = real[0]
+                if  geners[1].shape[0]==3:               
                     recons.append(recon)
                     geners.append(gener)
                     reals.append(real)
