@@ -28,7 +28,7 @@ def coverage_density(real_images, generated_images, k = 5, embedding_fn=vgg, pre
 
     metrics = compute_prdc(features["real"], features["generated"], k)
 
-    print ('Coverage: ', metrics['coverage'])
-    print ('Density: ', metrics['density'])
-    print ('Precision: ', metrics['precision'])
-    print ('Recall: ', metrics['recall'])
+    print (f"Coverage: {round(metrics['coverage'], 3)}")
+    print (f"Density: {round(metrics['density'], 3)}")
+    print (f"Precision: {round(metrics['precision'], 3)}")
+    print (f"Recall: {round(metrics['recall'], 3)}")

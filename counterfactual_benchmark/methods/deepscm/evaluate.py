@@ -38,11 +38,13 @@ dataclass_mapping = {
     "celeba": (Celeba, unnormalize_celeba)
 }
 
-def produce_qualitative_samples(dataset, scm, parents, intervention_source, unnormalize_fn):
+def produce_qualitative_samples(dataset, scm, parents, intervention_source, unnormalize_fn, num=20):
     data_loader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=True, num_workers=7)
 
+    produce_every = len(dataset) // num
+    fig_idx = 0
     for i , batch in tqdm(enumerate(data_loader)):
-        if i % 100 == 0:
+        if i % produce_every == 0:
             res = [batch]
 
             for do_parent in parents:
@@ -50,7 +52,8 @@ def produce_qualitative_samples(dataset, scm, parents, intervention_source, unno
                                                          force_change=True, possible_values=dataset.possible_values)
                 res.append(counterfactual)
 
-            save_plots(res, i, parents, unnormalize_fn)
+            save_plots(res, fig_idx, parents, unnormalize_fn)
+            fig_idx += 1
     return
 
 
@@ -69,7 +72,7 @@ def evaluate_coverage_density(real_set: Dataset, test_set: Dataset, batch_size: 
     return coverage_density(real_images, generated_images=counterfactual_images, k = 5, embedding_fn=vgg, pretrained=False)
 
 
-def evaluate_composition(test_set: Dataset, unnormalize_fn, batch_size: int, cycles: int, scm: nn.Module, save_dir: str = "composition_samples"):
+def evaluate_composition(test_set: Dataset, unnormalize_fn, batch_size: int, cycles: List[int], scm: nn.Module, save_dir: str = "composition_samples"):
     test_data_loader = torch.utils.data.DataLoader(test_set, batch_size=batch_size, shuffle=False, num_workers=7)
 
     composition_scores = []
@@ -80,16 +83,16 @@ def evaluate_composition(test_set: Dataset, unnormalize_fn, batch_size: int, cyc
         images.append(image_batch)
 
     images = np.concatenate(images)
-    composition_scores = np.concatenate(composition_scores)
 
+    composition_scores = {cycle: np.concatenate([composition_batch[cycle] for composition_batch in composition_scores]) for cycle in cycles}
 
     os.makedirs(save_dir, exist_ok=True)
-    save_selected_images(images, composition_scores, save_dir=save_dir, lower_better=True)
+    save_selected_images(images, composition_scores[cycles[-1]], save_dir=save_dir, lower_better=True)
 
-    composition_score = np.mean(composition_scores)
-    print("Average composition score:", composition_score)
+    for cycle in cycles:
+        print(f"Average composition score for {cycle} cycles: {round(np.mean(composition_scores[cycle]), 3)}")
 
-    return composition_score
+    return
 
 
 def produce_counterfactuals(factual_batch: torch.Tensor, scm: nn.Module, do_parent:str, intervention_source: Dataset,
@@ -100,7 +103,6 @@ def produce_counterfactuals(factual_batch: torch.Tensor, scm: nn.Module, do_pare
     idxs = torch.randperm(len(intervention_source))[:batch_size] # select random indices from train set to perform interventions
 
     #update with the counterfactual parent
-
     if force_change:
         possible_values = possible_values[do_parent]
         values = factual_batch[do_parent].cpu()
@@ -134,9 +136,9 @@ def evaluate_effectiveness(test_set: Dataset, unnormalize_fn, batch_size:int , s
         for attr in attributes:
             effectiveness_scores[attr].append(e_score[attr])
 
-    effectiveness_score = {key  : np.mean(score) for key, score in effectiveness_scores.items()}
+    effectiveness_score = {key  : round(np.mean(score), 3) for key, score in effectiveness_scores.items()}
 
-    print("Effectiveness score " + "do("+do_parent+"):", effectiveness_score)
+    print(f"Effectiveness score do({do_parent}): {effectiveness_score}")
 
     return effectiveness_score
 
@@ -150,9 +152,9 @@ def parse_arguments():
                         help="Metrics to calculate. "
                         "Choose one or more of [composition, effectiveness, coverage_density] or use 'all'.",
                         default=["all"])
-    parser.add_argument("--cycles", '-cc', type=int, help="Composition cycles.", default=10)
+    parser.add_argument("--cycles", '-cc', nargs="+", type=int, help="Composition cycles.", default=[1, 10])
     parser.add_argument("--coverage-density-on-train", '-cvtrain', action='store_true', help="Whether to compute coverage & density against the training set")
-    parser.add_argument("--qualitative", action='store_true', help="Whether to produce qualitative samples of interventions")
+    parser.add_argument("--qualitative", '-qn', type=int, help="Number of qualitative results to produce", default=20)
     return parser.parse_args()
 
 
@@ -197,9 +199,9 @@ if __name__ == "__main__":
     train_set = data_class(attribute_size, split='train', transform=transform)
     test_set = data_class(attribute_size, split='test', transform=transform)
 
-    if args.qualitative:
+    if args.qualitative > 0:
         produce_qualitative_samples(dataset=test_set, scm=scm, parents=list(attribute_size.keys()),
-                                    intervention_source=train_set, unnormalize_fn=unnormalize_fn)
+                                    intervention_source=train_set, unnormalize_fn=unnormalize_fn, num=args.qualitative)
 
 
     if "composition" in args.metrics or "all" in args.metrics:

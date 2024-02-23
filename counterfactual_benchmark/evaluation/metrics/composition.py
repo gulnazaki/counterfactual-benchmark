@@ -1,10 +1,10 @@
 import numpy as np
 
-def composition(factual_batch, unnormalize_fn, method, cycles=10, device='cuda'):
+def composition(factual_batch, unnormalize_fn, method, cycles=[1, 10], device='cuda'):
     factual_batch = {k: v.to(device) for k, v in factual_batch.items()}
     images = [unnormalize_fn(factual_batch["image"].cpu(), name="image")]
 
-    for _ in range(cycles):
+    for _ in range(max(cycles)):
         abducted_noise = method.encode(**factual_batch)
         counterfactual_batch = method.decode(**abducted_noise)
         images.append(unnormalize_fn(counterfactual_batch["image"].cpu(), name="image"))
@@ -18,7 +18,8 @@ def composition(factual_batch, unnormalize_fn, method, cycles=10, device='cuda')
     return composition_scores, all_images
 
 def l1_distance(images, steps):
-    final_img = (images[steps]).numpy()
-    init_img = images[0].numpy()
+    distances = {}
+    for step in steps:
+        distances[step] = np.mean(np.abs(images[step].numpy() - images[0].numpy()), axis=(1,2,3))
 
-    return np.mean(np.abs(final_img - init_img), axis=(1,2,3))
+    return distances
