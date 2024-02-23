@@ -3,7 +3,7 @@ from json import load
 from importlib import import_module
 import argparse
 import os
-from training_scripts import train_flow, train_vae
+from training_scripts import train_flow, train_vae, train_gan
 
 import sys
 sys.path.append("../../")
@@ -13,7 +13,8 @@ from datasets.celeba.dataset import Celeba
 
 model_to_script = {
     "flow": train_flow,
-    "vae": train_vae
+    "vae": train_vae,
+    "gan": train_gan
 }
 
 dataclass_mapping = {
@@ -23,7 +24,7 @@ dataclass_mapping = {
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", '-c', type=str, help="Config file for experiment.", default="./configs/celeba_hvae_config.json")
+    parser.add_argument("--config", '-c', type=str, help="Config file for experiment.", default="./configs/celeba_gan_config.json")
     return parser.parse_args()
 
 if __name__ == "__main__":
