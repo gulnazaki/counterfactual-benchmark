@@ -5,7 +5,7 @@ import os
 import torch.nn as nn
 
 class SCM(nn.Module):
-    def __init__(self, checkpoint_dir, graph_structure, **models):
+    def __init__(self, checkpoint_dir, graph_structure, temperature, **models):
         super().__init__()
         self.checkpoint_dir = checkpoint_dir
         self.graph_structure = graph_structure
@@ -13,6 +13,8 @@ class SCM(nn.Module):
         self.__load_parameters()
         # no need for training further
         self.__freeze_models()
+        for model in self.models:
+            self.models[model].temperature = temperature
 
     def __load_parameters(self):
         # load pre-trained model for first file name starting with model name

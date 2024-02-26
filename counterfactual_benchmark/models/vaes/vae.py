@@ -76,7 +76,7 @@ class CondVAE(StructuralEquation, pl.LightningModule):
 
     def decode(self, u, cond):
         z , e  = u
-        t_u = 0.1     #temp parameter
+        t_u = self.temperature if hasattr(self, 'temperature') else 0.1
         cf_loc, cf_scale = self.forward_latents(z, parents=cond, return_loc=True)
 
         cf_scale = cf_scale * t_u

@@ -38,6 +38,7 @@ class Celeba(Dataset):
         self.attrs = torch.cat([self.metrics[attr].unsqueeze(1)
                                 for attr in attribute_size.keys()], dim=1)
         self.possible_values = {attr: torch.unique(values, dim=0) for attr, values in self.metrics.items()}
+        self.bins = None
 
     def __len__(self):
         return len(self.data)
