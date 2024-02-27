@@ -105,8 +105,8 @@ class CondGAN(StructuralEquation, pl.LightningModule):
             batch_size = x.shape[0]
 
             optimizer_E, optimizer_D = self.optimizers()
-            valid = torch.ones((batch_size, 1))
-            fake = torch.zeros((batch_size, 1))
+            valid = torch.ones((batch_size, 1), device=x.device)
+            fake = torch.zeros((batch_size, 1), device=x.device)
 
             # sample noise
             z_mean = torch.zeros((len(x), self.latent_dim, 1, 1)).float()
