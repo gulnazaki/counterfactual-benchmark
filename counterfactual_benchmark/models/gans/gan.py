@@ -12,8 +12,6 @@ from torchmetrics.image.fid import FrechetInceptionDistance as FID
 
 sys.path.append("../../")
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
 
 class CondGAN(StructuralEquation, pl.LightningModule):
     def __init__(self, encoder, decoder, discriminator, latent_dim, d_updates_per_g_update, gradient_clip_val, finetune, lr=1e-4, name="image_gan"):
@@ -85,15 +83,15 @@ class CondGAN(StructuralEquation, pl.LightningModule):
             self.toggle_optimizer(optimizer_E)
             self.untoggle_optimizer(optimizer_D)
             x, cond = train_batch
-            x = x.to(device)
-            cond = cond.to(device)
+            x = x
+            cond = cond
             optimizer_E , _ = self.optimizers()
             optimizer_E.zero_grad()
             ex = self.forward_enc(x,cond)
             gu = self.forward_dec(ex, cond)
             loss = self.mse_loss(x, gu)
             z_mean = torch.zeros((len(x), self.latent_dim, 1, 1)).float()
-            z = torch.normal(z_mean, z_mean + 1).to(device)
+            z = torch.normal(z_mean, z_mean + 1)
             latent = self.l1(z, ex)
             loss = loss + latent
             self.manual_backward(loss)
@@ -104,18 +102,18 @@ class CondGAN(StructuralEquation, pl.LightningModule):
         else:
 
             x, cond = train_batch
-            x = x.to(device)
-            cond = cond.to(device)
+            x = x
+            cond = cond
 
             batch_size = x.shape[0]
 
             optimizer_E, optimizer_D = self.optimizers()
-            valid = torch.ones((batch_size, 1), device=self.device)
-            fake = torch.zeros((batch_size, 1), device=self.device)
+            valid = torch.ones((batch_size, 1))
+            fake = torch.zeros((batch_size, 1))
 
             # sample noise
             z_mean = torch.zeros((len(x), self.latent_dim, 1, 1)).float()
-            z = torch.normal(z_mean, z_mean + 1).to(device)
+            z = torch.normal(z_mean, z_mean + 1)
 
             ##########################
             # Optimize Discriminator #
@@ -168,19 +166,17 @@ class CondGAN(StructuralEquation, pl.LightningModule):
     def validation_step(self, train_batch):
 
         x, cond = train_batch
-        x = x.to(device)
-        cond = cond.to(device)
 
         with torch.no_grad():
             # sample noise
             z_mean = torch.zeros((len(x), self.latent_dim, 1, 1)).float()
-            z = torch.normal(z_mean, z_mean + 1).to(device)
+            z = torch.normal(z_mean, z_mean + 1)
             gz = self.forward_dec(z, cond)
 
             ex = self.forward_enc(x, cond)
             gex = self.forward_dec(ex, cond)
 
-            metric = FID(feature=64)
+            metric = FID(feature=64, normalize=True, reset_real_features=False)
             metric.update(x, real=True)
             metric.update(gz, real=False)
             metric.update(gex, real=False)
@@ -203,17 +199,16 @@ class CondGAN(StructuralEquation, pl.LightningModule):
                 recons = []
                 # generate images from same class as real ones
                 for i in range(n_show):
-                    images = x[i].to(device)
-                    images = torch.unsqueeze(images, 0).float().to(device)
+                    images = x[i]
+                    images = torch.unsqueeze(images, 0).float()
 
 
-                    attrs = cond[i].to(device)
+                    attrs = cond[i]
                     attrs = attrs.reshape((1, attrs.shape[0]))
 
 
                     z_mean = torch.zeros((len(images), 512, 1, 1)).float()
                     z = torch.normal(z_mean, z_mean + 1)
-                    z = z.to(device)
 
                     gener = self.decode(z, attrs)
                     recon = self.decode(self.encode(images, attrs), attrs)
