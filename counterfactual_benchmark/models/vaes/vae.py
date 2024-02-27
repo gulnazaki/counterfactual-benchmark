@@ -26,6 +26,64 @@ def gaussian_kl(q_loc, q_logscale, p_loc, p_logscale):
     )
 
 
+class DGaussNet(nn.Module):
+    def __init__(self, latent_dim, fixed_logvar, input_channels):
+        super().__init__()
+        self.x_loc = nn.Conv2d(
+            latent_dim, input_channels, kernel_size=1, stride=1
+        )
+        self.x_logscale = nn.Conv2d(
+            latent_dim, input_channels, kernel_size=1, stride=1
+        )
+
+        assert fixed_logvar == "False" or type(fixed_logvar) == float, \
+            f'fixed_logvar can either be "False" or a float value, not: {fixed_logvar}'
+        if fixed_logvar != "False":
+            nn.init.zeros_(self.x_logscale.weight)
+            nn.init.constant_(self.x_logscale.bias, fixed_logvar)
+            self.x_logscale.weight.requires_grad = False
+            self.x_logscale.bias.requires_grad = False
+
+    def forward(self, h):
+        loc, logscale = self.x_loc(h), self.x_logscale(h).clamp(min=-9)
+        return loc, logscale
+
+    def approx_cdf(self, x):
+        return 0.5 * (
+            1.0 + torch.tanh(np.sqrt(2.0 / np.pi) * (x + 0.044715 * torch.pow(x, 3)))
+        )
+
+    def nll(self, h, x):
+        loc, logscale = self.forward(h)
+        centered_x = x - loc
+        inv_stdv = torch.exp(-logscale)
+        plus_in = inv_stdv * (centered_x + 1.0 / 255.0)
+        cdf_plus = self.approx_cdf(plus_in)
+        min_in = inv_stdv * (centered_x - 1.0 / 255.0)
+        cdf_min = self.approx_cdf(min_in)
+        log_cdf_plus = torch.log(cdf_plus.clamp(min=1e-12))
+        log_one_minus_cdf_min = torch.log((1.0 - cdf_min).clamp(min=1e-12))
+        cdf_delta = cdf_plus - cdf_min
+        log_probs = torch.where(
+            x < -0.999,
+            log_cdf_plus,
+            torch.where(
+                x > 0.999, log_one_minus_cdf_min, torch.log(cdf_delta.clamp(min=1e-12))
+            ),
+        )
+        return -1.0 * log_probs.mean(dim=(1, 2, 3))
+
+    def sample(
+        self, h, return_loc: bool = True, t=None):
+        if return_loc:
+            x, logscale = self.forward(h)
+        else:
+            loc, logscale = self.forward(h, t)
+            x = loc + torch.exp(logscale) * torch.randn_like(loc)
+        x = torch.clamp(x, min=-1.0, max=1.0)
+        return x, logscale.exp()
+
+
 class CondVAE(StructuralEquation, pl.LightningModule):
     def __init__(self, encoder, decoder, likelihood, latent_dim, beta=4, lr=1e-3, weight_decay=0.01, name="image_vae"):
         super(CondVAE, self).__init__(latent_dim=latent_dim)

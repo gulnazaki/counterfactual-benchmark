@@ -3,7 +3,7 @@ import torch
 from collections import OrderedDict
 from models.utils import flatten_list, init_bias
 from models.vaes import CondVAE
-import numpy as np
+from models.vaes.vae import DGaussNet
 
 
 class Encoder(nn.Module):
@@ -40,6 +40,7 @@ class Encoder(nn.Module):
         logvar = self.logvar(hidden).clamp(min=-9)
 
         return mu, logvar
+
 
 class Decoder(nn.Module):
     def __init__(self, cond_dim, latent_dim, hidden_dim, n_chan=[32, 32, 32, 16], stride=[1, 1, 1],
@@ -81,63 +82,7 @@ class Decoder(nn.Module):
     def prior(self, cond):
         return self.mu.repeat(cond.shape[0], 1), self.var.repeat(cond.shape[0], 1)
 
-class DGaussNet(nn.Module):
-    def __init__(self, latent_dim):
-        super().__init__()
-        self.x_loc = nn.Conv2d(
-            latent_dim, 1, kernel_size=1, stride=1
-        )
-        self.x_logscale = nn.Conv2d(
-            latent_dim, 1, kernel_size=1, stride=1
-        )
 
-    def forward(self, h):
-        loc, logscale = self.x_loc(h), self.x_logscale(h).clamp(min=-9)
-        return loc, logscale
-
-    def approx_cdf(self, x):
-        return 0.5 * (
-            1.0 + torch.tanh(np.sqrt(2.0 / np.pi) * (x + 0.044715 * torch.pow(x, 3)))
-        )
-
-    def nll(self, h, x):
-        loc, logscale = self.forward(h)
-        centered_x = x - loc
-        inv_stdv = torch.exp(-logscale)
-        plus_in = inv_stdv * (centered_x + 1.0 / 255.0)
-        cdf_plus = self.approx_cdf(plus_in)
-        min_in = inv_stdv * (centered_x - 1.0 / 255.0)
-        cdf_min = self.approx_cdf(min_in)
-        log_cdf_plus = torch.log(cdf_plus.clamp(min=1e-12))
-        log_one_minus_cdf_min = torch.log((1.0 - cdf_min).clamp(min=1e-12))
-        cdf_delta = cdf_plus - cdf_min
-        log_probs = torch.where(
-            x < -0.999,
-            log_cdf_plus,
-            torch.where(
-                x > 0.999, log_one_minus_cdf_min, torch.log(cdf_delta.clamp(min=1e-12))
-            ),
-        )
-        return -1.0 * log_probs.mean(dim=(1, 2, 3))
-    
-
-    def sample(
-        self, h, return_loc: bool = True, t=None): 
-        if return_loc:
-            x, logscale = self.forward(h)
-        else:
-            loc, logscale = self.forward(h, t)
-            x = loc + torch.exp(logscale) * torch.randn_like(loc)
-        x = torch.clamp(x, min=-1.0, max=1.0)
-        return x, logscale.exp()
-
-
-    ''' def sample(self, h):
-        loc, logscale = self.forward(h)
-        x = loc + torch.exp(logscale) * torch.randn_like(loc)
-        x = torch.clamp(x, min=-1.0, max=1.0)
-        return x
-    '''
 class MmnistCondVAE(CondVAE):
     def __init__(self, params, attr_size, name="image_vae"):
         # dimensionality of the conditional data
@@ -148,10 +93,11 @@ class MmnistCondVAE(CondVAE):
         beta = params["beta"]
         lr = params["lr"]
         weight_decay = params["weight_decay"]
+        fixed_logvar = params["fixed_logvar"]
 
         encoder = Encoder(cond_dim, latent_dim, hidden_dim, n_chan=n_chan)
         decoder = Decoder(cond_dim, latent_dim, hidden_dim, n_chan=n_chan[::-1][:-1] + [latent_dim])
-        likelihood = DGaussNet(latent_dim)
+        likelihood = DGaussNet(latent_dim, fixed_logvar, input_channels=1)
 
         super().__init__(encoder, decoder, likelihood, latent_dim, beta, lr, weight_decay, name)
         self.apply(init_bias)
