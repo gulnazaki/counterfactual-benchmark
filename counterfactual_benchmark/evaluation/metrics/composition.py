@@ -20,7 +20,7 @@ def composition(factual_batch, unnormalize_fn, method, cycles=[1, 10], device='c
 
 def l1_distance(images, steps, embedding, pretrained, unnormalize_fn):
     if embedding is None:
-        embedding_fn = lambda x: unnormalize_fn(x.cpu().numpy(), name="image")
+        embedding_fn = lambda x: unnormalize_fn(x.cpu(), name="image").numpy()
     elif embedding == "vgg":
         model = vgg(pretrained)
         embedding_fn = lambda x: model(x).detach().cpu().numpy()
