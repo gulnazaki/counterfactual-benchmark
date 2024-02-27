@@ -83,8 +83,7 @@ class CondGAN(StructuralEquation, pl.LightningModule):
             self.toggle_optimizer(optimizer_E)
             self.untoggle_optimizer(optimizer_D)
             x, cond = train_batch
-            x = x
-            cond = cond
+
             optimizer_E , _ = self.optimizers()
             optimizer_E.zero_grad()
             ex = self.forward_enc(x,cond)
@@ -102,8 +101,6 @@ class CondGAN(StructuralEquation, pl.LightningModule):
         else:
 
             x, cond = train_batch
-            x = x
-            cond = cond
 
             batch_size = x.shape[0]
 
@@ -113,7 +110,7 @@ class CondGAN(StructuralEquation, pl.LightningModule):
 
             # sample noise
             z_mean = torch.zeros((len(x), self.latent_dim, 1, 1)).float()
-            z = torch.normal(z_mean, z_mean + 1)
+            z = torch.normal(z_mean, z_mean + 1).to(x.device)
 
             ##########################
             # Optimize Discriminator #
@@ -170,7 +167,7 @@ class CondGAN(StructuralEquation, pl.LightningModule):
         with torch.no_grad():
             # sample noise
             z_mean = torch.zeros((len(x), self.latent_dim, 1, 1)).float()
-            z = torch.normal(z_mean, z_mean + 1)
+            z = torch.normal(z_mean, z_mean + 1).to(x.device)
             gz = self.forward_dec(z, cond)
 
             ex = self.forward_enc(x, cond)
