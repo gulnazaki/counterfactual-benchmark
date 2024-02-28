@@ -21,7 +21,7 @@ def get_dataloaders(data_class, attribute_size, config, transform=None, **kwargs
 
 
 def train_flow(flow, config, data_class, graph_structure, attribute_size, checkpoint_dir, **kwargs):
-    transform = SelectParentAttributesTransform(flow.name, attribute_size, graph_structure)
+    transform = SelectParentAttributesTransform(flow.name.rstrip('_flow'), attribute_size, graph_structure)
 
     train_data_loader, val_data_loader = get_dataloaders(data_class, attribute_size, transform, config, **kwargs)
     trainer = Trainer(accelerator="auto", devices="auto", strategy="auto", callbacks=[generate_checkpoint_callback(flow.name, checkpoint_dir),
