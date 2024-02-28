@@ -1,12 +1,13 @@
-from ..embeddings.vgg import vgg, vgg_normalize
-from .prdc import compute_prdc
-from ...models.utils import rgbify
 import torchvision.transforms as T
 import torch
 import numpy as np
 from tqdm import tqdm
 import os
-
+import sys
+sys.path.append("../../")
+from evaluation.embeddings.vgg import vgg, vgg_normalize
+from evaluation.metrics.prdc import compute_prdc
+from models.utils import rgbify
 
 def coverage_density(real_images, generated_images, k = 5, embedding_fn=vgg, pretrained=True, feat_path=None):
     transform224 = T.Resize(size = (224,224), antialias=True)
@@ -38,8 +39,8 @@ def coverage_density(real_images, generated_images, k = 5, embedding_fn=vgg, pre
 
     metrics = compute_prdc(features["real"], features["generated"], k)
 
-    print (f"Coverage: {round(metrics['coverage'], 3)}")
-    print (f"Density: {round(metrics['density'], 3)}")
+    print (f"Coverage: mean {round(metrics['coverage'][0], 3)}, std {round(metrics['coverage'][1], 3)}")
+    print (f"Density: mean {round(metrics['density'][0], 3)}, std {round(metrics['density'][1], 3)}")
     print (f"Precision: {round(metrics['precision'], 3)}")
     print (f"Recall: {round(metrics['recall'], 3)}")
 

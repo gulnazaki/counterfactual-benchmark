@@ -14,7 +14,7 @@ def compute_pairwise_distance(data_x, data_y=None):
     if data_y is None:
         data_y = data_x
     dists = sklearn.metrics.pairwise_distances(
-        data_x, data_y, metric='euclidean', n_jobs=8)
+        data_x, data_y, metric='euclidean', n_jobs=-1)
     return dists
 
 
@@ -80,12 +80,12 @@ def compute_prdc(real_features, fake_features, nearest_k):
     density = (1. / float(nearest_k)) * (
             distance_real_fake <
             np.expand_dims(real_nearest_neighbour_distances, axis=1)
-    ).sum(axis=0).mean()
+    ).sum(axis=0)
 
     coverage = (
             distance_real_fake.min(axis=1) <
             real_nearest_neighbour_distances
-    ).mean()
+    )
 
     return dict(precision=precision, recall=recall,
-                density=density, coverage=coverage)
+                density=(density.mean(), density.std()), coverage=(coverage.mean(), coverage.std()))
