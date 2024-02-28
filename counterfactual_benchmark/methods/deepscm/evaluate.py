@@ -184,14 +184,14 @@ def parse_arguments():
     parser.add_argument("--metrics", '-m',
                         nargs="+", type=str,
                         help="Metrics to calculate. "
-                        "Choose one or more of [composition, effectiveness, coverage_density]. If not set, all metrics are calculated.",
-                        choices=["composition", "effectiveness", "coverage_density"],
-                        default=["composition", "effectiveness", "coverage_density"])
+                        "Choose one or more of [composition, effectiveness, coverage_density, minimality]. If not set, all metrics are calculated.",
+                        choices=["composition", "effectiveness", "coverage_density", "minimality"],
+                        default=["composition", "effectiveness", "coverage_density", "minimality"])
     parser.add_argument("--cycles", '-cc', nargs="+", type=int, help="Composition cycles.", default=[1, 10])
     parser.add_argument("--coverage-density-on-train", '-cvtrain', action='store_true', help="Whether to compute coverage & density against the training set")
     parser.add_argument("--qualitative", '-qn', type=int, help="Number of qualitative results to produce", default=20)
     parser.add_argument("--pretrained-vgg", action='store_true', help="Whether to use pretrained vgg for feature extraction")
-    parser.add_argument("--real-features-path", type=str, default="./real_features.npy", help="Path to save or load features of the real set for coverage & density")
+    parser.add_argument("--real-features-path", type=str, default=None, help="Path to save or load features of the real set for coverage & density")
     parser.add_argument("--composition-embeddings", type=str, choices=["vgg"], help="What embeddings to use for composition metric. "
                         "Supported: [vgg]. If not set, will compute distance on image space")
     parser.add_argument("--sampling-temperature", '-temp', type=float, default=0.1, help="Sampling temperature, used for VAE, HVAE.")
@@ -278,4 +278,8 @@ if __name__ == "__main__":
         feat_dict = evaluate_coverage_density(real_set, test_set=test_set, batch_size=64, scm=scm, attributes=list(attribute_size.keys()),
                                   pretrained_vgg=args.pretrained_vgg, feat_path=args.real_features_path)
 
-        # evaluate_minimality(feat_dict, real_set.bins)
+    if "minimality" in args.metrics:
+        if not "coverage_density" in args.metrics:
+            exit("minimality has to run together with coverage_density, since it uses the same features")
+
+        evaluate_minimality(feat_dict, real_set.bins)

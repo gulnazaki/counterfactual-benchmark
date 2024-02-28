@@ -1,11 +1,10 @@
 import numpy as np
 from tqdm import tqdm
 
-def l1_distance(embedding_1, embedding_2):
-    return np.mean(np.abs(embedding_1 - embedding_2))
+def l1_distance(embedding_1, embedding_2, array=False):
+    return np.mean(np.abs(embedding_1 - embedding_2), axis = 1 if array else 0)
 
 def prob(div, S, S_leq=True):
-    S = np.array(S)
     total = len(S)
     if total == 0:
         print("Warning: S is empty")
@@ -32,12 +31,15 @@ def minimality(feat_dict, bins):
 
         div = l1_distance(f, cf)
 
-        S_f, S_cf = [], []
+        fs, cfs = [], []
         for real, real_pa in zip(*feat_dict['real']):
             if same(real_pa, f_pa, i, bins):
-                S_f.append(l1_distance(real, f))
+                fs.append(real)
             elif same(real_pa, cf_pa, i, bins):
-                S_cf.append(l1_distance(real, f))
+                cfs.append(real)
+
+        S_f = l1_distance(np.array(fs), f, array=True)
+        S_cf = l1_distance(np.array(cfs), f, array=True)
 
         minimality_scores.append(np.log(np.exp(prob(div, S_cf, S_leq=True)) + np.exp(prob(div, S_f, S_leq=False))))
 
