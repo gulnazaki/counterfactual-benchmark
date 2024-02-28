@@ -224,6 +224,8 @@ if __name__ == "__main__":
         model = model_class(params=model_config["params"], attr_size=attribute_size)
 
         models[variable] = model
+        if "finetune" in model_config["params"] and model_config["params"]["finetune"] == 1:
+            model.name += '_finetuned'
 
     batch_size = config["mechanism_models"]["image"]["params"]["batch_size_val"]
 

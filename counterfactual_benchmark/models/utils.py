@@ -20,8 +20,8 @@ def generate_checkpoint_callback(model_name, dir_path, monitor="val_loss"):
     )
     return checkpoint_callback
 
-def generate_early_stopping_callback(patience=5, min_delta = 0.0):
-    early_stopping_callback = EarlyStopping(monitor = 'val_loss', min_delta = min_delta, patience=patience, mode = 'min')
+def generate_early_stopping_callback(patience=5, min_delta = 0.001, monitor="val_loss"):
+    early_stopping_callback = EarlyStopping(monitor=monitor, min_delta=min_delta, patience=patience, mode = 'min')
     return early_stopping_callback
 
 def generate_ema_callback(decay=0.999):
@@ -53,8 +53,8 @@ def linear_warmup(warmup_iters):
 def init_bias(m):
     if type(m) == nn.Conv2d:
         nn.init.zeros_(m.bias)
-        
-        
+
+
 def init_weights(layer, std=0.01):
     name = layer.__class__.__name__
     if name.startswith('Conv'):

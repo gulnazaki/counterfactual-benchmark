@@ -11,12 +11,8 @@ from tqdm import tqdm
 from typing import Dict
 import numpy as np
 from collections import OrderedDict
-# from datasets.morphomnist.dataset import MorphoMNISTLike
-from models.utils import flatten_list, continuous_feature_map, init_weights, init_bias
+from models.utils import flatten_list, continuous_feature_map
 from models.gans import CondGAN
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
 
 
 
@@ -54,20 +50,20 @@ class Encoder(nn.Module):
         batchnorm = nn.BatchNorm2d(latent_dim)
         self.layers.append(lastconv)
         self.layers.append(batchnorm)
-        
+
 
 
     def forward(self, x: torch.Tensor, cond):
-      
-       
+
+
         attr1 = cond[:, 0]
         attr2 = cond[:, 1]
         attr1 = continuous_feature_map(attr1, size=(x.shape[2], x.shape[3]))
         attr2 = continuous_feature_map(attr2, size=(x.shape[2], x.shape[3]))
-  
-        features = torch.concat((x, attr1, attr2), dim=1)  
+
+        features = torch.concat((x, attr1, attr2), dim=1)
         features = self.layers(features)
-        
+
         return features
 
 #Layer F K S BN D A
@@ -106,17 +102,17 @@ class Decoder(nn.Module):
         self.layers.append(sig)
 
     def forward(self, u, cond):
-      
+
         attr1 = cond[:, 0]
         attr2 = cond[:, 1]
         attr1 = continuous_feature_map(attr1, size=(1, 1))
         attr2 = continuous_feature_map(attr2, size=(1, 1))
-    
-     
+
+
         features = torch.concat((u, attr1, attr2), dim=1)
-         
+
         features = self.layers(features)
-        
+
         return features
 
 
@@ -125,7 +121,7 @@ class Discriminator(nn.Module):
         super().__init__()
 
         self.num_continuous = num_continuous
-        
+
         self.dz = nn.Sequential(
             nn.Dropout2d(0.2),
             nn.Conv2d(512, 1024, (1, 1), (1, 1)),
@@ -164,15 +160,10 @@ class Discriminator(nn.Module):
             nn.LeakyReLU(0.1),
             nn.Dropout2d(0.2),
             nn.Conv2d(2048, 1, (1, 1), (1, 1)),
-          
-          
+
+
         )
-        
 
-
-    @property
-    def device(self):
-        return next(self.parameters()).device
 
     def forward(self, x, u, cond):
 
@@ -199,15 +190,10 @@ class CelebaCondGAN(CondGAN):
         lr = params["lr"]
         d_updates_per_g_update = params["d_updates_per_g_update"]
         gradient_clip_val = params["gradient_clip_val"]
-        
+
 
         encoder = Encoder(latent_dim, num_continuous, n_chan=n_chan_enc)
         decoder = Decoder(latent_dim, num_continuous, n_chan=n_chan_gen)
         discriminator = Discriminator(num_continuous)
-        
-        
-       
 
-        super().__init__(encoder, decoder, discriminator, latent_dim, d_updates_per_g_update, gradient_clip_val,finetune, lr, name)
-        self.apply(init_weights)
-
+        super().__init__(encoder, decoder, discriminator, latent_dim, d_updates_per_g_update, gradient_clip_val, finetune, lr, name)

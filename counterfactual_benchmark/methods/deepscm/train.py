@@ -46,8 +46,11 @@ if __name__ == "__main__":
 
         module = import_module(model_config["module"])
         model_class = getattr(module, model_config["model_class"])
-        model = model_class(params=model_config["params"], attr_size=attribute_size)
 
+        model = model_class(params=model_config["params"], attr_size=attribute_size)
+        if "finetune" in model_config["params"] and model_config["params"]["finetune"] == 1:
+            model.load_state_dict(torch.load(model_config["params"]["pretrained_path"])["state_dict"])
+            model.name += '_finetuned'
 
         train_fn = model_to_script[config["mechanism_models"][variable]["model_type"]]
         train_fn(model,

@@ -15,8 +15,6 @@ from collections import OrderedDict
 from models.utils import flatten_list, continuous_feature_map, init_weights, init_bias
 from models.gans import CondGAN
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
 
 class Encoder(nn.Module):
     def __init__(self, latent_dim, num_continuous, n_chan=[2, 64, 128, 256, 512], stride=[2, 2, 2, 2, 2],
@@ -158,10 +156,6 @@ class Discriminator(nn.Module):
             nn.Conv2d(1024, 1, (1, 1), (1, 1))
         )
 
-    @property
-    def device(self):
-        return next(self.parameters()).device
-
     def forward(self, x, u, cond):
         processed_digit = self.digit_embedding(cond[:, 2:12].argmax(1))
         # processed_digit = self.digit_embedding(c["digit"].argmax(1))
@@ -199,12 +193,12 @@ class MmnistCondGAN(CondGAN):
         lr = params["lr"]
         d_updates_per_g_update = params["d_updates_per_g_update"]
         gradient_clip_val = params["gradient_clip_val"]
-        
+
 
         encoder = Encoder(latent_dim, num_continuous, n_chan=n_chan_enc)
         decoder = Decoder(latent_dim, num_continuous, n_chan=n_chan_gen)
         discriminator = Discriminator(num_continuous)
-        
+
         encoder.apply(init_weights)
         decoder.apply(init_weights)
         discriminator.apply(init_weights)
@@ -213,5 +207,3 @@ class MmnistCondGAN(CondGAN):
         discriminator.apply(init_bias)
 
         super().__init__(encoder, decoder, discriminator, latent_dim, d_updates_per_g_update, gradient_clip_val,finetune, lr, name)
-
-
