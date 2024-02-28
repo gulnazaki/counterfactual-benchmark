@@ -9,6 +9,7 @@ from models.structural_equation import StructuralEquation
 import sys
 import os
 from torchmetrics.image.fid import FrechetInceptionDistance as FID
+from torchmetrics.image.lpip import LearnedPerceptualImagePatchSimilarity as LPIPS
 
 sys.path.append("../../")
 
@@ -47,15 +48,14 @@ class CondGAN(StructuralEquation, pl.LightningModule):
         loss = criterion(y_hat, y)
         return loss
 
-    def mse_loss(self, x, xr):
-        loss = torch.square(x - xr).mean()
-        loss = torch.sqrt(loss)
+    def l1_loss(self, z, ex):
+        criterion = nn.L1Loss()
+        loss = criterion(z, ex)
         return loss
 
-
-    def l1(self, z, ex):
-        criterion = nn.L1Loss()
-        loss = criterion(z,ex)
+    def l2_loss(self, x, xr):
+        criterion = nn.L2Loss()
+        loss = criterion(x, xr)
         return loss
 
     def forward_enc(self, x, cond):
@@ -82,22 +82,30 @@ class CondGAN(StructuralEquation, pl.LightningModule):
             optimizer_E, optimizer_D = self.optimizers()
             self.toggle_optimizer(optimizer_E)
             self.untoggle_optimizer(optimizer_D)
+
             x, cond = train_batch
 
-            optimizer_E , _ = self.optimizers()
-            optimizer_E.zero_grad()
-            ex = self.forward_enc(x,cond)
-            gu = self.forward_dec(ex, cond)
-            loss = self.mse_loss(x, gu)
+            # latent loss
             z_mean = torch.zeros((len(x), self.latent_dim, 1, 1)).float()
             z = torch.normal(z_mean, z_mean + 1)
-            latent = self.l1(z, ex)
-            loss = loss + latent
-            self.manual_backward(loss)
+            gz = self.forward_dec(z, cond)
+            egz = self.forward_enc(gz,cond)
+            latent_loss = self.l2_loss(z, egz)
+
+            ex = self.forward_enc(x, cond)
+            gex = self.forward_dec(ex, cond)
+            image_loss = self.l1_loss(x, gex)
+
+            optimizer_E.zero_grad()
+            self.manual_backward(latent_loss)
             optimizer_E.step()
 
-            self.log("train_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
-            return loss
+            optimizer_E.zero_grad()
+            self.manual_backward(image_loss)
+            optimizer_E.step()
+
+            self.log_dict({"latent_loss": latent_loss, "image_loss": image_loss}, on_step=False, on_epoch=True, prog_bar=True)
+            return latent_loss + image_loss
         else:
 
             x, cond = train_batch
@@ -108,30 +116,12 @@ class CondGAN(StructuralEquation, pl.LightningModule):
             valid = torch.ones((batch_size, 1), device=x.device)
             fake = torch.zeros((batch_size, 1), device=x.device)
 
+            ex = self.forward_enc(x, cond)
+
             # sample noise
             z_mean = torch.zeros((len(x), self.latent_dim, 1, 1)).float()
             z = torch.normal(z_mean, z_mean + 1).to(x.device)
-
-            ##########################
-            # Optimize Discriminator #
-            ##########################
-
-            self.toggle_optimizer(optimizer_D)
-
-            ex = self.forward_enc(x, cond)
-            D_valid = self.forward_discr(x, ex, cond)
-            loss_D_valid = self.gan_loss(D_valid, valid)
-
             gz = self.forward_dec(z, cond)
-            D_fake = self.forward_discr(gz.detach(), z, cond)
-            loss_D_fake = self.gan_loss(D_fake, fake)
-
-            loss_D = loss_D_valid + loss_D_fake
-
-            optimizer_D.zero_grad()
-            self.manual_backward(loss_D)
-            optimizer_D.step()
-            self.untoggle_optimizer(optimizer_D)
 
             ##############################
             # Optimize Encoder & Decoder #
@@ -140,7 +130,7 @@ class CondGAN(StructuralEquation, pl.LightningModule):
             # if batch_idx % self.d_updates_per_g_update == 0:
             self.toggle_optimizer(optimizer_E)
 
-            EG_valid = self.forward_discr(gz.detach(), z, cond)
+            EG_valid = self.forward_discr(gz, z, cond)
             loss_EG_valid = self.gan_loss(EG_valid, valid)
 
             EG_fake = self.forward_discr(x, ex, cond)
@@ -154,9 +144,28 @@ class CondGAN(StructuralEquation, pl.LightningModule):
             optimizer_E.step()
             self.untoggle_optimizer(optimizer_E)
 
+            # ##########################
+            # # Optimize Discriminator #
+            # ##########################
+
+            self.toggle_optimizer(optimizer_D)
+
+            D_valid = self.forward_discr(x, ex.detach(), cond)
+            loss_D_valid = self.gan_loss(D_valid, valid)
+
+            D_fake = self.forward_discr(gz.detach(), z, cond)
+            loss_D_fake = self.gan_loss(D_fake, fake)
+
+            loss_D = loss_D_valid + loss_D_fake
+
+            optimizer_D.zero_grad()
+            self.manual_backward(loss_D)
+            optimizer_D.step()
+            self.untoggle_optimizer(optimizer_D)
+
             # if batch_idx % self.d_updates_per_g_update == 0:
             # loss_EG = loss_EG
-            self.log({"eg_loss": loss_EG, "d_loss": loss_D}, on_step=False, on_epoch=True, prog_bar=True)
+            self.log_dict({"eg_loss": loss_EG, "d_loss": loss_D}, on_step=False, on_epoch=True, prog_bar=True)
             return loss_EG
 
 
@@ -165,32 +174,40 @@ class CondGAN(StructuralEquation, pl.LightningModule):
         x, cond = train_batch
 
         with torch.no_grad():
-            # sample noise
-            z_mean = torch.zeros((len(x), self.latent_dim, 1, 1)).float()
-            z = torch.normal(z_mean, z_mean + 1).to(x.device)
-            gz = self.forward_dec(z, cond)
+            if self.finetune == 1:
+                ex = self.forward_enc(x, cond)
+                gex = self.forward_dec(ex, cond)
 
-            ex = self.forward_enc(x, cond)
-            gex = self.forward_dec(ex, cond)
+                metric = LPIPS(net_type='vgg', normalize=True).to(x.device)
+                lpips_score = metric(x, gex)
 
-            metric = FID(feature=64, normalize=True, reset_real_features=False).to(x.device)
-            metric.update(x, real=True)
-            metric.update(gz, real=False)
-            metric.update(gex, real=False)
-            fid_score = metric.compute()
+                self.log("lpips", lpips_score, on_step=False, on_epoch=True, prog_bar=True)
+            else:
+                # sample noise
+                z_mean = torch.zeros((len(x), self.latent_dim, 1, 1)).float()
+                z = torch.normal(z_mean, z_mean + 1).to(x.device)
+                gz = self.forward_dec(z, cond)
 
-        self.log("fid", fid_score, on_step=False, on_epoch=True, prog_bar=True)
+                ex = self.forward_enc(x, cond)
+                gex = self.forward_dec(ex, cond)
 
-        epoch = self.current_epoch
-        n_show = 10
-        save_images_every = 10
-        path = os.getcwd()
-        image_output_path = path.replace('methods/deepscm', 'gantraining')
-        if not os.path.exists(image_output_path):
-            os.mkdir(image_output_path)
+                metric = FID(normalize=True, reset_real_features=False).to(x.device)
+                metric.update(x, real=True)
+                metric.update(gz, real=False)
+                metric.update(gex, real=False)
+                fid_score = metric.compute()
 
-        if save_images_every and (epoch + 1) % save_images_every == 0:
-            with torch.no_grad():
+                self.log("fid", fid_score, on_step=False, on_epoch=True, prog_bar=True)
+
+            epoch = self.current_epoch
+            n_show = 10
+            save_images_every = 3
+            path = os.getcwd()
+            image_output_path = path.replace('methods/deepscm', 'gantraining')
+            if not os.path.exists(image_output_path):
+                os.mkdir(image_output_path)
+
+            if save_images_every and epoch % save_images_every == 0:
                 reals = []
                 geners = []
                 recons = []
@@ -203,9 +220,8 @@ class CondGAN(StructuralEquation, pl.LightningModule):
                     attrs = cond[i]
                     attrs = attrs.reshape((1, attrs.shape[0]))
 
-
-                    z_mean = torch.zeros((len(images), 512, 1, 1)).float()
-                    z = torch.normal(z_mean, z_mean + 1)
+                    z_mean = torch.zeros((len(images), self.latent_dim, 1, 1)).float()
+                    z = torch.normal(z_mean, z_mean + 1).to(x.device)
 
                     gener = self.decode(z, attrs)
                     recon = self.decode(self.encode(images, attrs), attrs)
@@ -225,7 +241,7 @@ class CondGAN(StructuralEquation, pl.LightningModule):
                 fig, ax = plt.subplots(3, n_show, figsize=(15, 5))
                 fig.subplots_adjust(wspace=0.05, hspace=0)
                 plt.rcParams.update({'font.size': 20})
-                fig.suptitle('Epoch {}'.format(epoch + 1))
+                fig.suptitle('Epoch {}'.format(epoch))
                 fig.text(0.04, 0.75, 'G(z, c)', ha='left')
                 fig.text(0.04, 0.5, 'x', ha='left')
                 fig.text(0.04, 0.25, 'G(E(x, c), c)', ha='left')
@@ -259,7 +275,7 @@ class CondGAN(StructuralEquation, pl.LightningModule):
                         ax[2, i].imshow(recons[i][0], cmap='gray', vmin=-1, vmax=1)
                         ax[2, i].axis('off')
 
-                plt.savefig(f'{image_output_path}/epoch-{epoch + 1}.png', format='png')
+                plt.savefig(f'{image_output_path}/epoch-{epoch}.png', format='png')
                 plt.close()
 
         return
