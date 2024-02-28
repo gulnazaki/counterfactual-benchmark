@@ -21,7 +21,7 @@
                 "num_continuous": 2,
                 "d_updates_per_g_update":3,
                 "gradient_clip_val": 0.5,
-                "finetune": 0,
+                "finetune": 1,
                 "lr": 1e-4,
                 "batch_size_train": 128,
                 "batch_size_val": 512,

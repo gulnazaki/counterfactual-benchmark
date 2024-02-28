@@ -28,6 +28,7 @@ class CondGAN(StructuralEquation, pl.LightningModule):
         self.gradient_clip_val = gradient_clip_val
         self.automatic_optimization = False
         if self.finetune == 1:
+            self.load_from_checkpoint("/home/v1tmelis/counterfactual-benchmark/counterfactual_benchmark/methods/deepscm/checkpoints_celeba/trained_scm_gan/image_gan-epoch=25.ckpt")
             # Freeze the parameters of the decoder & discriminator
             for param in self.decoder.parameters():
                 param.requires_grad = False
