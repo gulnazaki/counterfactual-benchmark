@@ -23,7 +23,7 @@ def l1_distance(images, steps, embedding, pretrained):
         embedding_fn = lambda x: x.cpu().numpy()
     elif embedding == "vgg":
         model = vgg(pretrained)
-        embedding_fn = lambda x: model(vgg_normalize(x)).detach().cpu().numpy()
+        embedding_fn = lambda x: model(vgg_normalize(x, to_0_1=True)).detach().cpu().numpy()
     else:
         exit(f"Invalid embedding: {embedding}")
 

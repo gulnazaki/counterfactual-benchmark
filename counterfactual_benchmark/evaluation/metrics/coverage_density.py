@@ -1,5 +1,6 @@
 from ..embeddings.vgg import vgg, vgg_normalize
 from .prdc import compute_prdc
+from ...models.utils import rgbify
 import torchvision.transforms as T
 import torch
 import numpy as np
@@ -24,8 +25,8 @@ def coverage_density(real_images, generated_images, k = 5, embedding_fn=vgg, pre
             continue
 
         for image in tqdm(images[type_]):
-            rgb_batch = image.repeat(1, 3, 1, 1) if image.shape[1] == 1 else image
-            input = vgg_normalize(transform224(rgb_batch))
+            rgb_batch = rgbify(image)
+            input = vgg_normalize(transform224(rgb_batch), to_0_1=False)
             if torch.cuda.is_available():
                 input = input.to("cuda")
             feat = model(input).cpu().detach().numpy()
