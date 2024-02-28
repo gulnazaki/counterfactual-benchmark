@@ -10,6 +10,7 @@ import sys
 import os
 from torchmetrics.image.fid import FrechetInceptionDistance as FID
 from torchmetrics.image.lpip import LearnedPerceptualImagePatchSimilarity as LPIPS
+from models.utils import init_weights
 
 sys.path.append("../../")
 
@@ -28,12 +29,10 @@ class CondGAN(StructuralEquation, pl.LightningModule):
         self.gradient_clip_val = gradient_clip_val
         self.automatic_optimization = False
         if self.finetune == 1:
-            self.load_from_checkpoint("/home/v1tmelis/counterfactual-benchmark/counterfactual_benchmark/methods/deepscm/checkpoints_celeba/trained_scm_gan/image_gan-epoch=25.ckpt")
-            # Freeze the parameters of the decoder & discriminator
-            for param in self.decoder.parameters():
-                param.requires_grad = False
-            for param in self.discriminator.parameters():
-                param.requires_grad = False
+            self.set_to_finetune()
+        else:
+            self.apply(init_weights)
+
 
     def encode(self, x, cond):
         return self.encoder(x, cond)
@@ -55,7 +54,7 @@ class CondGAN(StructuralEquation, pl.LightningModule):
         return loss
 
     def l2_loss(self, x, xr):
-        criterion = nn.L2Loss()
+        criterion = nn.MSELoss()
         loss = criterion(x, xr)
         return loss
 
@@ -77,6 +76,12 @@ class CondGAN(StructuralEquation, pl.LightningModule):
                                        lr=self.lr, betas=(0.5, 0.999))
         return optimizer_E, optimizer_D
 
+    def set_to_finetune(self):
+        # Freeze the parameters of the decoder & discriminator
+        for param in self.decoder.parameters():
+            param.requires_grad = False
+        for param in self.discriminator.parameters():
+            param.requires_grad = False
 
     def training_step(self, train_batch, batch_idx):
         if self.finetune == 1:
@@ -88,7 +93,7 @@ class CondGAN(StructuralEquation, pl.LightningModule):
 
             # latent loss
             z_mean = torch.zeros((len(x), self.latent_dim, 1, 1)).float()
-            z = torch.normal(z_mean, z_mean + 1)
+            z = torch.normal(z_mean, z_mean + 1).to(x.device)
             gz = self.forward_dec(z, cond)
             egz = self.forward_enc(gz,cond)
             latent_loss = self.l2_loss(z, egz)
@@ -97,16 +102,14 @@ class CondGAN(StructuralEquation, pl.LightningModule):
             gex = self.forward_dec(ex, cond)
             image_loss = self.l1_loss(x, gex)
 
-            optimizer_E.zero_grad()
-            self.manual_backward(latent_loss)
-            optimizer_E.step()
+            loss = latent_loss + image_loss
 
             optimizer_E.zero_grad()
-            self.manual_backward(image_loss)
+            self.manual_backward(loss)
             optimizer_E.step()
 
             self.log_dict({"latent_loss": latent_loss, "image_loss": image_loss}, on_step=False, on_epoch=True, prog_bar=True)
-            return latent_loss + image_loss
+            return loss
         else:
 
             x, cond = train_batch
@@ -202,11 +205,10 @@ class CondGAN(StructuralEquation, pl.LightningModule):
 
             epoch = self.current_epoch
             n_show = 10
-            save_images_every = 3
+            save_images_every = 1
             path = os.getcwd()
-            image_output_path = path.replace('methods/deepscm', 'gantraining')
-            if not os.path.exists(image_output_path):
-                os.mkdir(image_output_path)
+            image_output_path = os.path.join(path, 'training_images_gan' + '_finetuned' if self.finetune == 1 else '')
+            os.makedirs(image_output_path, exist_ok=True)
 
             if save_images_every and epoch % save_images_every == 0:
                 reals = []

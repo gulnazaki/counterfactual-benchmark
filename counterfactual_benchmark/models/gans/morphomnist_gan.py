@@ -207,5 +207,3 @@ class MmnistCondGAN(CondGAN):
         discriminator.apply(init_bias)
 
         super().__init__(encoder, decoder, discriminator, latent_dim, d_updates_per_g_update, gradient_clip_val,finetune, lr, name)
-
-

@@ -63,13 +63,11 @@ def train_gan(gan, config, data_class, graph_structure, attribute_size, checkpoi
     if config['finetune'] == 0:
         min_delta = 0.01
         monitor="fid"
-        name = gan.name
     else:
         min_delta = 0.001
         monitor="lpips"
-        name = gan.name + '_finetuned'
     callbacks = [
-        generate_checkpoint_callback(name, checkpoint_dir, monitor=monitor),
+        generate_checkpoint_callback(gan.name, checkpoint_dir, monitor=monitor),
         generate_early_stopping_callback(patience=config["patience"], min_delta=min_delta, monitor=monitor)
     ]
 

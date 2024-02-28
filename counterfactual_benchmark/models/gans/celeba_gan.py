@@ -11,8 +11,7 @@ from tqdm import tqdm
 from typing import Dict
 import numpy as np
 from collections import OrderedDict
-# from datasets.morphomnist.dataset import MorphoMNISTLike
-from models.utils import flatten_list, continuous_feature_map, init_weights, init_bias
+from models.utils import flatten_list, continuous_feature_map
 from models.gans import CondGAN
 
 
@@ -197,9 +196,4 @@ class CelebaCondGAN(CondGAN):
         decoder = Decoder(latent_dim, num_continuous, n_chan=n_chan_gen)
         discriminator = Discriminator(num_continuous)
 
-
-
-
-        super().__init__(encoder, decoder, discriminator, latent_dim, d_updates_per_g_update, gradient_clip_val,finetune, lr, name)
-        self.apply(init_weights)
-
+        super().__init__(encoder, decoder, discriminator, latent_dim, d_updates_per_g_update, gradient_clip_val, finetune, lr, name)
