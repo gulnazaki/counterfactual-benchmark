@@ -191,7 +191,7 @@ class CondGAN(StructuralEquation, pl.LightningModule):
                 ex = self.forward_enc(x, cond)
                 gex = self.forward_dec(ex, cond)
 
-                metric = FID(normalize=True, reset_real_features=False).to(x.device)
+                metric = FID(feature=64, normalize=True, reset_real_features=False).to(x.device)
                 metric.update(x, real=True)
                 metric.update(gz, real=False)
                 metric.update(gex, real=False)

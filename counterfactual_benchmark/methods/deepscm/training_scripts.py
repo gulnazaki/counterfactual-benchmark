@@ -62,10 +62,10 @@ def train_gan(gan, config, data_class, graph_structure, attribute_size, checkpoi
 
     if config['finetune'] == 0:
         min_delta = 0.01
-        monitor="lpips"
+        monitor="fid"
     else:
         min_delta = 0.001
-        monitor="fid"
+        monitor="lpips"
     callbacks = [
         generate_checkpoint_callback(gan.name, checkpoint_dir, monitor=monitor),
         generate_early_stopping_callback(patience=config["patience"], min_delta=min_delta, monitor=monitor)
@@ -79,4 +79,4 @@ def train_gan(gan, config, data_class, graph_structure, attribute_size, checkpoi
     if config['finetune'] == 0:
         trainer.fit(gan, train_data_loader, val_data_loader)
     else:
-        trainer.fit(gan, train_data_loader, val_data_loader,  ckpt_path ='')
+        trainer.fit(gan, train_data_loader, val_data_loader, ckpt_path ='')
