@@ -199,11 +199,4 @@ class MmnistCondGAN(CondGAN):
         decoder = Decoder(latent_dim, num_continuous, n_chan=n_chan_gen)
         discriminator = Discriminator(num_continuous)
 
-        encoder.apply(init_weights)
-        decoder.apply(init_weights)
-        discriminator.apply(init_weights)
-        encoder.apply(init_bias)
-        decoder.apply(init_bias)
-        discriminator.apply(init_bias)
-
         super().__init__(encoder, decoder, discriminator, latent_dim, d_updates_per_g_update, gradient_clip_val,finetune, lr, name)

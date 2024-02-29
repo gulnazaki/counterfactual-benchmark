@@ -1,10 +1,10 @@
 import torch
 from pytorch_lightning import Trainer
-
 import sys
 sys.path.append("../../")
 from datasets.transforms import SelectParentAttributesTransform
 from models.utils import generate_checkpoint_callback, generate_early_stopping_callback, generate_ema_callback
+
 
 def get_dataloaders(data_class, attribute_size, config, transform=None, **kwargs):
     data = data_class(attribute_size=attribute_size, transform=transform, split='train', **kwargs)
@@ -19,10 +19,11 @@ def get_dataloaders(data_class, attribute_size, config, transform=None, **kwargs
     val_data_loader = torch.utils.data.DataLoader(val_set, batch_size=config["batch_size_val"], shuffle=False, num_workers=7)
     return train_data_loader, val_data_loader
 
-def train_flow(flow, config, data_class, graph_structure, attribute_size, checkpoint_dir, **kwargs):
-    transform = SelectParentAttributesTransform(flow.name, attribute_size, graph_structure)
 
-    train_data_loader, val_data_loader = get_dataloaders(data_class, attribute_size, transform, config, **kwargs)
+def train_flow(flow, config, data_class, graph_structure, attribute_size, checkpoint_dir, **kwargs):
+    transform = SelectParentAttributesTransform(flow.name.rstrip('_flow'), attribute_size, graph_structure)
+
+    train_data_loader, val_data_loader = get_dataloaders(data_class, attribute_size, config, transform, **kwargs)
     trainer = Trainer(accelerator="auto", devices="auto", strategy="auto", callbacks=[generate_checkpoint_callback(flow.name, checkpoint_dir),
                                                                                       generate_early_stopping_callback(patience=config["patience"])],
                                                                            default_root_dir=checkpoint_dir, max_epochs=config["max_epochs"])
@@ -45,9 +46,6 @@ def train_vae(vae, config, data_class, graph_structure, attribute_size, checkpoi
                       default_root_dir=checkpoint_dir, max_epochs=config["max_epochs"])
 
     trainer.fit(vae, train_data_loader, val_data_loader)
-
-
-
 
 
 def train_gan(gan, config, data_class, graph_structure, attribute_size, checkpoint_dir, **kwargs):

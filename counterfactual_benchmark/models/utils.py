@@ -54,7 +54,6 @@ def init_bias(m):
     if type(m) == nn.Conv2d:
         nn.init.zeros_(m.bias)
 
-
 def init_weights(layer, std=0.01):
     name = layer.__class__.__name__
     if name.startswith('Conv'):
@@ -62,6 +61,13 @@ def init_weights(layer, std=0.01):
         if layer.bias is not None:
             torch.nn.init.constant_(layer.bias, 0)
 
-
 def continuous_feature_map(c: torch.Tensor, size: tuple = (32, 32)):
     return c.reshape((c.size(0), 1, 1, 1)).repeat(1, 1, *size)
+
+def rgbify(image):
+    if image.shape[1] == 1:
+        # MorphoMNIST: [-1, 1] -> [0, 1]
+        image = (image + 1) / 2
+        image = image.repeat(1, 3, 1, 1)
+
+    return image

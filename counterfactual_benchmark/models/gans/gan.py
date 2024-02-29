@@ -4,13 +4,12 @@ from torch.optim import Adam
 import pytorch_lightning as pl
 import torch
 import numpy as np
-import torch.nn.functional as F
 from models.structural_equation import StructuralEquation
 import sys
 import os
 from torchmetrics.image.fid import FrechetInceptionDistance as FID
 from torchmetrics.image.lpip import LearnedPerceptualImagePatchSimilarity as LPIPS
-from models.utils import init_weights
+from models.utils import init_weights, rgbify
 
 sys.path.append("../../")
 
@@ -167,8 +166,6 @@ class CondGAN(StructuralEquation, pl.LightningModule):
             optimizer_D.step()
             self.untoggle_optimizer(optimizer_D)
 
-            # if batch_idx % self.d_updates_per_g_update == 0:
-            # loss_EG = loss_EG
             self.log_dict({"eg_loss": loss_EG, "d_loss": loss_D}, on_step=False, on_epoch=True, prog_bar=True)
             return loss_EG
 
@@ -183,7 +180,7 @@ class CondGAN(StructuralEquation, pl.LightningModule):
                 gex = self.forward_dec(ex, cond)
 
                 metric = LPIPS(net_type='vgg', normalize=True).to(x.device)
-                lpips_score = metric(x, gex)
+                lpips_score = metric(rgbify(x), rgbify(gex))
 
                 self.log("lpips", lpips_score, on_step=False, on_epoch=True, prog_bar=True)
             else:
@@ -196,9 +193,9 @@ class CondGAN(StructuralEquation, pl.LightningModule):
                 gex = self.forward_dec(ex, cond)
 
                 metric = FID(feature=64, normalize=True, reset_real_features=False).to(x.device)
-                metric.update(x, real=True)
-                metric.update(gz, real=False)
-                metric.update(gex, real=False)
+                metric.update(rgbify(x), real=True)
+                metric.update(rgbify(gz), real=False)
+                metric.update(rgbify(gex), real=False)
                 fid_score = metric.compute()
 
                 self.log("fid", fid_score, on_step=False, on_epoch=True, prog_bar=True)
@@ -207,10 +204,10 @@ class CondGAN(StructuralEquation, pl.LightningModule):
             n_show = 10
             save_images_every = 1
             path = os.getcwd()
-            image_output_path = os.path.join(path, 'training_images_gan' + '_finetuned' if self.finetune == 1 else '')
+            image_output_path = os.path.join(path, 'training_images_gan' + ('_finetuned' if self.finetune == 1 else ''))
             os.makedirs(image_output_path, exist_ok=True)
 
-            if save_images_every and epoch % save_images_every == 0:
+            if self.trainer.is_last_batch and epoch % save_images_every == 0:
                 reals = []
                 geners = []
                 recons = []
