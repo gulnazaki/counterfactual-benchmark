@@ -171,14 +171,12 @@ class Decoder(nn.Module):
                  kernel_size=[4, 7, 5, 7, 2, 1], padding=[0, 0, 0, 0, 0, 0]):
         super().__init__()
 
-        self.synt_blocks = 9
+        self.synt_blocks = 3
         self.num_continuous = num_continuous
         self.latent_dim = latent_dim
         self.n_chan = n_chan
         n_chan[0] = n_chan[0] + num_continuous
 
-
-        activation_fn = nn.LeakyReLU(0.1)
         self.map = MappingNetwork()
         
         self.starting_constant = nn.Parameter(torch.ones((1, 512, 64, 64)))
@@ -191,7 +189,7 @@ class Decoder(nn.Module):
         
         
         
-        self.blocks=[]
+        self.blocks=nn.ModuleList([])
         for i in range(self.synt_blocks):
             self.blocks.append(GenBlock(512,512,512).to('cuda'))
                                
@@ -204,7 +202,7 @@ class Decoder(nn.Module):
         # alpha should be scalar within [0, 1], and upscale.shape == generated.shape
         return alpha * generated + (1 - alpha) * upscaled
     
-    def forward(self, u, cond):
+    def forward(self, u, cond, step):
 
         attr1 = cond[:, 0]
         attr2 = cond[:, 1]
@@ -223,12 +221,12 @@ class Decoder(nn.Module):
         outs = []
         outs.append(out)
         
-        for i in range(self.synt_blocks):
+        for i in range(step):
             out = self.blocks[i](outs[-1], w)
             outs.append(out)
         
-        rgb1 = self.rgb_layer1(outs[self.synt_blocks-1])
-        rgb2 = self.rgb_layer2(outs[self.synt_blocks])
+        rgb1 = self.rgb_layer1(outs[step-1])
+        rgb2 = self.rgb_layer2(outs[step])
         
         #out = self.sig(out)
         alpha = 0.9
@@ -236,25 +234,16 @@ class Decoder(nn.Module):
         final = self.sig(fadein)
         
         return rgb2 #or final??
+    
 
 
-class Discriminator(nn.Module):
+
+class SeqX(nn.Module):
     def __init__(self, num_continuous):
-        super().__init__()
-
-        self.num_continuous = num_continuous
-
-        self.dz = nn.Sequential(
+        super(SeqX, self).__init__()
+        self.layer = nn.Sequential(
             nn.Dropout2d(0.2),
-            nn.Conv2d(512, 1024, (1, 1), (1, 1)),
-            nn.LeakyReLU(0.1),
-            nn.Dropout2d(0.2),
-            nn.Conv2d(1024, 1024, (1, 1), (1, 1)),
-            nn.LeakyReLU(0.1)
-        )
-        self.dx = nn.Sequential(
-            nn.Dropout2d(0.2),
-            nn.Conv2d(1 + self.num_continuous+2, 64, (2, 2), (1, 1)),
+            nn.Conv2d(1 + num_continuous+2, 64, (2, 2), (1, 1)),
             nn.LeakyReLU(0.1),
             nn.Dropout2d(0.2),
             nn.BatchNorm2d(64),
@@ -273,7 +262,25 @@ class Discriminator(nn.Module):
             nn.Conv2d(256, 1024, (4, 4), (1, 1)),
             nn.LeakyReLU(0.1)
         )
-        self.dxz = nn.Sequential(
+    def forward(self, x):
+        return self.layer(x)
+class SeqZ(nn.Module):
+    def __init__(self):
+        super(SeqZ, self).__init__()
+        self.layer = nn.Sequential(
+            nn.Dropout2d(0.2),
+            nn.Conv2d(512, 1024, (1, 1), (1, 1)),
+            nn.LeakyReLU(0.1),
+            nn.Dropout2d(0.2),
+            nn.Conv2d(1024, 1024, (1, 1), (1, 1)),
+            nn.LeakyReLU(0.1)
+        )
+    def forward(self, x):
+        return self.layer(x)    
+class SeqZX(nn.Module):
+    def __init__(self):
+        super(SeqZX, self).__init__()
+        self.layer = nn.Sequential(
             nn.Dropout2d(0.2),
             nn.Conv2d(2048, 2048, (1, 1), (1, 1)),
             nn.LeakyReLU(0.1),
@@ -285,19 +292,37 @@ class Discriminator(nn.Module):
 
 
         )
+    def forward(self, x):
+        return self.layer(x)
+
+class Discriminator(nn.Module):
+    def __init__(self, num_continuous):
+        super().__init__()
+
+        self.num_continuous = num_continuous
+        self.synt_blocks = 4
+        self.layersz, self.layersx, self.layersxz = nn.ModuleList([]), nn.ModuleList([]), nn.ModuleList([])
+        
+        
+    
+        for i in range(self.synt_blocks):
+            self.layersx.append(SeqX(self.num_continuous).to('cuda'))
+            self.layersz.append(SeqZ().to('cuda'))
+            self.layersxz.append(SeqZX().to('cuda'))
 
 
-    def forward(self, x, u, cond):
-
+    def forward(self, x, u, cond, step):
+       
         attr1 = cond[:, 0]
         attr2 = cond[:, 1]
         attr1 = continuous_feature_map(attr1, size=(x.shape[2], x.shape[3]))
         attr2 = continuous_feature_map(attr2, size=(x.shape[2], x.shape[3]))
         features = torch.concat((x, attr1, attr2), dim=1)
 
-        dx = self.dx(features)
-        dz = self.dz(u)
-        z = self.dxz(torch.concat([dx, dz], dim=1)).reshape((-1, 1))
+       
+        dx = self.layersx[step](features)
+        dz = self.layersz[step](u)
+        z = self.layersxz[step](torch.concat([dx, dz], dim=1)).reshape((-1, 1))
         return z
 
 class CelebaCondGAN(CondGAN):
