@@ -70,12 +70,12 @@ def compute_prdc(real_features, fake_features, nearest_k):
     precision = (
             distance_real_fake <
             np.expand_dims(real_nearest_neighbour_distances, axis=1)
-    ).any(axis=0).mean()
+    ).any(axis=0)
 
     recall = (
             distance_real_fake <
             np.expand_dims(fake_nearest_neighbour_distances, axis=0)
-    ).any(axis=1).mean()
+    ).any(axis=1)
 
     density = (1. / float(nearest_k)) * (
             distance_real_fake <
@@ -87,5 +87,5 @@ def compute_prdc(real_features, fake_features, nearest_k):
             real_nearest_neighbour_distances
     )
 
-    return dict(precision=precision, recall=recall,
+    return dict(precision=(precision.mean(), precision.std()), recall=(recall.mean(), recall.std()),
                 density=(density.mean(), density.std()), coverage=(coverage.mean(), coverage.std()))

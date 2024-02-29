@@ -41,7 +41,7 @@ def coverage_density(real_images, generated_images, k = 5, embedding_fn=vgg, pre
 
     print (f"Coverage: mean {round(metrics['coverage'][0], 3)}, std {round(metrics['coverage'][1], 3)}")
     print (f"Density: mean {round(metrics['density'][0], 3)}, std {round(metrics['density'][1], 3)}")
-    print (f"Precision: {round(metrics['precision'], 3)}")
-    print (f"Recall: {round(metrics['recall'], 3)}")
+    print (f"Precision: mean {round(metrics['precision'][0], 3)}, std {round(metrics['precision'][1], 3)}")
+    print (f"Recall: mean {round(metrics['recall'][0], 3)}, std {round(metrics['recall'][1], 3)}")
 
     return features["real"], features["generated"]

@@ -166,8 +166,6 @@ class CondGAN(StructuralEquation, pl.LightningModule):
             optimizer_D.step()
             self.untoggle_optimizer(optimizer_D)
 
-            # if batch_idx % self.d_updates_per_g_update == 0:
-            # loss_EG = loss_EG
             self.log_dict({"eg_loss": loss_EG, "d_loss": loss_D}, on_step=False, on_epoch=True, prog_bar=True)
             return loss_EG
 

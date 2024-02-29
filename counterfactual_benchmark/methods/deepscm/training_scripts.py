@@ -16,7 +16,7 @@ def get_dataloaders(data_class, attribute_size, config, transform=None, **kwargs
         train_set, val_set = torch.utils.data.random_split(data, [config["train_val_split"], 1 - config["train_val_split"]])
 
     train_data_loader = torch.utils.data.DataLoader(train_set, batch_size=config["batch_size_train"], shuffle=True, num_workers=7)
-    val_data_loader = torch.utils.data.DataLoader(val_set, batch_size=config["batch_size_val"], shuffle=True, num_workers=7)
+    val_data_loader = torch.utils.data.DataLoader(val_set, batch_size=config["batch_size_val"], shuffle=False, num_workers=7)
     return train_data_loader, val_data_loader
 
 

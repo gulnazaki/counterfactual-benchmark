@@ -76,7 +76,7 @@ def evaluate_composition(test_set: Dataset, unnormalize_fn, batch_size: int, cyc
     save_selected_images(images, composition_scores[cycles[-1]], save_dir=save_dir, lower_better=True)
 
     for cycle in cycles:
-        print(f"Average composition score for {cycle} cycles: mean {round(np.mean(composition_scores[cycle]), 3)} std {round(np.std(composition_scores[cycle]), 3)}")
+        print(f"Average composition score for {cycle} cycles: mean {round(np.mean(composition_scores[cycle]), 3):.3f} std {round(np.std(composition_scores[cycle]), 3):.3f}")
 
     return
 

@@ -19,7 +19,7 @@
                 "n_chan_gen": [512 ,512, 256, 256, 128, 64, 3],
                 "latent_dim": 512,
                 "num_continuous": 2,
-                "d_updates_per_g_update":3,
+                "d_updates_per_g_update": 1,
                 "gradient_clip_val": 0.5,
                 "finetune": 1,
                 "pretrained_path": "/home/v1tmelis/counterfactual-benchmark/counterfactual_benchmark/methods/deepscm/checkpoints_celeba/trained_scm_gan/image_gan-epoch=25.ckpt",
