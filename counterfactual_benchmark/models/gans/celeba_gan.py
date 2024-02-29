@@ -95,8 +95,6 @@ class MappingNetwork(nn.Module):
         return x
      #   x = x.view(-1, self.latent_size)
       #  return self.mapping(x)
-
-
 class WSLinear(nn.Module):
     def __init__(
         self, in_features, out_features,
@@ -112,8 +110,7 @@ class WSLinear(nn.Module):
         nn.init.zeros_(self.bias)
 
     def forward(self, x):
-        return self.linear(x * self.scale) + self.bias
-    
+        return self.linear(x * self.scale) + self.bias   
 class AdaIN(nn.Module):
     def __init__(self, channels, w_dim):
         super().__init__()
@@ -149,8 +146,7 @@ class WSConv2d(nn.Module):
         nn.init.zeros_(self.bias)
 
     def forward(self, x):
-        return self.conv(x * self.scale) + self.bias.view(1, self.bias.shape[0], 1, 1)
-    
+        return self.conv(x * self.scale) + self.bias.view(1, self.bias.shape[0], 1, 1)    
 class GenBlock(nn.Module):
     def __init__(self, in_channels, out_channels, w_dim):
         super(GenBlock, self).__init__()
@@ -167,11 +163,15 @@ class GenBlock(nn.Module):
         x = self.adain2(self.leaky(self.inject_noise2(self.conv2(x))), w)
         return x
 
+
+
+
 class Decoder(nn.Module):
     def __init__(self, latent_dim, num_continuous, n_chan=[512 ,512, 256, 256, 128, 64, 3], stride=[1, 2, 2, 2, 1, 1],
                  kernel_size=[4, 7, 5, 7, 2, 1], padding=[0, 0, 0, 0, 0, 0]):
         super().__init__()
 
+        self.synt_blocks = 9
         self.num_continuous = num_continuous
         self.latent_dim = latent_dim
         self.n_chan = n_chan
@@ -191,36 +191,26 @@ class Decoder(nn.Module):
         
         
         
-        
         self.blocks=[]
-        for i in range(9):
+        for i in range(self.synt_blocks):
             self.blocks.append(GenBlock(512,512,512).to('cuda'))
                                
-        self.rgb_layer = WSConv2d(in_channels = 512, out_channels = 3, kernel_size=1, stride=1, padding=0)
+        self.rgb_layer1 = WSConv2d(in_channels = 512, out_channels = 3, kernel_size=1, stride=1, padding=0)
+        self.rgb_layer2 = WSConv2d(in_channels = 512, out_channels = 3, kernel_size=1, stride=1, padding=0)
         
-        self.layers = nn.Sequential(
-            OrderedDict(flatten_list([
-                [('gen' + str(i + 1), nn.ConvTranspose2d(in_channels=n_chan[i], out_channels=n_chan[i + 1],
-                                                         kernel_size=kernel_size[i], stride=stride[i],
-                                                         padding=padding[i])),
-                 ('batchnorm'+str(i+1), nn.BatchNorm2d(n_chan[i + 1])),
-                 ('gen' + str(i + 1) + 'leaky_relu', activation_fn)] for i in range(len(n_chan) - 2)
-            ]))
-        )
-        lastconv = nn.Conv2d(in_channels=512, out_channels=3, kernel_size=kernel_size[-1], stride=stride[-1], padding=padding[-1])
-        batchnorm = nn.BatchNorm2d(3)
         self.sig = nn.Sigmoid()
-        self.layers.append(lastconv)
-        self.layers.append(batchnorm)
-        self.layers.append(self.sig)
-
+    
+    def fade_in(self, alpha, upscaled, generated):
+        # alpha should be scalar within [0, 1], and upscale.shape == generated.shape
+        return alpha * generated + (1 - alpha) * upscaled
+    
     def forward(self, u, cond):
 
         attr1 = cond[:, 0]
         attr2 = cond[:, 1]
         attr1 = continuous_feature_map(attr1, size=(1, 1))
         attr2 = continuous_feature_map(attr2, size=(1, 1))
-
+   
         
         #w = self.map(noise)
         w = self.map(u, cond)
@@ -228,14 +218,24 @@ class Decoder(nn.Module):
         x = self.initial_conv(x)
         out = self.initial_adain2(self.leaky(self.initial_noise2(x)), w)
         
-        
         #upscaled = F.interpolate(out, scale_factor=2, mode="bilinear")
-        for i in range(9):
-            out = self.blocks[i](out, w)
-        out = self.rgb_layer(out)
-        out = self.sig(out)
-    
-        return out
+        
+        outs = []
+        outs.append(out)
+        
+        for i in range(self.synt_blocks):
+            out = self.blocks[i](outs[-1], w)
+            outs.append(out)
+        
+        rgb1 = self.rgb_layer1(outs[self.synt_blocks-1])
+        rgb2 = self.rgb_layer2(outs[self.synt_blocks])
+        
+        #out = self.sig(out)
+        alpha = 0.9
+        fadein = self.fade_in(alpha, rgb1, rgb2)
+        final = self.sig(fadein)
+        
+        return rgb2 #or final??
 
 
 class Discriminator(nn.Module):
