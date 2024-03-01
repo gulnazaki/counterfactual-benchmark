@@ -53,7 +53,8 @@ if __name__ == "__main__":
     attribute_size = config["attribute_size"]
 
     if dataset == "celeba": #celeba
-        tr_transforms = Compose([RandomHorizontalFlip()])
+        tr_transforms = Compose([RandomHorizontalFlip(), 
+                                 ConvertImageDtype(dtype=torch.uint8), AutoAugment(),  ConvertImageDtype(dtype=torch.float32)])
         data_tr = dataclass_mapping[dataset](attribute_size=attribute_size, 
                                              split="train", transform_cls=tr_transforms)
         
