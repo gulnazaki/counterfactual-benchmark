@@ -1,4 +1,4 @@
-from torchmetrics.classification import BinaryAccuracy
+from torchmetrics.classification import BinaryAccuracy, BinaryF1Score
 
 def effectiveness(counterfactual_batch, unnormalize_fn, predictors):
    # print(counterfactual_batch["intensity"].shape)
@@ -13,6 +13,6 @@ def effectiveness(counterfactual_batch, unnormalize_fn, predictors):
               for key in targets}
 
     else: #celeba attributes
-        result = {key: BinaryAccuracy()(predictions[key].detach().cpu(), targets[key].detach().cpu()) for key in targets}
+        result = {key: BinaryF1Score(threshold=0.001)(predictions[key].detach().cpu(), targets[key].detach().cpu()) for key in targets}
 
     return result

@@ -26,10 +26,12 @@ def unnormalize(value, name):
     return value.to(torch.uint8)
 
 class Celeba(Dataset):
-    def __init__(self, attribute_size, split='train', normalize_=True, transform=None, data_dir='/home/v1tmelis/'):
+    def __init__(self, attribute_size, split='train', normalize_=True, 
+                 transform=None, transform_cls=None, data_dir='/storage/th.melistas/'):
         super().__init__()
         self.has_valid_set = True
         self.transform = transform
+        self.transform_cls = transform_cls
         self.data = load_data(data_dir, split)
 
         attribute_ids = [self.data.attr_names.index(attr) for attr in attribute_size.keys()]
@@ -46,6 +48,9 @@ class Celeba(Dataset):
     def __getitem__(self, idx):
         if self.transform:
             return self.transform(self.data[idx][0], self.attrs[idx])
+        
+        if self.transform_cls:
+            return self.transform_cls(self.data[idx][0]), self.attrs[idx]
 
         return self.data[idx][0], self.attrs[idx]
 
