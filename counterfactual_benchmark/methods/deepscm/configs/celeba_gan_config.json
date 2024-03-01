@@ -20,7 +20,7 @@
                 "d_updates_per_g_update": 3,
                 "gradient_clip_val": 0.5,
                 "finetune": 0,
-                "pretrained_path": "/home/v1tmelis/counterfactual-benchmark/counterfactual_benchmark/methods/deepscm/checkpoints_celeba/trained_scm_gan/image_gan-epoch=25.ckpt",
+                "pretrained_path": " ",
                 "lr": 1e-4,
                 "batch_size_train": 256,
                 "batch_size_val": 256,

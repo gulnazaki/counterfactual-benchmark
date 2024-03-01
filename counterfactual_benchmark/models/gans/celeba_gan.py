@@ -177,6 +177,12 @@ class GenBlock2(nn.Module):
         self.convt4 =  WSConvTranspose2d(256,128,7,2)
         self.convt5 =  WSConvTranspose2d(128,64,2,1)
 
+        self.batchnorm1 = nn.BatchNorm2d(512)
+        self.batchnorm2 = nn.BatchNorm2d(256)
+        self.batchnorm3= nn.BatchNorm2d(256)
+        self.batchnorm4 = nn.BatchNorm2d(128)
+        self.batchnorm5 = nn.BatchNorm2d(64)
+
         self.leaky = nn.LeakyReLU(0.1, inplace=True)
         self.inject_noise1 = InjectNoise(512) #the out channels of convt1
         self.adain1 = AdaIN(512, latent_dim) # the outchannels of first convt1 , latent dimen
@@ -186,12 +192,24 @@ class GenBlock2(nn.Module):
 
     def forward(self, x, w):
         x = self.convt1(x)
+        x = self.batchnorm1(x)
         x = self.adain1(self.leaky(self.inject_noise1(x)), w)
         
         x = self.convt2(x)
+        x = self.batchnorm2(x)
+        x = self.leaky(x)
+        
         x = self.convt3(x)
+        x = self.batchnorm3(x)
+        x = self.leaky(x)
+        
         x = self.convt4(x)
+        x = self.batchnorm4(x)
+        x = self.leaky(x)
+        
         x = self.convt5(x)
+        x = self.batchnorm5(x)
+        
         x = self.adain2(self.leaky(self.inject_noise2(x)), w)
         
         return x
@@ -201,11 +219,16 @@ class Decoder(nn.Module):
         super().__init__()
 
         self.latent_dim = latent_dim
-     
+        
+        self.initial_adain1 = AdaIN(512, 512)
+       
+        self.initial_noise1 = InjectNoise(512)
+        
         self.map = MappingNetwork()
         self.starting_constant = nn.Parameter(torch.ones((1, latent_dim, 1, 1)))
         self.block = GenBlock2(latent_dim).to('cuda')                     
         self.rgb_layer = WSConv2d(in_channels = 64, out_channels = 3, kernel_size=1, stride=1, padding=0)
+        self.batchnorm = nn.BatchNorm2d(3)
         self.sig = nn.Sigmoid()
     
 
@@ -222,13 +245,14 @@ class Decoder(nn.Module):
 
         #initial start point pass it through conv layer
         start = self.starting_constant
-          
+        
         #block with adain and inject noise inside
         out = self.block(start, w)
         
         #rgb layer
         rgb = self.rgb_layer(out)
- 
+        rgb = self.batchnorm(rgb)
+        
         #sigmoid for [0,1]
         out = self.sig(rgb)
         
