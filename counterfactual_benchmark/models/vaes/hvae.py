@@ -5,9 +5,11 @@ from torch.optim import AdamW
 import pytorch_lightning as pl
 import torch
 import numpy as np
+import random
 import json
+from models.classifiers.celeba_classifier import CelebaClassifier
 
-import sys
+import sys, os
 sys.path.append("../../")
 from models.structural_equation import StructuralEquation
 from models.utils import linear_warmup
@@ -30,7 +32,7 @@ def gaussian_kl(q_loc, q_logscale, p_loc, p_logscale):
 
 class CondHVAE(StructuralEquation, pl.LightningModule):
     
-    def __init__(self, encoder, decoder, likelihood, params, name):
+    def __init__(self, encoder, decoder, likelihood, params, cf_fine_tune, evaluate, name):
 
         super().__init__()
         
@@ -42,16 +44,52 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
         self.lr = params["lr"]
         self.weight_decay = params["wd"]
         self.beta = params["beta"]
+        self.automatic_optimization = False
+        self.evaluate = evaluate
 
         self.cond_prior =  json.loads(params["cond_prior"].lower())
         self.free_bits = params["kl_free_bits"]
-        self.register_buffer("log2", torch.tensor(2.0).log())
+        self.cf_fine_tune = cf_fine_tune
+        self.lmbda = nn.Parameter(0.0 * torch.ones(1))
+        self.elbo_constraint = 2.320
+        self.register_buffer("eps", self.elbo_constraint * torch.ones(1))
+       
+
+        if self.cf_fine_tune:
+            if not self.evaluate:
+                self.load_hvae_checkpoint_for_finetuning()
+
+            device = "cuda"
+            smiling_cls = CelebaClassifier(attr="Smiling", width=64).eval()
+            eye_cls = CelebaClassifier(attr="Eyeglasses", width=64).eval()
+
+            for model in [smiling_cls, eye_cls]:
+                for param in model.parameters():
+                    param.requires_grad = False
+            
+            smiling_cls.load_state_dict(torch.load("../../methods/deepscm/checkpoints_celeba/trained_classifiers/Smiling_classifier-epoch=09.ckpt",
+                                     map_location=torch.device("cuda"))["state_dict"])
+            
+            eye_cls.load_state_dict(torch.load("../../methods/deepscm/checkpoints_celeba/trained_classifiers/Eyeglasses_classifier-epoch=13.ckpt",
+                                  map_location=torch.device("cuda"))["state_dict"])
+            
+            self.smiling_cls = smiling_cls.to(device)
+            self.eye_cls = eye_cls.to(device)
 
 
     def expand_parents(self, pa):
         return pa[..., None, None].repeat(1, 1, *(self.params["input_res"],) * 2) #expand the parents
     
-    def forward(self, x, parents, beta = 1):
+
+    def load_hvae_checkpoint_for_finetuning(self):
+        file_name = self.params["checkpoint_file"]
+        print(file_name)
+        device = "cuda"
+        self.load_state_dict(torch.load(file_name, map_location=torch.device(device))["state_dict"])
+        print("checkpoint loaded!")
+        return
+    
+    def forward(self, x, parents, beta):
         acts = self.encoder(x)
         h, stats = self.decoder(parents=parents, x=acts)
         nll_pp = self.likelihood.nll(h, x)
@@ -145,55 +183,181 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
     
 
 
-    def training_step(self, train_batch, batch_idx):
+    def training_step(self, train_batch):
         x, cond = train_batch
+
+        if self.cf_fine_tune:
+
+            optimizer , lagrange_opt = self.optimizers()
+
+            cond_ = self.expand_parents(cond)
+            out = self.forward(x, cond_, beta = self.beta)  
+            nelbo_loss = out
+            
+            z , e , f_pa, obs = self.encode(x , cond)
+            u = z , e , f_pa, obs
+            cf_pa = cond
+
+            attr = random.choice([0,1])
+            if torch.rand(1) < 0.8: #select a parent to intervene
+                cf_pa[:,attr] = 1-cond[:,attr] #flip smile
+            
+         #   if torch.rand(1) < 0.6:
+         #       cf_pa[:, 1] = 1-cond[:,1] #flip eye
+             
+            cf_x = self.decode(u, cf_pa)
+            y_s_target = cf_pa[:, 0]
+            y_e_target = cf_pa[:, 1]
+            y_hat_s = self.smiling_cls(cf_x)
+            y_hat_e = self.eye_cls(cf_x)
+            smiling_cond_loss = nn.BCEWithLogitsLoss()(y_hat_s, y_s_target.type(torch.float32).view(-1, 1))
+            eye_cond_loss = nn.BCEWithLogitsLoss()(y_hat_e, y_e_target.type(torch.float32).view(-1, 1))
+
+            conditional_loss = 0.5*smiling_cond_loss + 0.5*eye_cond_loss
+           # total_loss = 0.5*nelbo_loss + 0.5*conditional_loss
+            
+            optimizer.zero_grad(set_to_none=True)
+            lagrange_opt.zero_grad(set_to_none=True)
+
+            if conditional_loss!=None and out["elbo"]!=None:
+
+                with torch.no_grad():
+                    sg = self.eps - out["elbo"]
+
+                damp = 100 * sg
+                total_loss = conditional_loss - (self.lmbda - damp) * (self.eps - out["elbo"])
+                self.manual_backward(total_loss)
+                optimizer.step()
+                lagrange_opt.step()  # gradient ascent on lmbda
+                self.lmbda.data.clamp_(min=0)
+                
+               # total_loss = 0.5*nelbo_loss + 0.5*conditional_loss
+               # self.log("nelbo", nelbo_loss, on_step=False, on_epoch=True, prog_bar=True)
+               # self.log("cond_loss", conditional_loss, on_step=False, on_epoch=True, prog_bar=True)
+                self.log("total_loss", total_loss, on_step=False, on_epoch=True, prog_bar=True)
+
+            else:
+               total_loss = None
+
+           # total_loss = 0.5*nelbo_loss + 0.5*conditional_loss
+
+            return total_loss
         
-        cond = self.expand_parents(cond)
-        out = self.forward(x, cond)  #model(batch["x"], batch["pa"], beta=args.beta)
+        else:
+            optimizer = self.optimizers()
+            #optimizer = optimizers["optimizer"]
+            scheduler = self.lr_schedulers()
 
-        nelbo_loss = out #["elbo"]
+            cond_ = self.expand_parents(cond)
+            out = self.forward(x, cond_, beta = self.beta)
+            nelbo_loss = out
 
-      #  nll_nan = torch.isnan(out["nll"]).sum()
-      #  kl_nan = torch.isnan(out["kl"]).sum()
+            optimizer.zero_grad()
+            loss = nelbo_loss["elbo"]
+            
+            if loss!=None:
+              
+                self.manual_backward(loss)
+                self.clip_gradients(optimizer, gradient_clip_val=350, gradient_clip_algorithm="norm")
+                optimizer.step()
+             #   scheduler.step()
 
-        for key , value in nelbo_loss.items():
-            if value!=None :
-                self.log(key, value, on_step=False, on_epoch=True, prog_bar=True)
+                for key , value in nelbo_loss.items():
+                    #if value!=None :
+                    self.log(key, value, on_step=False, on_epoch=True, prog_bar=True)
+                
+                if self.trainer.is_last_batch == 0:
+                    scheduler.step()
+
+                return loss
         
-        return nelbo_loss["elbo"]
-        
+            return loss
 
-       # if nll_nan == 0 and kl_nan == 0:
-       #     return nelbo_loss["elbo"]
-        
-       # else:
-       #     return None
 
+ #   def on_train_epoch_end(self, training_step_outputs):
+ #       # Step the learning rate scheduler at the end of each epoch
+  #      self.trainer.lr_schedulers[0]['scheduler'].step()  
+        
     
     def validation_step(self, val_batch, batch_idx):
         x, cond = val_batch
 
-        cond = self.expand_parents(cond)
-
-        out = self.forward(x, cond)  #model(batch["x"], batch["pa"], beta=args.beta)
+        cond_ = self.expand_parents(cond)
+        out = self.forward(x, cond_, beta=self.beta)  
 
         nelbo_loss = out["elbo"]
 
-      #  for key , value in nelbo_loss.items(): 
-      #      self.log(key, value, on_step=False, on_epoch=True, prog_bar=True)
+        if self.cf_fine_tune: #
+
+            cond_ = self.expand_parents(cond)
+            out = self.forward(x, cond_, beta = self.beta)  
+            nelbo_loss = out
+            
+            z , e , f_pa, obs = self.encode(x , cond)
+            u = z , e , f_pa, obs
+            cf_pa = cond
+            attr = random.choice([0,1])
+            
+            if torch.rand(1) < 0.8: #select parent to intervene
+                cf_pa[:,attr] = 1-cond[:,attr] #flip smile
+            
+            cf_x = self.decode(u, cf_pa)
+            y_s_target = cf_pa[:, 0]
+            y_e_target = cf_pa[:, 1]
+            y_hat_s = self.smiling_cls(cf_x)
+            y_hat_e = self.eye_cls(cf_x)
+            smiling_cond_loss = nn.BCEWithLogitsLoss()(y_hat_s, y_s_target.type(torch.float32).view(-1, 1))
+            eye_cond_loss = nn.BCEWithLogitsLoss()(y_hat_e, y_e_target.type(torch.float32).view(-1, 1))
+
+            conditional_loss = 0.5*smiling_cond_loss + 0.5*eye_cond_loss
+
+           # total_loss = 0.5*nelbo_loss + 0.5*conditional_loss
+            if conditional_loss!=None and out["elbo"]!=None:
+                with torch.no_grad():
+                    sg = self.eps - out["elbo"]
+
+                damp = 100 * sg
+                val_loss = conditional_loss - (self.lmbda - damp) * (self.eps - out["elbo"])
+
+               # total_loss = 0.5*nelbo_loss + 0.5*conditional_loss
+               # self.log("val_nelbo", nelbo_loss, on_step=False, on_epoch=True, prog_bar=True)
+                self.log("val_loss", val_loss, on_step=False, on_epoch=True, prog_bar=True)
+
+            else:
+               val_loss = None
+
+           # total_loss = 0.5*nelbo_loss + 0.5*conditional_loss
+
+            return val_loss
+
+        val_loss = nelbo_loss
         if nelbo_loss!=None:
-            self.log("val_loss", nelbo_loss, on_step=False, on_epoch=True, prog_bar=True)
+            self.log("val_loss", val_loss, on_step=False, on_epoch=True, prog_bar=True)
+        
         return nelbo_loss
 
 
     def configure_optimizers(self):
+
+        if self.cf_fine_tune:
+            self.lr = 1e-4
+            optimizer = AdamW([p for n, p in self.named_parameters() if n != "lmbda"], lr=self.lr, 
+                              weight_decay=self.weight_decay, betas=[0.9, 0.9])
+            
+            lagrange_opt = torch.optim.AdamW([self.lmbda], lr=1e-2, betas=[0.9, 0.9], 
+                                             weight_decay=0, maximize=True)
+            
+            
+            return optimizer , lagrange_opt
+
+
         optimizer = AdamW(self.parameters(), lr=self.lr, weight_decay=self.weight_decay, betas=[0.9, 0.9])
 
         lr_scheduler = torch.optim.lr_scheduler.LambdaLR(
             optimizer, lr_lambda=linear_warmup(100)
         )
 
-        return {"optimizer": optimizer, "lr_scheduler": lr_scheduler}
+        return {"optimizer":optimizer, "lr_scheduler":lr_scheduler}
 
 
     
@@ -219,17 +383,18 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
     
     def decode(self, u, cond):
         z , e , f_pa, obs = u
-        t_u = 0.1 ##temp parameter
+        t_u = 0.3  ##temp parameter
       #  f_pa = self.expand_parents(f_pa)
+     #   print(cond.shape)
         cf_pa =  self.expand_parents(cond)
 
-        if self.cond_prior:
-            cf_z = self.abduct(x=obs, parents=f_pa, cf_parents=cf_pa, alpha=0.65, t=0.1)
-            cf_loc, cf_scale = self.forward_latents(cf_z, parents=cf_pa, return_loc = True)
+      #  if self.cond_prior:
+      #      cf_z = self.abduct(x=obs, parents=f_pa, cf_parents=cf_pa, alpha=0.65, t=0.1)
+      #      cf_loc, cf_scale = self.forward_latents(cf_z, parents=cf_pa, return_loc = True)
         
         
-        else:
-            cf_loc, cf_scale = self.forward_latents(z, parents=cf_pa, return_loc=True)
+      #  else:
+        cf_loc, cf_scale = self.forward_latents(z, parents=cf_pa, return_loc=True)
 
 
         cf_scale = cf_scale * t_u

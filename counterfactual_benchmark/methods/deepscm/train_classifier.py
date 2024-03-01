@@ -10,11 +10,16 @@ from datasets.celeba.dataset import Celeba
 from models.classifiers.classifier import Classifier
 from models.classifiers.celeba_classifier import CelebaClassifier
 from models.utils import generate_checkpoint_callback, generate_early_stopping_callback, generate_ema_callback
+from torchvision.transforms import Compose, AutoAugment, RandomHorizontalFlip, ConvertImageDtype
 
 
 def train_classifier(classifier, attr, train_set, val_set, config, default_root_dir):
 
     ckp_callback = generate_checkpoint_callback(attr + "_classifier", config["ckpt_path"])
+    callbacks = [ckp_callback]
+
+    if config["ema"] == "True":
+        callbacks.append(generate_ema_callback(decay=0.999))
 
     trainer = Trainer(accelerator="auto", devices="auto", strategy="auto",
                       callbacks=[ckp_callback,
@@ -48,7 +53,10 @@ if __name__ == "__main__":
     attribute_size = config["attribute_size"]
 
     if dataset == "celeba": #celeba
-        data_tr = dataclass_mapping[dataset](attribute_size=attribute_size, split="train")
+        tr_transforms = Compose([RandomHorizontalFlip()])
+        data_tr = dataclass_mapping[dataset](attribute_size=attribute_size, 
+                                             split="train", transform_cls=tr_transforms)
+        
         data_val = dataclass_mapping[dataset](attribute_size=attribute_size, split="valid")
 
 

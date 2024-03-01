@@ -20,8 +20,8 @@ def generate_checkpoint_callback(model_name, dir_path, monitor="val_loss"):
     )
     return checkpoint_callback
 
-def generate_early_stopping_callback(patience=5, min_delta = 0.0):
-    early_stopping_callback = EarlyStopping(monitor = 'val_loss', min_delta = min_delta, patience=patience, mode = 'min')
+def generate_early_stopping_callback(patience=5, min_delta = 0.0, monitor = "val_loss"):
+    early_stopping_callback = EarlyStopping(monitor = monitor, min_delta = min_delta, patience=patience, mode = 'min')
     return early_stopping_callback
 
 def generate_ema_callback(decay=0.999):

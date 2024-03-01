@@ -40,7 +40,7 @@ def train_vae(vae, config, data_class, graph_structure, attribute_size, checkpoi
     if config["ema"] == "True":
         callbacks.append(generate_ema_callback(decay=0.999))
 
-    trainer = Trainer(accelerator="auto", devices="auto", strategy="auto", gradient_clip_val=config["gradient_clip_val"],
+    trainer = Trainer(accelerator="auto", devices="auto", strategy="auto",
                       callbacks=callbacks,
                       default_root_dir=checkpoint_dir, max_epochs=config["max_epochs"])
 

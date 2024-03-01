@@ -18,7 +18,7 @@ class SCM(nn.Module):
         # load pre-trained model for first file name starting with model name
         for model in self.models.values():
             file_name = next((file for file in os.listdir(self.checkpoint_dir) if file.startswith(model.name)), None)
-
+            print(file_name)
             device = "cuda" #if file_name.startswith("hvae") else "cpu" #evaluate hvae on gpu
            # print(device)
             model.load_state_dict(torch.load(os.path.join(self.checkpoint_dir, file_name), map_location=torch.device(device))["state_dict"])
