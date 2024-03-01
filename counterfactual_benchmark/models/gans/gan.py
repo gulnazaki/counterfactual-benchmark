@@ -513,7 +513,7 @@ class CondGAN(StructuralEquation, pl.LightningModule):
                 metric.update(rgbify(gex), real=False)
                 fid_score = metric.compute()
 
-            self.log("fid", fid_score, on_step=False, on_epoch=True, prog_bar=True)
+            self.log("val_loss", fid_score, on_step=False, on_epoch=True, prog_bar=True)
 
         epoch = self.current_epoch
         n_show = 10
@@ -811,7 +811,7 @@ class CondGAN(StructuralEquation, pl.LightningModule):
                 metric.update(rgbify(gex), real=False)
                 fid_score = metric.compute()
 
-            self.log("fid", fid_score, on_step=False, on_epoch=True, prog_bar=True)
+            self.log("val_loss", fid_score, on_step=False, on_epoch=True, prog_bar=True)
 
         epoch = self.current_epoch
         n_show = 10
