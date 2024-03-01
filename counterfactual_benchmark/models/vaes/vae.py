@@ -1,6 +1,6 @@
 """Generic conditional VAE class without specified encoder and decoder archtitecture: to be implemented by subclasses."""
 from torch import nn
-from torch.optim import AdamW
+from torch.optim import Adam, AdamW
 import pytorch_lightning as pl
 import torch
 import numpy as np
@@ -24,6 +24,64 @@ def gaussian_kl(q_loc, q_logscale, p_loc, p_logscale):
         * (q_logscale.exp().pow(2) + (q_loc - p_loc).pow(2))
         / p_logscale.exp().pow(2)
     )
+
+
+class DGaussNet(nn.Module):
+    def __init__(self, latent_dim, fixed_logvar, input_channels):
+        super().__init__()
+        self.x_loc = nn.Conv2d(
+            latent_dim, input_channels, kernel_size=1, stride=1
+        )
+        self.x_logscale = nn.Conv2d(
+            latent_dim, input_channels, kernel_size=1, stride=1
+        )
+
+        assert fixed_logvar == "False" or type(fixed_logvar) == float, \
+            f'fixed_logvar can either be "False" or a float value, not: {fixed_logvar}'
+        if fixed_logvar != "False":
+            nn.init.zeros_(self.x_logscale.weight)
+            nn.init.constant_(self.x_logscale.bias, fixed_logvar)
+            self.x_logscale.weight.requires_grad = False
+            self.x_logscale.bias.requires_grad = False
+
+    def forward(self, h):
+        loc, logscale = self.x_loc(h), self.x_logscale(h).clamp(min=-9)
+        return loc, logscale
+
+    def approx_cdf(self, x):
+        return 0.5 * (
+            1.0 + torch.tanh(np.sqrt(2.0 / np.pi) * (x + 0.044715 * torch.pow(x, 3)))
+        )
+
+    def nll(self, h, x):
+        loc, logscale = self.forward(h)
+        centered_x = x - loc
+        inv_stdv = torch.exp(-logscale)
+        plus_in = inv_stdv * (centered_x + 1.0 / 255.0)
+        cdf_plus = self.approx_cdf(plus_in)
+        min_in = inv_stdv * (centered_x - 1.0 / 255.0)
+        cdf_min = self.approx_cdf(min_in)
+        log_cdf_plus = torch.log(cdf_plus.clamp(min=1e-12))
+        log_one_minus_cdf_min = torch.log((1.0 - cdf_min).clamp(min=1e-12))
+        cdf_delta = cdf_plus - cdf_min
+        log_probs = torch.where(
+            x < -0.999,
+            log_cdf_plus,
+            torch.where(
+                x > 0.999, log_one_minus_cdf_min, torch.log(cdf_delta.clamp(min=1e-12))
+            ),
+        )
+        return -1.0 * log_probs.mean(dim=(1, 2, 3))
+
+    def sample(
+        self, h, return_loc: bool = True, t=None):
+        if return_loc:
+            x, logscale = self.forward(h)
+        else:
+            loc, logscale = self.forward(h, t)
+            x = loc + torch.exp(logscale) * torch.randn_like(loc)
+        x = torch.clamp(x, min=-1.0, max=1.0)
+        return x, logscale.exp()
 
 
 class CondVAE(StructuralEquation, pl.LightningModule):
@@ -76,7 +134,7 @@ class CondVAE(StructuralEquation, pl.LightningModule):
 
     def decode(self, u, cond):
         z , e  = u
-        t_u = 0.1     #temp parameter
+        t_u = self.temperature if hasattr(self, 'temperature') else 0.1
         cf_loc, cf_scale = self.forward_latents(z, parents=cond, return_loc=True)
 
         cf_scale = cf_scale * t_u
@@ -84,7 +142,8 @@ class CondVAE(StructuralEquation, pl.LightningModule):
         return x
 
     def configure_optimizers(self):
-        optimizer = AdamW(self.parameters(), lr=self.lr, weight_decay=self.weight_decay, betas=[0.9, 0.9])
+        optimizer = AdamW(self.parameters(), lr=self.lr, weight_decay=self.weight_decay, betas=[0.9, 0.9]) if self.weight_decay > 0 else \
+            Adam(self.parameters(), lr=self.lr)
         lr_scheduler = torch.optim.lr_scheduler.LambdaLR(
             optimizer, lr_lambda=linear_warmup(100)
         )

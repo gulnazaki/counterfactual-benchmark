@@ -4,14 +4,14 @@ from torch.optim import Adam
 import pytorch_lightning as pl
 import torch
 import numpy as np
-import torch.nn.functional as F
 from models.structural_equation import StructuralEquation
 import sys
 import os
+from torchmetrics.image.fid import FrechetInceptionDistance as FID
+from torchmetrics.image.lpip import LearnedPerceptualImagePatchSimilarity as LPIPS
+from models.utils import init_weights, rgbify
 
 sys.path.append("../../")
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class CondGAN(StructuralEquation, pl.LightningModule):
@@ -28,11 +28,10 @@ class CondGAN(StructuralEquation, pl.LightningModule):
         self.gradient_clip_val = gradient_clip_val
         self.automatic_optimization = False
         if self.finetune == 1:
-            # Freeze the parameters of the decoder & discriminator
-            for param in self.decoder.parameters():
-                param.requires_grad = False
-            for param in self.discriminator.parameters():
-                param.requires_grad = False
+            self.set_to_finetune()
+        else:
+            self.apply(init_weights)
+
 
     def encode(self, x, cond):
         return self.encoder(x, cond)
@@ -47,21 +46,25 @@ class CondGAN(StructuralEquation, pl.LightningModule):
         criterion = nn.BCEWithLogitsLoss()
         loss = criterion(y_hat, y)
         return loss
-    
-    def mse_loss(self, x, xr):
-        loss = torch.square(x - xr).mean()
+
+    def l1_loss(self, z, ex):
+        criterion = nn.L1Loss()
+        loss = criterion(z, ex)
         return loss
 
-
+    def l2_loss(self, x, xr):
+        criterion = nn.MSELoss()
+        loss = criterion(x, xr)
+        return loss
 
     def forward_enc(self, x, cond):
         ex = self.encode(x, cond)
         return ex
-    
+
     def forward_dec(self, u, cond):
         gu = self.decode(u, cond)
         return gu
-    
+
     def forward_discr(self, x, z, cond):
         return self.discriminate(x, z, cond)
 
@@ -72,193 +75,163 @@ class CondGAN(StructuralEquation, pl.LightningModule):
                                        lr=self.lr, betas=(0.5, 0.999))
         return optimizer_E, optimizer_D
 
-    
+    def set_to_finetune(self):
+        # Freeze the parameters of the decoder & discriminator
+        for param in self.decoder.parameters():
+            param.requires_grad = False
+        for param in self.discriminator.parameters():
+            param.requires_grad = False
+
     def training_step(self, train_batch, batch_idx):
         if self.finetune == 1:
             optimizer_E, optimizer_D = self.optimizers()
             self.toggle_optimizer(optimizer_E)
             self.untoggle_optimizer(optimizer_D)
+
             x, cond = train_batch
-            x = x.to(device)
-            cond = cond.to(device)
-            optimizer_E , _ = self.optimizers()
+
+            # latent loss
+            z_mean = torch.zeros((len(x), self.latent_dim, 1, 1)).float()
+            z = torch.normal(z_mean, z_mean + 1).to(x.device)
+            gz = self.forward_dec(z, cond)
+            egz = self.forward_enc(gz,cond)
+            latent_loss = self.l2_loss(z, egz)
+
+            ex = self.forward_enc(x, cond)
+            gex = self.forward_dec(ex, cond)
+            image_loss = self.l1_loss(x, gex)
+
+            loss = latent_loss + image_loss
+
             optimizer_E.zero_grad()
-            ex = self.forward_enc(x,cond)
-            gu = self.forward_dec(ex, cond)
-            loss = self.mse_loss(x, gu)
-            latent = torch.square(ex).mean()
-            loss = loss + latent
             self.manual_backward(loss)
             optimizer_E.step()
-            
-            self.log("train_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
+
+            self.log_dict({"latent_loss": latent_loss, "image_loss": image_loss}, on_step=False, on_epoch=True, prog_bar=True)
             return loss
         else:
-            
-            torch.manual_seed(batch_idx)
-            
+
             x, cond = train_batch
-            x = x.to(device)
-            cond = cond.to(device)
+
+            batch_size = x.shape[0]
 
             optimizer_E, optimizer_D = self.optimizers()
-            valid = torch.autograd.Variable(
-                torch.Tensor(x.size(0), 1).fill_(1.0).to(device),
-                requires_grad=False)
-            fake = torch.autograd.Variable(
-                torch.Tensor(x.size(0), 1).fill_(0.0).to(device),
-                requires_grad=False)
+            valid = torch.ones((batch_size, 1), device=x.device)
+            fake = torch.zeros((batch_size, 1), device=x.device)
+
+            ex = self.forward_enc(x, cond)
 
             # sample noise
             z_mean = torch.zeros((len(x), self.latent_dim, 1, 1)).float()
-            z = torch.normal(z_mean, z_mean + 1).to(device)
-           
-            ex = self.forward_enc(x, cond)
+            z = torch.normal(z_mean, z_mean + 1).to(x.device)
             gz = self.forward_dec(z, cond)
-            D_valid = self.forward_discr(x, ex, cond)
-            D_fake = self.forward_discr(gz, z, cond)
 
-            # train gen and enc
-            if batch_idx % self.d_updates_per_g_update == 0:
-                real_loss = self.gan_loss(D_valid, fake).to(device)
-                fake_loss = self.gan_loss(D_fake, valid)
-                loss_EG = (real_loss + fake_loss) / 2
-                self.toggle_optimizer(optimizer_E)
-                optimizer_E.zero_grad()
-                self.manual_backward(loss_EG)
-                #self.clip_gradients(optimizer_E, gradient_clip_val=self.gradient_clip_val, gradient_clip_algorithm="norm")
-                optimizer_E.step()
-                self.untoggle_optimizer(optimizer_E)
+            ##############################
+            # Optimize Encoder & Decoder #
+            ##############################
 
-            # train discr
+            # if batch_idx % self.d_updates_per_g_update == 0:
+            self.toggle_optimizer(optimizer_E)
+
+            EG_valid = self.forward_discr(gz, z, cond)
+            loss_EG_valid = self.gan_loss(EG_valid, valid)
+
+            EG_fake = self.forward_discr(x, ex, cond)
+            loss_EG_fake = self.gan_loss(EG_fake, fake)
+
+            loss_EG = loss_EG_valid + loss_EG_fake
+
+            optimizer_E.zero_grad()
+            self.manual_backward(loss_EG)
+            #self.clip_gradients(optimizer_E, gradient_clip_val=self.gradient_clip_val, gradient_clip_algorithm="norm")
+            optimizer_E.step()
+            self.untoggle_optimizer(optimizer_E)
+
+            # ##########################
+            # # Optimize Discriminator #
+            # ##########################
+
             self.toggle_optimizer(optimizer_D)
-            
-            valid = torch.autograd.Variable(
-                torch.Tensor(x.size(0), 1).fill_(1.0).to(device),
-                requires_grad=False)
-            # sample noise
-            z_mean = torch.zeros((len(x), self.latent_dim, 1, 1)).float()
-            z = torch.normal(z_mean, z_mean + 1).to(device)
 
-            ex = self.forward_enc(x, cond)
-            gz = self.forward_dec(z, cond)
-            D_valid = self.forward_discr(x, ex, cond)
-            loss_D_valid = self.gan_loss(D_valid, valid).to(device)
-            
+            D_valid = self.forward_discr(x, ex.detach(), cond)
+            loss_D_valid = self.gan_loss(D_valid, valid)
+
+            D_fake = self.forward_discr(gz.detach(), z, cond)
+            loss_D_fake = self.gan_loss(D_fake, fake)
+
+            loss_D = loss_D_valid + loss_D_fake
+
             optimizer_D.zero_grad()
-            self.manual_backward(loss_D_valid)
-            #self.clip_gradients(optimizer_E, gradient_clip_val=self.gradient_clip_val, gradient_clip_algorithm="norm")
-            optimizer_D.step()
-            
-            
-            fake = torch.autograd.Variable(
-                torch.Tensor(x.size(0), 1).fill_(0.0).to(device),
-                requires_grad=False)
-            # sample noise
-            z_mean = torch.zeros((len(x), self.latent_dim, 1, 1)).float()
-            z = torch.normal(z_mean, z_mean + 1).to(device)
-            
-            ex = self.forward_enc(x, cond)
-            gz = self.forward_dec(z, cond)
-            D_valid = self.forward_discr(x, ex, cond)
-            D_fake = self.forward_discr(gz, z, cond) 
-            loss_D_fake = self.gan_loss(D_fake, fake).to(device)
-            
-            optimizer_D.zero_grad()
-            self.manual_backward(loss_D_fake)
-            #self.clip_gradients(optimizer_E, gradient_clip_val=self.gradient_clip_val, gradient_clip_algorithm="norm")
+            self.manual_backward(loss_D)
             optimizer_D.step()
             self.untoggle_optimizer(optimizer_D)
 
-            if batch_idx % self.d_updates_per_g_update == 0:
-                loss_EG = loss_EG
-                self.log("train_loss", loss_EG, on_step=False, on_epoch=True, prog_bar=True)
-                return loss_EG
-            else:
-                return
+            self.log_dict({"eg_loss": loss_EG, "d_loss": loss_D}, on_step=False, on_epoch=True, prog_bar=True)
+            return loss_EG
 
 
     def validation_step(self, train_batch):
-        if self.finetune==1:
-            self.encoder.eval()
-            x, cond = train_batch
-            x = x.to(device)
-            cond = cond.to(device)
-            ex = self.forward_enc(x,cond)
-            gu = self.forward_dec(ex, cond)
-            loss = self.mse_loss(x, gu)
-            latent = torch.square(gu).mean()
-            loss = loss + latent
-        
-            self.log("val_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
-        else:
-            x, cond = train_batch
-            x = x.to(device)
-            cond = cond.to(device)
-            
-            valid = torch.autograd.Variable(
-                torch.Tensor(x.size(0), 1).fill_(1.0).to(device),
-                requires_grad=False)
-            fake = torch.autograd.Variable(
-                torch.Tensor(x.size(0), 1).fill_(0.0).to(device),
-                requires_grad=False)
-            #sample noise
-            z_mean = torch.zeros((len(x), self.latent_dim, 1, 1)).float()
-            z = torch.normal(z_mean, z_mean + 1).to(device)
-            
-            ex = self.forward_enc(x, cond)
-            gz = self.forward_dec(z, cond)
-            D_valid = self.forward_discr(x, ex, cond)
-            D_fake = self.forward_discr(gz, z, cond)
-            real_loss = self.gan_loss(D_valid, fake)
-            fake_loss = self.gan_loss(D_fake, valid)
-            
-            if self.current_epoch < 50:
-                loss = 555555
+
+        x, cond = train_batch
+
+        with torch.no_grad():
+            if self.finetune == 1:
+                ex = self.forward_enc(x, cond)
+                gex = self.forward_dec(ex, cond)
+
+                metric = LPIPS(net_type='vgg', normalize=True).to(x.device)
+                lpips_score = metric(rgbify(x), rgbify(gex))
+
+                self.log("lpips", lpips_score, on_step=False, on_epoch=True, prog_bar=True)
             else:
-                loss = (real_loss + fake_loss) / 2
-        
-            self.log("val_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
+                # sample noise
+                z_mean = torch.zeros((len(x), self.latent_dim, 1, 1)).float()
+                z = torch.normal(z_mean, z_mean + 1).to(x.device)
+                gz = self.forward_dec(z, cond)
 
+                ex = self.forward_enc(x, cond)
+                gex = self.forward_dec(ex, cond)
 
+                metric = FID(feature=64, normalize=True, reset_real_features=False).to(x.device)
+                metric.update(rgbify(x), real=True)
+                metric.update(rgbify(gz), real=False)
+                metric.update(rgbify(gex), real=False)
+                fid_score = metric.compute()
 
+                self.log("fid", fid_score, on_step=False, on_epoch=True, prog_bar=True)
 
-        epoch = self.current_epoch
-        n_show = 10
-        save_images_every = 1
-        path = os.getcwd()
-        image_output_path = path.replace('methods/deepscm', 'gantraining_morpho_finetune')
-        if not os.path.exists(image_output_path):
-            os.mkdir(image_output_path)
+            epoch = self.current_epoch
+            n_show = 10
+            save_images_every = 1
+            path = os.getcwd()
+            image_output_path = os.path.join(path, 'training_images_gan' + ('_finetuned' if self.finetune == 1 else ''))
+            os.makedirs(image_output_path, exist_ok=True)
 
-        if save_images_every and (epoch + 1) % save_images_every == 0:
-            with torch.no_grad():
+            if self.trainer.is_last_batch and epoch % save_images_every == 0:
                 reals = []
                 geners = []
                 recons = []
                 # generate images from same class as real ones
-                for i in range(n_show):       
-                    images = x[i].to(device)
-                    images = torch.unsqueeze(images, 0).float().to(device)
-                    
-                    
-                    attrs = cond[i].to(device)
+                for i in range(n_show):
+                    images = x[i]
+                    images = torch.unsqueeze(images, 0).float()
+
+
+                    attrs = cond[i]
                     attrs = attrs.reshape((1, attrs.shape[0]))
-             
-                    
-                    z_mean = torch.zeros((len(images), 512, 1, 1)).float()
-                    z = torch.normal(z_mean, z_mean + 1)
-                    z = z.to(device)
-                    
+
+                    z_mean = torch.zeros((len(images), self.latent_dim, 1, 1)).float()
+                    z = torch.normal(z_mean, z_mean + 1).to(x.device)
+
                     gener = self.decode(z, attrs)
                     recon = self.decode(self.encode(images, attrs), attrs)
                     real = images.cpu().numpy()
-                    
+
                     gener = gener.reshape(gener.shape[1], gener.shape[2], gener.shape[3]).cpu().numpy()
                     recon = recon.reshape(recon.shape[1], recon.shape[2], recon.shape[3]).cpu().numpy()
                     real = real[0]
-                    
-                    
+
+
                     recons.append(recon)
                     geners.append(gener)
                     reals.append(real)
@@ -268,17 +241,14 @@ class CondGAN(StructuralEquation, pl.LightningModule):
                 fig, ax = plt.subplots(3, n_show, figsize=(15, 5))
                 fig.subplots_adjust(wspace=0.05, hspace=0)
                 plt.rcParams.update({'font.size': 20})
-                fig.suptitle('Epoch {}'.format(epoch + 1))
+                fig.suptitle('Epoch {}'.format(epoch))
                 fig.text(0.04, 0.75, 'G(z, c)', ha='left')
                 fig.text(0.04, 0.5, 'x', ha='left')
                 fig.text(0.04, 0.25, 'G(E(x, c), c)', ha='left')
 
 
-                
+
                 if  geners[1].shape[0]==3:
-                    gener = gener.reshape(gener.shape[1], gener.shape[2], gener.shape[3]).cpu().numpy()
-                    recon = recon.reshape(recon.shape[1], recon.shape[2], recon.shape[3]).cpu().numpy()
-                    real = real[0]
                     recons.append(recon)
                     geners.append(gener)
                     reals.append(real)
@@ -292,12 +262,12 @@ class CondGAN(StructuralEquation, pl.LightningModule):
                         recons[i] = np.transpose(recons[i], (1, 2, 0))
                         ax[2, i].imshow(recons[i])
                         ax[2, i].axis('off')
-                    
+
                 else:
                     recons.append(recon)
                     geners.append(gener)
                     reals.append(real)
-                    for i in range(n_show):                        
+                    for i in range(n_show):
                         ax[0, i].imshow(geners[i][0], cmap='gray', vmin=-1, vmax=1)
                         ax[0, i].axis('off')
                         ax[1, i].imshow(reals[i][0], cmap='gray', vmin=-1, vmax=1)
@@ -305,7 +275,7 @@ class CondGAN(StructuralEquation, pl.LightningModule):
                         ax[2, i].imshow(recons[i][0], cmap='gray', vmin=-1, vmax=1)
                         ax[2, i].axis('off')
 
-                plt.savefig(f'{image_output_path}/epoch-{epoch + 1}.png', format='png')
+                plt.savefig(f'{image_output_path}/epoch-{epoch}.png', format='png')
                 plt.close()
 
-        return loss
+        return

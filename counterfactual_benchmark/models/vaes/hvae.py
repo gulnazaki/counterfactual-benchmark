@@ -35,7 +35,7 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
     def __init__(self, encoder, decoder, likelihood, params, cf_fine_tune, evaluate, name):
 
         super().__init__()
-        
+
         self.name = name
         self.params = params
         self.encoder = encoder
@@ -106,7 +106,7 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
             kl_pp = torch.zeros_like(nll_pp)
             for _, stat in enumerate(stats):
                 kl_pp += stat["kl"].sum(dim=(1, 2, 3))
-                
+
         kl_pp = kl_pp / np.prod(x.shape[1:])  # per pixel
         kl_pp = kl_pp.mean()  # / self.log2
         nll_pp = nll_pp.mean()  # / self.log2
@@ -116,15 +116,15 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
         if torch.isnan(nelbo).sum() == 0 and kl_pp < 350:
             return dict(elbo=nelbo, nll=nll_pp, kl=kl_pp)
 
-        else: 
+        else:
             return dict(elbo=None, nll=None, kl=None)
-    
+
 
     def sample(
         self, parents, return_loc = True, t= None):
         h, _ = self.decoder(parents=parents, t=t)
         return self.likelihood.sample(h, return_loc, t=t)
-    
+
 
 
     def abduct(self, x, parents, cf_parents = None, alpha = 0.5, t = None):
@@ -132,7 +132,7 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
         _, q_stats = self.decoder(
             x=acts, parents=parents, abduct=True, t=t
         )  # q(z|x,pa)
-        
+
         q_stats = [s["z"] for s in q_stats]
 
         if self.cond_prior and cf_parents is not None:
@@ -175,12 +175,12 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
             return cf_zs
         else:
             return q_stats  # zs
-        
+
 
     def forward_latents(self, latents, parents, t = None, return_loc = False):
         h, _ = self.decoder(latents=latents, parents=parents, t=t)
         return self.likelihood.sample(h, return_loc=return_loc, t=t)
-    
+
 
 
     def training_step(self, train_batch):
@@ -360,27 +360,27 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
         return {"optimizer":optimizer, "lr_scheduler":lr_scheduler}
 
 
-    
+
 
     def encode(self, x, cond):
         cond =  self.expand_parents(cond)
-       
 
-        z = self.abduct(x, cond, t=0.1)
+        t = self.temperature if hasattr(self, 'temperature') else 0.1
+        z = self.abduct(x, cond, t=t)
 
         if self.cond_prior:
             z = [z[i]['z'] for i in range(len(z))]
 
-        rec_loc, rec_scale = self.forward_latents(z, parents=cond, return_loc=True) 
+        rec_loc, rec_scale = self.forward_latents(z, parents=cond, return_loc=True)
         # abduct exogenous noise u
       #  t_u = 0.1
       #  rec_scale = rec_scale * t_u
         eps = (x - rec_loc) / rec_scale.clamp(min=1e-12)
 
         return  z , eps, cond , x
-    
 
-    
+
+
     def decode(self, u, cond):
         z , e , f_pa, obs = u
         t_u = 0.3  ##temp parameter

@@ -7,6 +7,7 @@ import pandas as pd
 from torch.utils.data import Dataset
 from torchvision import transforms
 import torch.nn.functional as F
+import numpy as np
 
 import sys
 sys.path.append("../../")
@@ -120,6 +121,14 @@ class MorphoMNISTLike(Dataset):
                                 for attr in attribute_size.keys()], dim=1)
 
         self.possible_values = {attr: torch.unique(values, dim=0) for attr, values in self.metrics.items()}
+
+        bins = np.linspace(-1, 1, 10)
+        self.bins = {}
+        for attr, values in self.metrics.items():
+            if attr != "digit":
+                data = values.numpy()
+                digitized = np.digitize(data, bins)
+                self.bins[attr] = [data[digitized == i].mean() for i in range(1, len(bins))]
 
     def __len__(self):
         return len(self.images)

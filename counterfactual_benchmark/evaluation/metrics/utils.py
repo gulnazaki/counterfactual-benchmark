@@ -34,7 +34,7 @@ def to_value(tensor, name):
     else:
         return round(value, 2)
 
-def save_plots(data, fig_idx, parents, unnormalize_fn):
+def save_plots(data, fig_idx, parents, unnormalize_fn, save_dir="qualitative_samples"):
     fig, axs = plt.subplots(1, len(data), figsize=(20, 5))
     titles = ["factual" + " (" + ", ".join([f"{v} = {to_value(data[0][v], v)}" for v in data[0].keys() if v != "image"]) + ")"]
 
@@ -51,7 +51,8 @@ def save_plots(data, fig_idx, parents, unnormalize_fn):
         axs[i].axis('off')
         plt.tight_layout()
 
-    plt.savefig("qualitative_samples/images_plot_{}.png".format(fig_idx))
+    os.makedirs(save_dir, exist_ok=True)
+    plt.savefig(os.path.join(save_dir, f"qualitative_{fig_idx}.png"))
 
     plt.close()
     return

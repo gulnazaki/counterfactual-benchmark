@@ -3,7 +3,7 @@ from json import load
 from importlib import import_module
 import argparse
 import os
-from training_scripts import train_flow, train_vae
+from training_scripts import train_flow, train_vae, train_gan
 
 import sys
 sys.path.append("../../")
@@ -13,7 +13,8 @@ from datasets.celeba.dataset import Celeba
 
 model_to_script = {
     "flow": train_flow,
-    "vae": train_vae
+    "vae": train_vae,
+    "gan": train_gan
 }
 
 dataclass_mapping = {
@@ -23,7 +24,7 @@ dataclass_mapping = {
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", '-c', type=str, help="Config file for experiment.", default="./configs/celeba_hvae_config.json")
+    parser.add_argument("--config", '-c', type=str, help="Config file for experiment.", default="./configs/celeba_gan_config.json")
     return parser.parse_args()
 
 if __name__ == "__main__":
@@ -45,8 +46,11 @@ if __name__ == "__main__":
 
         module = import_module(model_config["module"])
         model_class = getattr(module, model_config["model_class"])
-        model = model_class(params=model_config["params"], attr_size=attribute_size)
 
+        model = model_class(params=model_config["params"], attr_size=attribute_size)
+        if "finetune" in model_config["params"] and model_config["params"]["finetune"] == 1:
+            model.load_state_dict(torch.load(model_config["params"]["pretrained_path"])["state_dict"])
+            model.name += '_finetuned'
 
         train_fn = model_to_script[config["mechanism_models"][variable]["model_type"]]
         train_fn(model,
