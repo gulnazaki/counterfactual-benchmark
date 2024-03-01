@@ -219,10 +219,7 @@ class Decoder(nn.Module):
         super().__init__()
 
         self.latent_dim = latent_dim
-        
-        self.initial_adain1 = AdaIN(512, 512)
-       
-        self.initial_noise1 = InjectNoise(512)
+
         
         self.map = MappingNetwork()
         self.starting_constant = nn.Parameter(torch.ones((1, latent_dim, 1, 1)))
