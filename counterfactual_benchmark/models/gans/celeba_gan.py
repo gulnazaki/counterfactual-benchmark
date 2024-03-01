@@ -233,7 +233,8 @@ class Decoder(nn.Module):
         fadein = self.fade_in(alpha, rgb1, rgb2)
         final = self.sig(fadein)
         
-        return rgb2 #or final??
+        out = self.sig(rgb2)
+        return out #or final??
     
 
 

@@ -26,8 +26,8 @@
                 "lr": 1e-4,
                 "batch_size_train": 16,
                 "batch_size_val": 16,
-                "patience": 50,
-                "max_epochs": 1000
+                "patience": 200,
+                "max_epochs": 150
             }
         }
     },
