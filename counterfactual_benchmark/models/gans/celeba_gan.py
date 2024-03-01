@@ -130,6 +130,8 @@ class InjectNoise(nn.Module):
 
     def forward(self, x):
         noise = torch.randn((x.shape[0], 1, x.shape[2], x.shape[3]), device=x.device)
+   
+       
         return x + self.weight * noise
 class WSConv2d(nn.Module):
     def __init__(
@@ -146,7 +148,180 @@ class WSConv2d(nn.Module):
         nn.init.zeros_(self.bias)
 
     def forward(self, x):
-        return self.conv(x * self.scale) + self.bias.view(1, self.bias.shape[0], 1, 1)    
+        return self.conv(x * self.scale) + self.bias.view(1, self.bias.shape[0], 1, 1)      
+class WSConvTranspose2d(nn.Module):
+    def __init__(
+        self, in_channels, out_channels, kernel_size=3, stride=1, padding=0
+    ):
+        super(WSConvTranspose2d, self).__init__()
+        self.conv = nn.ConvTranspose2d(in_channels, out_channels, kernel_size, stride, padding)
+        self.scale = (2 / (in_channels * (kernel_size ** 2))) ** 0.5
+        self.bias = self.conv.bias
+        self.conv.bias = None
+
+        # initialize conv layer
+        nn.init.normal_(self.conv.weight)
+        nn.init.zeros_(self.bias)
+
+    def forward(self, x):
+        return self.conv(x * self.scale) + self.bias.view(1, self.bias.shape[0], 1, 1)
+  
+  
+class GenBlock2(nn.Module):
+    def __init__(self, latent_dim):
+        super(GenBlock2, self).__init__()
+      
+        self.convt1 =  WSConvTranspose2d(512,512,4,1)
+        self.convt2 =  WSConvTranspose2d(512,256,7,2)
+        self.convt3 =  WSConvTranspose2d(256,256,5,2)
+        self.convt4 =  WSConvTranspose2d(256,128,7,2)
+        self.convt5 =  WSConvTranspose2d(128,64,2,1)
+
+        self.leaky = nn.LeakyReLU(0.1, inplace=True)
+        self.inject_noise1 = InjectNoise(512) #the out channels of convt1
+        self.adain1 = AdaIN(512, latent_dim) # the outchannels of first convt1 , latent dimen
+        
+        self.inject_noise2 = InjectNoise(64) #the out channels of last convt5
+        self.adain2 = AdaIN(64, latent_dim) # the outchannels of last convt5 , latent dimen
+
+    def forward(self, x, w):
+        x = self.convt1(x)
+        x = self.adain1(self.leaky(self.inject_noise1(x)), w)
+        
+        x = self.convt2(x)
+        x = self.convt3(x)
+        x = self.convt4(x)
+        x = self.convt5(x)
+        x = self.adain2(self.leaky(self.inject_noise2(x)), w)
+        
+        return x
+
+class Decoder(nn.Module):
+    def __init__(self, latent_dim):
+        super().__init__()
+
+        self.latent_dim = latent_dim
+     
+        self.map = MappingNetwork()
+        self.starting_constant = nn.Parameter(torch.ones((1, latent_dim, 1, 1)))
+        self.block = GenBlock2(latent_dim).to('cuda')                     
+        self.rgb_layer = WSConv2d(in_channels = 64, out_channels = 3, kernel_size=1, stride=1, padding=0)
+        self.sig = nn.Sigmoid()
+    
+
+    
+    def forward(self, u, cond):
+     
+        attr1 = cond[:, 0]
+        attr2 = cond[:, 1]
+        attr1 = continuous_feature_map(attr1, size=(1, 1))
+        attr2 = continuous_feature_map(attr2, size=(1, 1))
+
+        #mapping noise
+        w = self.map(u, cond)
+
+        #initial start point pass it through conv layer
+        start = self.starting_constant
+          
+        #block with adain and inject noise inside
+        out = self.block(start, w)
+        
+        #rgb layer
+        rgb = self.rgb_layer(out)
+ 
+        #sigmoid for [0,1]
+        out = self.sig(rgb)
+        
+        return out 
+
+
+
+class Discriminator(nn.Module):
+    def __init__(self, num_continuous):
+        super().__init__()
+
+        self.num_continuous = num_continuous
+
+        self.dz = nn.Sequential(
+            nn.Dropout2d(0.2),
+            nn.Conv2d(512, 1024, (1, 1), (1, 1)),
+            nn.LeakyReLU(0.1),
+            nn.Dropout2d(0.2),
+            nn.Conv2d(1024, 1024, (1, 1), (1, 1)),
+            nn.LeakyReLU(0.1)
+        )
+        self.dx = nn.Sequential(
+            nn.Dropout2d(0.2),
+            nn.Conv2d(1 + self.num_continuous+2, 64, (2, 2), (1, 1)),
+            nn.LeakyReLU(0.1),
+            nn.Dropout2d(0.2),
+            nn.BatchNorm2d(64),
+            nn.Conv2d(64, 128, (7, 7), (2, 2)),
+            nn.LeakyReLU(0.1),
+            nn.BatchNorm2d(128),
+            nn.Dropout2d(0.2),
+            nn.Conv2d(128, 256, (5, 5), (2, 2)),
+            nn.LeakyReLU(0.1),
+            nn.BatchNorm2d(256),
+            nn.Dropout2d(0.2),
+            nn.Conv2d(256, 256, (7, 7), (2, 2)),
+            nn.LeakyReLU(0.1),
+            nn.BatchNorm2d(256),
+            nn.Dropout2d(0.2),
+            nn.Conv2d(256, 1024, (4, 4), (1, 1)),
+            nn.LeakyReLU(0.1)
+        )
+        self.dxz = nn.Sequential(
+            nn.Dropout2d(0.2),
+            nn.Conv2d(2048, 2048, (1, 1), (1, 1)),
+            nn.LeakyReLU(0.1),
+            nn.Dropout2d(0.2),
+            nn.Conv2d(2048, 2048, (1, 1), (1, 1)),
+            nn.LeakyReLU(0.1),
+            nn.Dropout2d(0.2),
+            nn.Conv2d(2048, 1, (1, 1), (1, 1)),
+
+
+        )
+
+
+    def forward(self, x, u, cond):
+
+        attr1 = cond[:, 0]
+        attr2 = cond[:, 1]
+        attr1 = continuous_feature_map(attr1, size=(x.shape[2], x.shape[3]))
+        attr2 = continuous_feature_map(attr2, size=(x.shape[2], x.shape[3]))
+        features = torch.concat((x, attr1, attr2), dim=1)
+
+        dx = self.dx(features)
+        dz = self.dz(u)
+        z = self.dxz(torch.concat([dx, dz], dim=1)).reshape((-1, 1))
+        return z  
+
+
+class CelebaCondGAN(CondGAN):
+    def __init__(self, params, attr_size, name="image_gan"):
+        # dimensionality of the conditional data
+        latent_dim = params["latent_dim"]
+        num_continuous = params["num_continuous"]
+        n_chan_enc = params["n_chan_enc"]
+        finetune= params["finetune"]
+        lr = params["lr"]
+        d_updates_per_g_update = params["d_updates_per_g_update"]
+        gradient_clip_val = params["gradient_clip_val"]
+
+       
+        encoder = Encoder(latent_dim, num_continuous, n_chan=n_chan_enc)
+        decoder = Decoder(latent_dim)
+        discriminator = Discriminator(num_continuous)
+
+        super().__init__(encoder, decoder, discriminator, latent_dim, d_updates_per_g_update, gradient_clip_val, finetune, lr, name)
+
+
+
+
+"""
+
 class GenBlock(nn.Module):
     def __init__(self, in_channels, out_channels, w_dim):
         super(GenBlock, self).__init__()
@@ -224,9 +399,13 @@ class Decoder(nn.Module):
         for i in range(step):
             out = self.blocks[i](outs[-1], w)
             outs.append(out)
-        
+       
+        print (outs[step].shape)
+        import time
+        time.sleep(4444)
         rgb1 = self.rgb_layer1(outs[step-1])
         rgb2 = self.rgb_layer2(outs[step])
+        
         
         #out = self.sig(out)
         alpha = 0.9
@@ -234,6 +413,9 @@ class Decoder(nn.Module):
         final = self.sig(fadein)
         
         out = self.sig(rgb2)
+        
+        import time
+        time.sleep(4444)
         return out #or final??
     
 
@@ -326,22 +508,6 @@ class Discriminator(nn.Module):
         z = self.layersxz[step](torch.concat([dx, dz], dim=1)).reshape((-1, 1))
         return z
 
-class CelebaCondGAN(CondGAN):
-    def __init__(self, params, attr_size, name="image_gan"):
-        # dimensionality of the conditional data
-        cond_dim = sum(attr_size.values())
-        latent_dim = params["latent_dim"]
-        num_continuous = params["num_continuous"]
-        n_chan_enc = params["n_chan_enc"]
-        n_chan_gen = params["n_chan_gen"]
-        finetune= params["finetune"]
-        lr = params["lr"]
-        d_updates_per_g_update = params["d_updates_per_g_update"]
-        gradient_clip_val = params["gradient_clip_val"]
 
 
-        encoder = Encoder(latent_dim, num_continuous, n_chan=n_chan_enc)
-        decoder = Decoder(latent_dim, num_continuous, n_chan=n_chan_gen)
-        discriminator = Discriminator(num_continuous)
-
-        super().__init__(encoder, decoder, discriminator, latent_dim, d_updates_per_g_update, gradient_clip_val, finetune, lr, name)
+"""

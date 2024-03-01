@@ -14,9 +14,7 @@
             "model_class": "CelebaCondGAN",
             "module": "models.gans",
             "params": {
-                "n_chan": [1, 32, 32, 32],
                 "n_chan_enc": [3, 64, 128, 256, 256, 512, 512],
-                "n_chan_gen": [512 ,512, 256, 256, 128, 64, 3],
                 "latent_dim": 512,
                 "num_continuous": 2,
                 "d_updates_per_g_update": 3,
@@ -24,10 +22,10 @@
                 "finetune": 0,
                 "pretrained_path": "/home/v1tmelis/counterfactual-benchmark/counterfactual_benchmark/methods/deepscm/checkpoints_celeba/trained_scm_gan/image_gan-epoch=25.ckpt",
                 "lr": 1e-4,
-                "batch_size_train": 16,
-                "batch_size_val": 16,
+                "batch_size_train": 256,
+                "batch_size_val": 256,
                 "patience": 200,
-                "max_epochs": 150
+                "max_epochs": 1000
             }
         }
     },

@@ -17,7 +17,6 @@ def generate_checkpoint_callback(model_name, dir_path, monitor="val_loss"):
     dirpath=dir_path,
     filename= model_name + '-{epoch:02d}',
     monitor=monitor , # Disable monitoring for checkpoint saving
-    save_top_k = 91
     )
     return checkpoint_callback
 
