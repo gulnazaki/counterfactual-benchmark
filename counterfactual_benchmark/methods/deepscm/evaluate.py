@@ -143,7 +143,7 @@ def evaluate_effectiveness(test_set: Dataset, unnormalize_fn, batch_size:int , s
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", '-c', type=str, help="Config file for experiment.", default="./configs/celeba_vae_config.json")
+    parser.add_argument("--config", '-c', type=str, help="Config file for experiment.", default="./configs/celeba_hvae_config.json")
     parser.add_argument("--classifier-config", '-clf', type=str, help="Classifier config file.", default="./configs/celeba_classifier_config.json")
     parser.add_argument("--metrics", '-m',
                         nargs="+", type=str,
