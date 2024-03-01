@@ -1,5 +1,8 @@
 import numpy as np
-from ..embeddings.vgg import vgg, vgg_normalize
+import sys
+sys.path.append("../../")
+from evaluation.embeddings.vgg import vgg, vgg_normalize
+from models.utils import rgbify
 
 def composition(factual_batch, unnormalize_fn, method, cycles=[1, 10], device='cuda', embedding=None, pretrained=False):
     factual_batch = {k: v.to(device) for k, v in factual_batch.items()}
@@ -23,7 +26,7 @@ def l1_distance(images, steps, embedding, pretrained):
         embedding_fn = lambda x: x.cpu().numpy()
     elif embedding == "vgg":
         model = vgg(pretrained)
-        embedding_fn = lambda x: model(vgg_normalize(x, to_0_1=True)).detach().cpu().numpy()
+        embedding_fn = lambda x: model(vgg_normalize(rgbify(x), to_0_1=True)).detach().cpu().numpy()
     else:
         exit(f"Invalid embedding: {embedding}")
 
