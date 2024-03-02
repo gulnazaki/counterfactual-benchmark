@@ -171,7 +171,7 @@ class GenBlock2(nn.Module):
     def __init__(self, latent_dim):
         super(GenBlock2, self).__init__()
       
-        self.convt1 =  WSConvTranspose2d(512,512,4,1)
+        self.convt1 =  WSConvTranspose2d(512+2,512,4,1) #in_channels == 512+2 if input is u+cond, 512 if input is starting_point
         self.convt2 =  WSConvTranspose2d(512,256,7,2)
         self.convt3 =  WSConvTranspose2d(256,256,5,2)
         self.convt4 =  WSConvTranspose2d(256,128,7,2)
@@ -236,12 +236,13 @@ class Decoder(nn.Module):
         attr2 = cond[:, 1]
         attr1 = continuous_feature_map(attr1, size=(1, 1))
         attr2 = continuous_feature_map(attr2, size=(1, 1))
-
+        features = torch.concat((u, attr1, attr2), dim=1)
+        
         #mapping noise
         w = self.map(u, cond)
 
         #initial start point pass it through conv layer
-        start = self.starting_constant
+        start = features #self.starting_constant
         
         #block with adain and inject noise inside
         out = self.block(start, w)
@@ -254,8 +255,6 @@ class Decoder(nn.Module):
         out = self.sig(rgb)
         
         return out 
-
-
 
 class Discriminator(nn.Module):
     def __init__(self, num_continuous):
@@ -318,7 +317,6 @@ class Discriminator(nn.Module):
         dz = self.dz(u)
         z = self.dxz(torch.concat([dx, dz], dim=1)).reshape((-1, 1))
         return z  
-
 
 class CelebaCondGAN(CondGAN):
     def __init__(self, params, attr_size, name="image_gan"):

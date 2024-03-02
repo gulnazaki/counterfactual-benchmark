@@ -221,7 +221,7 @@ class CondGAN(StructuralEquation, pl.LightningModule):
         n_show = 10
         save_images_every = 1
         path = os.getcwd()
-        image_output_path = os.path.join(path, 'training_images_gan' + ('_finetuned' if self.finetune == 1 else ''))
+        image_output_path = os.path.join(path, 'training_images_gan_again' + ('_finetuned' if self.finetune == 1 else ''))
         os.makedirs(image_output_path, exist_ok=True)
 
         if self.trainer.is_last_batch and epoch % save_images_every == 0:

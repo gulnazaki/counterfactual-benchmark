@@ -74,4 +74,4 @@ def train_gan(gan, config, data_class, graph_structure, attribute_size, checkpoi
                       callbacks=callbacks,
                       default_root_dir=checkpoint_dir, max_epochs=config["max_epochs"])
 
-    trainer.fit(gan, train_data_loader, val_data_loader)
+    trainer.fit(gan, train_data_loader, val_data_loader )
