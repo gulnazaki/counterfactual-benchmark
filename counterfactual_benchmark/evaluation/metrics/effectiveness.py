@@ -8,11 +8,11 @@ def effectiveness(counterfactual_batch, unnormalize_fn, predictors):
                    else clfs(counterfactual_batch["image"]) for key , clfs in predictors.items()} #predicted values
 
     if "digit" in list(targets.keys()):
-        result = {key:(unnormalize_fn(targets[key], key) - unnormalize_fn(predictions[key], key)).abs().mean().detach().cpu().numpy()
-              if key!="digit" else  (targets[key].argmax(-1).cpu().numpy() == predictions[key].argmax(-1).cpu().numpy()).mean()
+        result = {key:(unnormalize_fn(targets[key], key) - unnormalize_fn(predictions[key], key)).abs().mean().cpu().numpy()
+              if key!="digit" else  (targets[key].argmax(-1) == predictions[key].argmax(-1)).sum().cpu().numpy() / predictions[key].shape[0]
               for key in targets}
 
     else: #celeba attributes
-        result = {key: BinaryF1Score(threshold=0.5)(predictions[key].detach().cpu(), targets[key].detach().cpu()) for key in targets}
+        result = {key: BinaryF1Score(threshold=0.5).to('cuda')(predictions[key], targets[key]).cpu() for key in targets}
 
     return result
