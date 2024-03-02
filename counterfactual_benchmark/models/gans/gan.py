@@ -69,11 +69,17 @@ class CondGAN(StructuralEquation, pl.LightningModule):
         return self.discriminate(x, z, cond)
 
     def configure_optimizers(self):
-        optimizer_E = torch.optim.Adam(list(self.encoder.parameters()) + list(self.decoder.parameters()),
-                                       lr=self.lr, betas=(0.5, 0.999))
-        optimizer_D = torch.optim.Adam(self.discriminator.parameters(),
-                                       lr=self.lr, betas=(0.5, 0.999))
-        return optimizer_E, optimizer_D
+        if self.finetune == 0:
+            optimizer_E = torch.optim.Adam(list(self.encoder.parameters()) + list(self.decoder.parameters()),
+                                        lr=self.lr, betas=(0.5, 0.999))
+            optimizer_D = torch.optim.Adam(self.discriminator.parameters(),
+                                        lr=self.lr, betas=(0.5, 0.999))
+            return optimizer_E, optimizer_D
+        else:
+            optimizer_E = torch.optim.Adam(list(self.encoder.parameters()),
+                                        lr=self.lr, betas=(0.5, 0.999))
+            return optimizer_E
+
 
     def set_to_finetune(self):
         # Freeze the parameters of the decoder & discriminator
@@ -83,11 +89,12 @@ class CondGAN(StructuralEquation, pl.LightningModule):
             param.requires_grad = False
 
     def training_step(self, train_batch, batch_idx):
-        if self.finetune == 1:
-            optimizer_E, optimizer_D = self.optimizers()
-            self.toggle_optimizer(optimizer_E)
-            self.untoggle_optimizer(optimizer_D)
+        # may happen if the last batch is of size 1 (dropout error)
+        if train_batch[0].shape[0] == 1 and self.trainer.is_last_batch:
+            return
 
+        if self.finetune == 1:
+            optimizer_E  = self.optimizers()
             x, cond = train_batch
 
             # latent loss
@@ -126,27 +133,6 @@ class CondGAN(StructuralEquation, pl.LightningModule):
             z = torch.normal(z_mean, z_mean + 1).to(x.device)
             gz = self.forward_dec(z, cond)
 
-            ##############################
-            # Optimize Encoder & Decoder #
-            ##############################
-
-            # if batch_idx % self.d_updates_per_g_update == 0:
-            self.toggle_optimizer(optimizer_E)
-
-            EG_valid = self.forward_discr(gz, z, cond)
-            loss_EG_valid = self.gan_loss(EG_valid, valid)
-
-            EG_fake = self.forward_discr(x, ex, cond)
-            loss_EG_fake = self.gan_loss(EG_fake, fake)
-
-            loss_EG = loss_EG_valid + loss_EG_fake
-
-            optimizer_E.zero_grad()
-            self.manual_backward(loss_EG)
-            #self.clip_gradients(optimizer_E, gradient_clip_val=self.gradient_clip_val, gradient_clip_algorithm="norm")
-            optimizer_E.step()
-            self.untoggle_optimizer(optimizer_E)
-
             # ##########################
             # # Optimize Discriminator #
             # ##########################
@@ -166,7 +152,33 @@ class CondGAN(StructuralEquation, pl.LightningModule):
             optimizer_D.step()
             self.untoggle_optimizer(optimizer_D)
 
-            self.log_dict({"eg_loss": loss_EG, "d_loss": loss_D}, on_step=False, on_epoch=True, prog_bar=True)
+
+            ##############################
+            # Optimize Encoder & Decoder #
+            ##############################
+
+            if batch_idx % self.d_updates_per_g_update == 0:
+                self.toggle_optimizer(optimizer_E)
+
+                EG_valid = self.forward_discr(gz, z, cond)
+                loss_EG_valid = self.gan_loss(EG_valid, valid)
+
+                EG_fake = self.forward_discr(x, ex, cond)
+                loss_EG_fake = self.gan_loss(EG_fake, fake)
+
+                loss_EG = loss_EG_valid + loss_EG_fake
+
+                optimizer_E.zero_grad()
+                self.manual_backward(loss_EG)
+                #self.clip_gradients(optimizer_E, gradient_clip_val=self.gradient_clip_val, gradient_clip_algorithm="norm")
+                optimizer_E.step()
+                self.untoggle_optimizer(optimizer_E)
+            else:
+                loss_EG = None
+
+            if loss_EG is not None:
+                self.log_dict({"eg_loss": loss_EG, "d_loss": loss_D}, on_step=False, on_epoch=True, prog_bar=True)
+
             return loss_EG
 
 
@@ -174,108 +186,113 @@ class CondGAN(StructuralEquation, pl.LightningModule):
 
         x, cond = train_batch
 
-        with torch.no_grad():
-            if self.finetune == 1:
-                ex = self.forward_enc(x, cond)
-                gex = self.forward_dec(ex, cond)
+        if self.finetune == 1:
+            ex = self.forward_enc(x, cond)
+            gex = self.forward_dec(ex, cond)
 
+            if hasattr(self, 'embeddings'):
+                lpips_score = self.l1_loss(x, gex)
+            else:
                 metric = LPIPS(net_type='vgg', normalize=True).to(x.device)
                 lpips_score = metric(rgbify(x), rgbify(gex))
 
-                self.log("lpips", lpips_score, on_step=False, on_epoch=True, prog_bar=True)
+            self.log("lpips", lpips_score, on_step=False, on_epoch=True, prog_bar=True)
+        else:
+            # sample noise
+            z_mean = torch.zeros((len(x), self.latent_dim, 1, 1)).float()
+            z = torch.normal(z_mean, z_mean + 1).to(x.device)
+            gz = self.forward_dec(z, cond)
+
+            ex = self.forward_enc(x, cond)
+            gex = self.forward_dec(ex, cond)
+
+            if hasattr(self, 'embeddings'):
+                fid_score = (self.l1_loss(x, gz) + self.l1_loss(x, gex)) / 2
             else:
-                # sample noise
-                z_mean = torch.zeros((len(x), self.latent_dim, 1, 1)).float()
-                z = torch.normal(z_mean, z_mean + 1).to(x.device)
-                gz = self.forward_dec(z, cond)
-
-                ex = self.forward_enc(x, cond)
-                gex = self.forward_dec(ex, cond)
-
                 metric = FID(feature=64, normalize=True, reset_real_features=False).to(x.device)
                 metric.update(rgbify(x), real=True)
                 metric.update(rgbify(gz), real=False)
                 metric.update(rgbify(gex), real=False)
                 fid_score = metric.compute()
 
-                self.log("fid", fid_score, on_step=False, on_epoch=True, prog_bar=True)
+            self.log("fid", fid_score, on_step=False, on_epoch=True, prog_bar=True)
 
-            epoch = self.current_epoch
-            n_show = 10
-            save_images_every = 1
-            path = os.getcwd()
-            image_output_path = os.path.join(path, 'training_images_gan' + ('_finetuned' if self.finetune == 1 else ''))
-            os.makedirs(image_output_path, exist_ok=True)
+        epoch = self.current_epoch
+        n_show = 10
+        save_images_every = 1
+        path = os.getcwd()
+        image_output_path = os.path.join(path, 'training_images_gan' + ('_finetuned' if self.finetune == 1 else ''))
+        os.makedirs(image_output_path, exist_ok=True)
 
-            if self.trainer.is_last_batch and epoch % save_images_every == 0:
-                reals = []
-                geners = []
-                recons = []
-                # generate images from same class as real ones
+        if self.trainer.is_last_batch and epoch % save_images_every == 0:
+            reals = []
+            geners = []
+            recons = []
+            # generate images from same class as real ones
+            for i in range(n_show):
+                images = x[i]
+                images = torch.unsqueeze(images, 0).float()
+
+
+                attrs = cond[i]
+                attrs = attrs.reshape((1, attrs.shape[0]))
+
+                z_mean = torch.zeros((len(images), self.latent_dim, 1, 1)).float()
+                z = torch.normal(z_mean, z_mean + 1).to(x.device)
+
+                gener = self.decode(z, attrs)
+                recon = self.decode(self.encode(images, attrs), attrs)
+                real = images.cpu().numpy()
+
+                gener = gener.reshape(gener.shape[1], gener.shape[2], gener.shape[3]).cpu().numpy()
+                recon = recon.reshape(recon.shape[1], recon.shape[2], recon.shape[3]).cpu().numpy()
+                real = real[0]
+
+
+                recons.append(recon)
+                geners.append(gener)
+                reals.append(real)
+
+            import matplotlib.pyplot as plt
+
+            fig, ax = plt.subplots(3, n_show, figsize=(15, 5))
+            fig.subplots_adjust(wspace=0.05, hspace=0)
+            plt.rcParams.update({'font.size': 20})
+            fig.suptitle('Epoch {}'.format(epoch))
+            fig.text(0.04, 0.75, 'G(z, c)', ha='left')
+            fig.text(0.04, 0.5, 'x', ha='left')
+            fig.text(0.04, 0.25, 'G(E(x, c), c)', ha='left')
+
+
+
+            if  geners[1].shape[0]==3:
+                recons.append(recon)
+                geners.append(gener)
+                reals.append(real)
                 for i in range(n_show):
-                    images = x[i]
-                    images = torch.unsqueeze(images, 0).float()
+                    geners[i] = np.transpose(geners[i], (1, 2, 0))
+                    ax[0, i].imshow(geners[i])
+                    ax[0, i].axis('off')
+                    real = np.transpose(reals[i], (1, 2, 0))
+                    ax[1, i].imshow(real)
+                    ax[1, i].axis('off')
+                    recons[i] = np.transpose(recons[i], (1, 2, 0))
+                    ax[2, i].imshow(recons[i])
+                    ax[2, i].axis('off')
 
+            else:
+                recons.append(recon)
+                geners.append(gener)
+                reals.append(real)
+                for i in range(n_show):
+                    ax[0, i].imshow(geners[i][0], cmap='gray', vmin=-1, vmax=1)
+                    ax[0, i].axis('off')
+                    ax[1, i].imshow(reals[i][0], cmap='gray', vmin=-1, vmax=1)
+                    ax[1, i].axis('off')
+                    ax[2, i].imshow(recons[i][0], cmap='gray', vmin=-1, vmax=1)
+                    ax[2, i].axis('off')
 
-                    attrs = cond[i]
-                    attrs = attrs.reshape((1, attrs.shape[0]))
-
-                    z_mean = torch.zeros((len(images), self.latent_dim, 1, 1)).float()
-                    z = torch.normal(z_mean, z_mean + 1).to(x.device)
-
-                    gener = self.decode(z, attrs)
-                    recon = self.decode(self.encode(images, attrs), attrs)
-                    real = images.cpu().numpy()
-
-                    gener = gener.reshape(gener.shape[1], gener.shape[2], gener.shape[3]).cpu().numpy()
-                    recon = recon.reshape(recon.shape[1], recon.shape[2], recon.shape[3]).cpu().numpy()
-                    real = real[0]
-
-
-                    recons.append(recon)
-                    geners.append(gener)
-                    reals.append(real)
-
-                import matplotlib.pyplot as plt
-
-                fig, ax = plt.subplots(3, n_show, figsize=(15, 5))
-                fig.subplots_adjust(wspace=0.05, hspace=0)
-                plt.rcParams.update({'font.size': 20})
-                fig.suptitle('Epoch {}'.format(epoch))
-                fig.text(0.04, 0.75, 'G(z, c)', ha='left')
-                fig.text(0.04, 0.5, 'x', ha='left')
-                fig.text(0.04, 0.25, 'G(E(x, c), c)', ha='left')
-
-
-
-                if  geners[1].shape[0]==3:
-                    recons.append(recon)
-                    geners.append(gener)
-                    reals.append(real)
-                    for i in range(n_show):
-                        geners[i] = np.transpose(geners[i], (1, 2, 0))
-                        ax[0, i].imshow(geners[i])
-                        ax[0, i].axis('off')
-                        real = np.transpose(reals[i], (1, 2, 0))
-                        ax[1, i].imshow(real)
-                        ax[1, i].axis('off')
-                        recons[i] = np.transpose(recons[i], (1, 2, 0))
-                        ax[2, i].imshow(recons[i])
-                        ax[2, i].axis('off')
-
-                else:
-                    recons.append(recon)
-                    geners.append(gener)
-                    reals.append(real)
-                    for i in range(n_show):
-                        ax[0, i].imshow(geners[i][0], cmap='gray', vmin=-1, vmax=1)
-                        ax[0, i].axis('off')
-                        ax[1, i].imshow(reals[i][0], cmap='gray', vmin=-1, vmax=1)
-                        ax[1, i].axis('off')
-                        ax[2, i].imshow(recons[i][0], cmap='gray', vmin=-1, vmax=1)
-                        ax[2, i].axis('off')
-
-                plt.savefig(f'{image_output_path}/epoch-{epoch}.png', format='png')
-                plt.close()
+            plt.savefig(f'{image_output_path}/epoch-{epoch}.png', format='png')
+            plt.close()
 
         return

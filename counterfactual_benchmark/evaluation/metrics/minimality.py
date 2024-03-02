@@ -2,16 +2,11 @@ import numpy as np
 from tqdm import tqdm
 
 def l1_distance(embedding_1, embedding_2, array=False):
-    return np.mean(np.abs(embedding_1 - embedding_2), axis = 1 if array else 0)
+    return np.mean(np.abs(embedding_1 - embedding_2), axis = (1 if array else 0))
 
 def prob(div, S, S_leq=True):
-    total = len(S)
-    if total == 0:
-        print("Warning: S is empty")
-        return 0
-    else:
-        num  = (S <= div if S_leq == True else S >= div).sum()
-        return num / len(S)
+    num  = (S <= div if S_leq == True else S >= div).sum()
+    return num / len(S)
 
 def same(p1, p2, name, bins):
     if name in ['thickness', 'intensity']:
@@ -37,6 +32,10 @@ def minimality(feat_dict, bins):
                 fs.append(real)
             elif same(real_pa, cf_pa, i, bins):
                 cfs.append(real)
+
+        if len(cfs) == 0 or len(fs) == 0:
+            print(f"Warning: fs or cfs is empty for intervention {i}, f_pa {f_pa}, cf_pa {cf_pa}")
+            continue
 
         S_f = l1_distance(np.array(fs), f, array=True)
         S_cf = l1_distance(np.array(cfs), f, array=True)

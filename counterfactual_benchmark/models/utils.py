@@ -12,11 +12,13 @@ def freeze_model(model):
         p.requires_grad = False
     return model
 
-def generate_checkpoint_callback(model_name, dir_path, monitor="val_loss"):
+def generate_checkpoint_callback(model_name, dir_path, monitor="val_loss", save_last=False, top=1):
     checkpoint_callback = ModelCheckpoint(
     dirpath=dir_path,
     filename= model_name + '-{epoch:02d}',
-    monitor=monitor  # Disable monitoring for checkpoint saving
+    monitor=monitor,  # Disable monitoring for checkpoint saving,
+    save_top_k=top,
+    save_last=save_last
     )
     return checkpoint_callback
 
