@@ -443,7 +443,7 @@ class DGaussNet(nn.Module):
 
 class CelebaCondHVAE(CondHVAE):
 
-    def __init__(self, attr_size, params, cf_fine_tune=True, evaluate=True, name="image_hvae"):
+    def __init__(self, attr_size, params, cf_fine_tune=False, evaluate=True, name="image_hvae"):
 
         params["context_dim"] = sum(attr_size.values())
         self.cf_fine_tune = cf_fine_tune

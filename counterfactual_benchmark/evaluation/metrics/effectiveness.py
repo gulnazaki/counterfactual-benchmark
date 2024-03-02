@@ -13,6 +13,6 @@ def effectiveness(counterfactual_batch, unnormalize_fn, predictors):
               for key in targets}
 
     else: #celeba attributes
-        result = {key: BinaryF1Score(threshold=0.001)(predictions[key].detach().cpu(), targets[key].detach().cpu()) for key in targets}
+        result = {key: BinaryF1Score(threshold=0.3)(predictions[key].detach().cpu(), targets[key].detach().cpu()) for key in targets}
 
     return result

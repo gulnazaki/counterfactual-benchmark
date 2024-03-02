@@ -437,16 +437,21 @@ class DGaussNet(nn.Module):
 
 class MmnistCondHVAE(CondHVAE):
 
-    def __init__(self, attr_size, params, name="image_hvae"):
+    def __init__(self, attr_size, params, cf_fine_tune=False, evaluate=True, name="image_hvae"):
 
         params["context_dim"] = sum(attr_size.values())
         encoder = Encoder(params)
         decoder = Decoder(params)
         likelihood = DGaussNet(params)
+        self.cf_fine_tune = cf_fine_tune
+        self.evaluate = evaluate
         self.name = name
 
-        super().__init__(encoder, decoder, likelihood, params, self.name)
-        self.apply(init_bias)
+        super().__init__(encoder, decoder, likelihood, params, 
+                         self.cf_fine_tune, self.evaluate, self.name)
+        
+        if not self.cf_fine_tune:
+            self.apply(init_bias)
 
 
 from json import load
