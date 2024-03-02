@@ -13,7 +13,7 @@ import numpy as np
 from collections import OrderedDict
 from models.utils import flatten_list, continuous_feature_map
 from models.gans import CondGAN
-from models.classifiers import Classifier
+from evaluation.embeddings.classifier_embeddings import ClassifierEmbeddings
 
 
 class Encoder(nn.Module):
@@ -198,11 +198,4 @@ class MmnistCondGAN(CondGAN):
 
         super().__init__(encoder, decoder, discriminator, latent_dim, d_updates_per_g_update, gradient_clip_val,finetune, lr, name)
 
-        clf = Classifier('digit', width=8, num_outputs=10)
-        path = '/home/v1tmelis/counterfactual-benchmark/counterfactual_benchmark/methods/deepscm/checkpoints/trained_classifiers/digit_classifier-epoch=23.ckpt'
-        clf.load_state_dict(torch.load(path)["state_dict"])
-        clf.fc = nn.Sequential(*[clf.fc[i] for i in range(3)])
-        for param in clf.parameters():
-            param.requires_grad = False
-        clf.eval()
-        self.embeddings = clf.forward
+        self.embeddings = ClassifierEmbeddings('/home/v1tmelis/counterfactual-benchmark/counterfactual_benchmark/methods/deepscm/configs/morphomnist_classifier_config.json')
