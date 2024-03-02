@@ -66,10 +66,11 @@ def init_weights(layer, std=0.01):
 def continuous_feature_map(c: torch.Tensor, size: tuple = (32, 32)):
     return c.reshape((c.size(0), 1, 1, 1)).repeat(1, 1, *size)
 
-def rgbify(image):
+def rgbify(image, normalized=True):
     if image.shape[1] == 1:
-        # MorphoMNIST: [-1, 1] -> [0, 1]
-        image = (image + 1) / 2
+        if normalized:
+            # MorphoMNIST: [-1, 1] -> [0, 1]
+            image = (image + 1) / 2
         image = image.repeat(1, 3, 1, 1)
 
     return image

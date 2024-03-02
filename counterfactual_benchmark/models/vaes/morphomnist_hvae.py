@@ -445,7 +445,7 @@ class MmnistCondHVAE(CondHVAE):
         likelihood = DGaussNet(params)
         self.name = name
 
-        super().__init__(encoder, decoder, likelihood, params, self.name)
+        super().__init__(encoder, decoder, likelihood, params, False, False, self.name)
         self.apply(init_bias)
 
 
