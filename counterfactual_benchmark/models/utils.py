@@ -12,11 +12,13 @@ def freeze_model(model):
         p.requires_grad = False
     return model
 
-def generate_checkpoint_callback(model_name, dir_path, monitor="val_loss"):
+def generate_checkpoint_callback(model_name, dir_path, monitor="val_loss", save_last=False, top=1):
     checkpoint_callback = ModelCheckpoint(
     dirpath=dir_path,
     filename= model_name + '-{epoch:02d}',
-    monitor=monitor , # Disable monitoring for checkpoint saving
+    monitor=monitor,  # Disable monitoring for checkpoint saving,
+    save_top_k=top,
+    save_last=save_last
     )
     return checkpoint_callback
 
@@ -64,10 +66,11 @@ def init_weights(layer, std=0.01):
 def continuous_feature_map(c: torch.Tensor, size: tuple = (32, 32)):
     return c.reshape((c.size(0), 1, 1, 1)).repeat(1, 1, *size)
 
-def rgbify(image):
+def rgbify(image, normalized=True):
     if image.shape[1] == 1:
-        # MorphoMNIST: [-1, 1] -> [0, 1]
-        image = (image + 1) / 2
+        if normalized:
+            # MorphoMNIST: [-1, 1] -> [0, 1]
+            image = (image + 1) / 2
         image = image.repeat(1, 3, 1, 1)
 
     return image

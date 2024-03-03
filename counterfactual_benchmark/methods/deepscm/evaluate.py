@@ -25,6 +25,7 @@ from evaluation.metrics.composition import composition
 from evaluation.metrics.coverage_density import coverage_density
 from evaluation.metrics.minimality import minimality
 from evaluation.embeddings.vgg import vgg
+from evaluation.embeddings.classifier_embeddings import ClassifierEmbeddings
 from evaluation.metrics.effectiveness import effectiveness
 from evaluation.metrics.utils import save_selected_images, save_plots
 from datasets.morphomnist.dataset import unnormalize as unnormalize_morphomnist
@@ -61,10 +62,17 @@ def produce_qualitative_samples(dataset, scm, parents, intervention_source, unno
 def evaluate_composition(test_set: Dataset, unnormalize_fn, batch_size: int, cycles: List[int], scm: nn.Module, save_dir: str = "composition_samples", embedding = None, pretrained = False):
     test_data_loader = torch.utils.data.DataLoader(test_set, batch_size=batch_size, shuffle=False, num_workers=7)
 
+    if embedding == "vgg":
+        embedding_model = vgg(pretrained)
+    elif embedding == "clfs":
+        embedding_model = ClassifierEmbeddings('/home/v1tmelis/counterfactual-benchmark/counterfactual_benchmark/methods/deepscm/configs/morphomnist_classifier_config.json')
+    else:
+        embedding_model = None
+
     composition_scores = []
     images = []
     for factual_batch in tqdm(test_data_loader):
-        score_batch, image_batch = composition(factual_batch, unnormalize_fn, method=scm, cycles=cycles, embedding=embedding, pretrained=pretrained)
+        score_batch, image_batch = composition(factual_batch, unnormalize_fn, method=scm, cycles=cycles, embedding=embedding, embedding_model=embedding_model)
         composition_scores.append(score_batch)
         images.append(image_batch)
 
@@ -179,7 +187,7 @@ def evaluate_minimality(feat_dict, bins):
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", '-c', type=str, help="Config file for experiment.", default="./configs/celeba_vae_config.json")
+    parser.add_argument("--config", '-c', type=str, help="Config file for experiment.", default="./configs/celeba_hvae_config.json")
     parser.add_argument("--classifier-config", '-clf', type=str, help="Classifier config file.", default="./configs/celeba_classifier_config.json")
     parser.add_argument("--metrics", '-m',
                         nargs="+", type=str,
@@ -192,8 +200,8 @@ def parse_arguments():
     parser.add_argument("--qualitative", '-qn', type=int, help="Number of qualitative results to produce", default=20)
     parser.add_argument("--pretrained-vgg", action='store_true', help="Whether to use pretrained vgg for feature extraction")
     parser.add_argument("--real-features-path", type=str, default=None, help="Path to save or load features of the real set for coverage & density")
-    parser.add_argument("--composition-embeddings", type=str, choices=["vgg"], help="What embeddings to use for composition metric. "
-                        "Supported: [vgg]. If not set, will compute distance on image space")
+    parser.add_argument("--composition-embeddings", type=str, choices=["vgg", "clfs"], help="What embeddings to use for composition metric. "
+                        "Supported: [vgg, clfs]. If not set, will compute distance on image space")
     parser.add_argument("--sampling-temperature", '-temp', type=float, default=0.1, help="Sampling temperature, used for VAE, HVAE.")
     return parser.parse_args()
 

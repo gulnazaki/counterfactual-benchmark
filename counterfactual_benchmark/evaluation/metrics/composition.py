@@ -1,29 +1,33 @@
 import numpy as np
-from ..embeddings.vgg import vgg, vgg_normalize
+import sys
+sys.path.append("../../")
+from evaluation.embeddings.vgg import vgg_normalize
+from models.utils import rgbify
 
-def composition(factual_batch, unnormalize_fn, method, cycles=[1, 10], device='cuda', embedding=None, pretrained=False):
+def composition(factual_batch, unnormalize_fn, method, cycles=[1, 10], device='cuda', embedding=None, embedding_model=None):
     factual_batch = {k: v.to(device) for k, v in factual_batch.items()}
-    images = [unnormalize_fn(factual_batch["image"], "image")]
+    cond = factual_batch["intensity"] if "intensity" in factual_batch else None
+    images = [factual_batch["image"]]
 
     for _ in range(max(cycles)):
         abducted_noise = method.encode(**factual_batch)
         counterfactual_batch = method.decode(**abducted_noise)
-        images.append(unnormalize_fn(counterfactual_batch["image"], "image"))
+        images.append(counterfactual_batch["image"])
         factual_batch = counterfactual_batch
 
-    # TODO loop on different embeddings
-    composition_scores = l1_distance(images, steps=cycles, embedding=embedding, pretrained=pretrained) # add more distances
+    composition_scores = l1_distance(images, cond, steps=cycles, embedding=embedding, embedding_model=embedding_model, unnormalize_fn=unnormalize_fn)
 
     # stack images for all cycles
-    all_images = np.concatenate([image.cpu().numpy() for image in images], axis=3)
+    all_images = np.concatenate([unnormalize_fn(image, "image").cpu().numpy() for image in images], axis=3)
     return composition_scores, all_images
 
-def l1_distance(images, steps, embedding, pretrained):
+def l1_distance(images, cond, steps, embedding, embedding_model, unnormalize_fn):
     if embedding is None:
-        embedding_fn = lambda x: x.cpu().numpy()
+        embedding_fn = lambda x: unnormalize_fn(x, "image").cpu().numpy()
     elif embedding == "vgg":
-        model = vgg(pretrained)
-        embedding_fn = lambda x: model(vgg_normalize(x, to_0_1=True)).detach().cpu().numpy()
+        embedding_fn = lambda x: embedding_model(vgg_normalize(rgbify(x, normalized=True), to_0_1=False)).detach().cpu().numpy()
+    elif embedding == "clfs":
+        embedding_fn = lambda x: embedding_model(x, cond, only_intensity=True).detach().cpu().numpy()
     else:
         exit(f"Invalid embedding: {embedding}")
 

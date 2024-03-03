@@ -191,7 +191,7 @@ class CondGAN(StructuralEquation, pl.LightningModule):
             gex = self.forward_dec(ex, cond)
 
             if hasattr(self, 'embeddings'):
-                lpips_score = self.l1_loss(x, gex)
+                lpips_score = self.l1_loss(self.embeddings(x, cond), self.embeddings(gex, cond))
             else:
                 metric = LPIPS(net_type='vgg', normalize=True).to(x.device)
                 lpips_score = metric(rgbify(x), rgbify(gex))
@@ -207,7 +207,8 @@ class CondGAN(StructuralEquation, pl.LightningModule):
             gex = self.forward_dec(ex, cond)
 
             if hasattr(self, 'embeddings'):
-                fid_score = (self.l1_loss(x, gz) + self.l1_loss(x, gex)) / 2
+                x_embeddings = self.embeddings(x, cond)
+                fid_score = (self.l1_loss(x_embeddings, self.embeddings(gz, cond)) + self.l1_loss(x_embeddings, self.embeddings(gex, cond))) / 2
             else:
                 metric = FID(feature=64, normalize=True, reset_real_features=False).to(x.device)
                 metric.update(rgbify(x), real=True)
@@ -221,7 +222,7 @@ class CondGAN(StructuralEquation, pl.LightningModule):
         n_show = 10
         save_images_every = 1
         path = os.getcwd()
-        image_output_path = os.path.join(path, 'training_images_gan_again' + ('_finetuned' if self.finetune == 1 else ''))
+        image_output_path = os.path.join(path, 'training_images_gan' + ('_finetuned' if self.finetune == 1 else ''))
         os.makedirs(image_output_path, exist_ok=True)
 
         if self.trainer.is_last_batch and epoch % save_images_every == 0:

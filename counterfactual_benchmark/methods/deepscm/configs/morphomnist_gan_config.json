@@ -1,10 +1,9 @@
 {
     "causal_graph": {
-        "image": ["thickness", "intensity", "digit"],
         "thickness": [],
         "intensity": ["thickness"],
-        "digit": []
-
+        "digit": [],
+        "image": ["thickness", "intensity", "digit"]
     },
     "attribute_size": {
         "thickness": 1,
@@ -59,18 +58,18 @@
             "model_class": "MmnistCondGAN",
             "module": "models.gans",
             "params": {
-                "n_chan": [1, 32, 32, 32],
                 "n_chan_enc": [2, 64, 128, 256, 512],
                 "n_chan_gen": [256, 512, 256, 128, 64],
                 "latent_dim": 512,
                 "num_continuous": 2,
-                "d_updates_per_g_update": 3,
+                "d_updates_per_g_update": 1,
                 "gradient_clip_val": 0.5,
-                "finetune": 0,
+                "finetune": 1,
+                "pretrained_path": "/home/v1tmelis/counterfactual-benchmark/counterfactual_benchmark/methods/deepscm/checkpoints/trained_scm_gan/image_gan-epoch=80.ckpt",
                 "lr": 1e-4,
                 "batch_size_train": 128,
                 "batch_size_val": 512,
-                "patience": 40,
+                "patience": 200,
                 "max_epochs": 1000,
                 "train_val_split": 0.8
             }

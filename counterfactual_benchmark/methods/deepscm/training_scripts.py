@@ -21,7 +21,7 @@ def get_dataloaders(data_class, attribute_size, config, transform=None, **kwargs
 
 
 def train_flow(flow, config, data_class, graph_structure, attribute_size, checkpoint_dir, **kwargs):
-    transform = SelectParentAttributesTransform(flow.name.rstrip('_flow'), attribute_size, graph_structure)
+    transform = SelectParentAttributesTransform(flow.name.removesuffix('_flow'), attribute_size, graph_structure)
 
     train_data_loader, val_data_loader = get_dataloaders(data_class, attribute_size, config, transform, **kwargs)
     trainer = Trainer(accelerator="auto", devices="auto", strategy="auto", callbacks=[generate_checkpoint_callback(flow.name, checkpoint_dir),
@@ -41,7 +41,7 @@ def train_vae(vae, config, data_class, graph_structure, attribute_size, checkpoi
     if config["ema"] == "True":
         callbacks.append(generate_ema_callback(decay=0.999))
 
-    trainer = Trainer(accelerator="auto", devices="auto", strategy="auto", gradient_clip_val=config["gradient_clip_val"],
+    trainer = Trainer(accelerator="auto", devices="auto", strategy="auto",
                       callbacks=callbacks,
                       default_root_dir=checkpoint_dir, max_epochs=config["max_epochs"])
 
@@ -74,4 +74,4 @@ def train_gan(gan, config, data_class, graph_structure, attribute_size, checkpoi
                       callbacks=callbacks,
                       default_root_dir=checkpoint_dir, max_epochs=config["max_epochs"])
 
-    trainer.fit(gan, train_data_loader, val_data_loader )
+    trainer.fit(gan, train_data_loader, val_data_loader)

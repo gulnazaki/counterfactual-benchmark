@@ -62,17 +62,17 @@ class Classifier(pl.LightningModule):
         if y is not None:
 
             x = torch.cat([x, y], dim=-1)
-      
+
         return self.fc(x)
 
 
     def training_step(self, batch, batch_idx):
         x, attrs_ = batch
-        
+
         y = attrs_[:, self.attr] #select attribute to train
 
         if self.variable == "digit":
-            y = attrs_[:, self.attr:] 
+            y = attrs_[:, self.attr:]
 
         if self.variable == "thickness":  #condition on intensity when training the thickness classifier
             cond = attrs_[:,self.variables["intensity"]].view(-1, 1)
@@ -85,7 +85,7 @@ class Classifier(pl.LightningModule):
 
             if self.variable == "intensity":
                 loss = nn.MSELoss()(y_hat, y.type(torch.float32).view(-1, 1))
-            
+
             else: #digit
               #  print(y_hat.shape, y.argmax(-1).type(torch.long).shape)
                 loss = nn.CrossEntropyLoss()(y_hat, y.argmax(-1).type(torch.long))
@@ -97,15 +97,15 @@ class Classifier(pl.LightningModule):
 
         #loss = nn.CrossEntropyLoss()(y_hat, y.type(torch.long))
         return loss
-    
+
 
     def validation_step(self, batch, batch_idx):
         x, attrs_ = batch
         y = attrs_[:, self.attr] #select attribute to train
 
         if self.variable == "digit":
-            y = attrs_[:, self.attr:] 
-        
+            y = attrs_[:, self.attr:]
+
 
         if self.variable == "thickness":  #condition on intensity when training the thickness classifier
             cond = attrs_[:,self.variables["intensity"]].view(-1, 1)
@@ -118,16 +118,16 @@ class Classifier(pl.LightningModule):
 
             if self.variable == "intensity":
                 loss = nn.MSELoss()(y_hat, y.type(torch.float32).view(-1, 1))
-            
+
             else: #digit
                 loss = nn.CrossEntropyLoss()(y_hat, y.argmax(-1).type(torch.long))
-             
+
               #  self.log("val_acc", loss, on_step=False, on_epoch=True, prog_bar=True)
                 val_acc =   self.accuracy(y_hat, y.argmax(-1).type(torch.long))
 
                 self.log('val_acc', val_acc, on_step=False , on_epoch=True, prog_bar=True)
 
-        
+
         self.log("val_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
 
         return loss

@@ -11,9 +11,9 @@ from tqdm import tqdm
 from typing import Dict
 import numpy as np
 from collections import OrderedDict
-# from datasets.morphomnist.dataset import MorphoMNISTLike
-from models.utils import flatten_list, continuous_feature_map, init_weights, init_bias
+from models.utils import flatten_list, continuous_feature_map
 from models.gans import CondGAN
+from evaluation.embeddings.classifier_embeddings import ClassifierEmbeddings
 
 
 class Encoder(nn.Module):
@@ -37,7 +37,7 @@ class Encoder(nn.Module):
         # conv layers
         self.layers = nn.Sequential(
             OrderedDict(flatten_list([
-                [('enc' + str(i + 1), nn.Conv2d(in_channels=n_chan[i], out_channels=n_chan[i + 1],
+                [('enc' + str(i + 1), nn.Conv2d(in_channels=n_chan[i], out_channels=n_chan[i+1],
                                                 kernel_size=kernel_size[i], stride=stride[i], padding=padding[i])),
                  ('enc' + str(i + 1) + 'leaky_relu', activation_fn)] for i in range(len(n_chan) - 1)
             ]))
@@ -49,7 +49,7 @@ class Encoder(nn.Module):
 
     # 0 thickness
     # 1 intensity
-    # 2 - 11 digit
+    # 2 - 12 digit
     def forward(self, x: torch.Tensor, cond):
         # cond[:,0:10] this is digit
         # cond[:, 10:12] this is intensity and flow
@@ -81,16 +81,15 @@ class Decoder(nn.Module):
         activation_fn = nn.LeakyReLU(0.2)
         self.layers = nn.Sequential(
             OrderedDict(flatten_list([
-                [('gen' + str(i + 1), nn.ConvTranspose2d(in_channels=n_chan[i], out_channels=n_chan[i + 1],
+                [('gen' + str(i + 1), nn.ConvTranspose2d(in_channels=n_chan[i], out_channels=n_chan[i+1],
                                                          kernel_size=kernel_size[i], stride=stride[i],
                                                          padding=padding[i])),
                  ('gen' + str(i + 1) + 'leaky_relu', activation_fn)] for i in range(len(n_chan) - 1)
             ]))
         )
         lastconv = nn.ConvTranspose2d(in_channels=64, out_channels=1, kernel_size=kernel_size[-1], stride=stride[-1])
-        tahn = nn.Tanh()
         self.layers.append(lastconv)
-        self.layers.append(tahn)
+        self.layers.append(nn.Tanh())
 
     def forward(self, u, cond):
         size = self.n_chan[0] - self.latent_dim - self.num_continuous
@@ -179,8 +178,6 @@ class Discriminator(nn.Module):
         return self.dxz(torch.concat([dx, dz], dim=1)).reshape((-1, 1))
 
 
-# enc chans [2, 64, 128, 256, 512]
-# dec chans [ 256, 512, 256, 128, 64]
 class MmnistCondGAN(CondGAN):
     def __init__(self, params, attr_size, name="image_gan"):
         # dimensionality of the conditional data
@@ -200,3 +197,5 @@ class MmnistCondGAN(CondGAN):
         discriminator = Discriminator(num_continuous)
 
         super().__init__(encoder, decoder, discriminator, latent_dim, d_updates_per_g_update, gradient_clip_val,finetune, lr, name)
+
+        self.embeddings = ClassifierEmbeddings('/home/v1tmelis/counterfactual-benchmark/counterfactual_benchmark/methods/deepscm/configs/morphomnist_classifier_config.json')
