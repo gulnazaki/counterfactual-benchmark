@@ -196,7 +196,7 @@ def parse_arguments():
                         default=["composition", "effectiveness", "fid", "minimality"])
     parser.add_argument("--cycles", '-cc', nargs="+", type=int, help="Composition cycles.", default=[1, 10])
     parser.add_argument("--qualitative", '-qn', type=int, help="Number of qualitative results to produce", default=20)
-    parser.add_argument("--pretrained-vgg", action='store_true', help="Whether to use pretrained vgg for feature extraction")
+    # parser.add_argument("--pretrained-vgg", action='store_true', help="Whether to use pretrained vgg for feature extraction")
     parser.add_argument("--embeddings", type=str, choices=["vgg", "clfs", "lpips"], help="What embeddings to use for composition metric. "
                         "Supported: [vgg, clfs, lpips]. If not set, will compute distance on image space")
     parser.add_argument("--sampling-temperature", '-temp', type=float, default=0.1, help="Sampling temperature, used for VAE, HVAE.")
@@ -251,7 +251,7 @@ if __name__ == "__main__":
         produce_qualitative_samples(dataset=test_set, scm=scm, parents=list(attribute_size.keys()),
                                     intervention_source=train_set, unnormalize_fn=unnormalize_fn, num=args.qualitative)
 
-    embedding_model = get_embedding_model(args.embeddings, args.pretrained_vgg, args.classifier_config)
+    embedding_model = get_embedding_model(args.embeddings, pretrained_vgg=True, classifier_config=args.classifier_config)
     embedding_fn = get_embedding_fn(args.embeddings, unnormalize_fn, embedding_model)
 
     if "composition" in args.metrics:
@@ -287,4 +287,4 @@ if __name__ == "__main__":
 
     if "minimality" in args.metrics:
         evaluate_minimality(real_set=train_set, test_set=test_set, batch_size=batch_size, scm=scm, attributes=list(attribute_size.keys()),
-                            embedding=args.embeddings, embedding_fn=embedding_fn))
+                            embedding=args.embeddings, embedding_fn=embedding_fn)

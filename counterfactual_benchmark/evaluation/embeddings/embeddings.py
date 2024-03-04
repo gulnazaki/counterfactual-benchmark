@@ -1,5 +1,5 @@
-from vgg import vgg, vgg_normalize
-from classifier_embeddings import ClassifierEmbeddings
+from .vgg import vgg, vgg_normalize
+from .classifier_embeddings import ClassifierEmbeddings
 from torchmetrics.image.lpip import LearnedPerceptualImagePatchSimilarity as LPIPS
 import sys
 sys.path.append("../../")
