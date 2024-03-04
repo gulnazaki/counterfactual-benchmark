@@ -11,7 +11,6 @@ import os
 import numpy as np
 import argparse
 import random
-from torchmetrics.image.lpip import LearnedPerceptualImagePatchSimilarity as LPIPS
 
 import sys
 sys.path.append("../../")
@@ -23,11 +22,9 @@ from datasets.celeba.dataset import Celeba
 from datasets.transforms import ReturnDictTransform
 
 from evaluation.metrics.composition import composition
-from evaluation.metrics.coverage_density import vgg_features
 from evaluation.metrics.minimality import minimality
-from evaluation.embeddings.vgg import vgg
+from evaluation.embeddings.embeddings import get_embedding_model, get_embedding_fn
 from evaluation.metrics.fid import fid
-from evaluation.embeddings.classifier_embeddings import ClassifierEmbeddings
 from evaluation.metrics.effectiveness import effectiveness
 from evaluation.metrics.utils import save_selected_images, save_plots
 from datasets.morphomnist.dataset import unnormalize as unnormalize_morphomnist
@@ -61,22 +58,13 @@ def produce_qualitative_samples(dataset, scm, parents, intervention_source, unno
     return
 
 
-def evaluate_composition(test_set: Dataset, unnormalize_fn, batch_size: int, cycles: List[int], scm: nn.Module, save_dir: str = "composition_samples", embedding = None, pretrained = False):
+def evaluate_composition(test_set: Dataset, unnormalize_fn, batch_size: int, cycles: List[int], scm: nn.Module, save_dir: str = "composition_samples", embedding = None, embedding_fn = None):
     test_data_loader = torch.utils.data.DataLoader(test_set, batch_size=batch_size, shuffle=False, num_workers=7)
-
-    if embedding == "vgg":
-        embedding_model = vgg(pretrained)
-    elif embedding == "clfs":
-        embedding_model = ClassifierEmbeddings('/home/v1tmelis/counterfactual-benchmark/counterfactual_benchmark/methods/deepscm/configs/morphomnist_classifier_config.json')
-    elif embedding == "lpips":
-        embedding_model = LPIPS(net_type='vgg', normalize=True).to('cuda')
-    else:
-        embedding_model = None
 
     composition_scores = []
     images = []
     for factual_batch in tqdm(test_data_loader):
-        score_batch, image_batch = composition(factual_batch, unnormalize_fn, method=scm, cycles=cycles, embedding=embedding, embedding_model=embedding_model)
+        score_batch, image_batch = composition(factual_batch, unnormalize_fn, method=scm, cycles=cycles, embedding=embedding, embedding_fn=embedding_fn)
         composition_scores.append(score_batch)
         images.append(image_batch)
 
@@ -166,49 +154,32 @@ def evaluate_fid(real_set: Dataset, test_set: Dataset, batch_size: int, scm: nn.
     return fid_score
 
 
-def evaluate_minimality(test_set: Dataset, batch_size: int, scm: nn.Module, attributes: List[str], embedding: str = None,
-                        pretrained: bool = False, feat_path: str = None, unnormalize_fn=unnormalize_fn):
+def evaluate_minimality(real_set: Dataset, test_set: Dataset, batch_size: int, scm: nn.Module, attributes: List[str], embedding: str = None,
+                        embedding_fn = None):
+
     test_data_loader = torch.utils.data.DataLoader(test_set, batch_size=batch_size, shuffle=False)
 
-    parents = {"real": {att: [] for att in attributes},
-               "counterfactual": {att: [] for att in attributes}}
+    factuals = []
+    counterfactuals = []
     interventions = []
 
-    if embedding == "vgg":
-        embedding_model = vgg(pretrained)
-    elif embedding == "clfs":
-        embedding_model = ClassifierEmbeddings('/home/v1tmelis/counterfactual-benchmark/counterfactual_benchmark/methods/deepscm/configs/morphomnist_classifier_config.json')
-    elif embedding == "lpips":
-        embedding_model = LPIPS(net_type='vgg', normalize=True).to('cuda')
-    else:
-        embedding_model = None
-
-    factual_images = []
-    counterfactual_images = []
     for factual_batch in tqdm(test_data_loader):
         do_parent = random.choice(attributes)
         counterfactual_batch = produce_counterfactuals(factual_batch, scm, do_parent, intervention_source=real_set,
                                                         force_change=True, possible_values=test_set.possible_values, bins=real_set.bins)
-        counterfactual_images.append(counterfactual_batch['image'])
-        factual_images.append(factual_batch['image'])
 
-        for att in attributes:
-            parents["counterfactual"][att].append(counterfactual_batch[att])
-            parents["factual"][att].append(factual_batch[att])
+        factual_cond = factual_batch["intensity"] if "intensity" in factual_batch else None
+        counterfactual_cond = counterfactual_batch["intensity"] if "intensity" in counterfactual_batch else None
+
+        factual_features = embedding_fn(factual_batch["image"], factual_cond)
+        counterfactual_features = embedding_fn(counterfactual_batch["image"], counterfactual_cond)
+
+        factuals += list(zip(*(factual_features, factual_batch[do_parent])))
+        counterfactuals += list(zip(*(counterfactual_features, counterfactual_batch[do_parent])))
         interventions += [do_parent] * len(factual_batch["image"])
 
-    features = vgg_features(real_images=factual_images, generated_images=counterfactual_images,
-                            embedding=embedding, embedding_model=embedding_model, feat_path=feat_path, unnormalize_fn=unnormalize_fn)
-
-    real_parents = {att: np.concatenate(values) for att, values in parents['real'].items()}
-    counterfactual_parents = {att: np.concatenate(values) for att, values in parents['counterfactual'].items()}
-    feat_dict = {
-        'interventions':  interventions,
-        'real': (features[0], [dict(zip(real_parents,t)) for t in zip(*real_parents.values())]),
-        'counterfactual': (features[1], [dict(zip(counterfactual_parents,t)) for t in zip(*counterfactual_parents.values())])
-    }
-
-    minimality(feat_dict, real_set.bins)
+    minimality_scores = minimality(real=torch.cat(factuals), generated=torch.cat(counterfactuals), interventions=torch.cat(interventions), bins=real_set.bins)
+    print(f"Minimality score: mean {round(np.mean(minimality_scores), 3)}, std {round(np.std(minimality_scores), 3)}")
 
     return
 
@@ -226,7 +197,6 @@ def parse_arguments():
     parser.add_argument("--cycles", '-cc', nargs="+", type=int, help="Composition cycles.", default=[1, 10])
     parser.add_argument("--qualitative", '-qn', type=int, help="Number of qualitative results to produce", default=20)
     parser.add_argument("--pretrained-vgg", action='store_true', help="Whether to use pretrained vgg for feature extraction")
-    parser.add_argument("--real-features-path", type=str, default=None, help="Path to save or load features of the real set for coverage & density")
     parser.add_argument("--embeddings", type=str, choices=["vgg", "clfs", "lpips"], help="What embeddings to use for composition metric. "
                         "Supported: [vgg, clfs, lpips]. If not set, will compute distance on image space")
     parser.add_argument("--sampling-temperature", '-temp', type=float, default=0.1, help="Sampling temperature, used for VAE, HVAE.")
@@ -281,9 +251,11 @@ if __name__ == "__main__":
         produce_qualitative_samples(dataset=test_set, scm=scm, parents=list(attribute_size.keys()),
                                     intervention_source=train_set, unnormalize_fn=unnormalize_fn, num=args.qualitative)
 
+    embedding_model = get_embedding_model(args.embeddings, args.pretrained_vgg, args.classifier_config)
+    embedding_fn = get_embedding_fn(args.embeddings, unnormalize_fn, embedding_model)
 
     if "composition" in args.metrics:
-        evaluate_composition(test_set, unnormalize_fn, batch_size, cycles=args.cycles, scm=scm, embedding=args.embeddings, pretrained=args.pretrained_vgg)
+        evaluate_composition(test_set, unnormalize_fn, batch_size, cycles=args.cycles, scm=scm, embedding=args.embeddings, embedding_fn=embedding_fn)
 
 
     if "effectiveness" in args.metrics:
@@ -311,9 +283,8 @@ if __name__ == "__main__":
                             intervention_source=train_set, predictors=predictors)
 
     if "fid" in args.metrics:
-        real_set = train_set
-        feat_dict = evaluate_fid(real_set, test_set=test_set, batch_size=batch_size, scm=scm, attributes=list(attribute_size.keys()))
+        feat_dict = evaluate_fid(real_set=train_set, test_set=test_set, batch_size=batch_size, scm=scm, attributes=list(attribute_size.keys()))
 
     if "minimality" in args.metrics:
-        evaluate_minimality(test_set=test_set, batch_size=batch_size, scm=scm, attributes=list(attribute_size.keys()), embedding=args.embeddings,
-                                  pretrained=args.pretrained_vgg, feat_path=args.real_features_path, unnormalize_fn=unnormalize_fn)
+        evaluate_minimality(real_set=train_set, test_set=test_set, batch_size=batch_size, scm=scm, attributes=list(attribute_size.keys()),
+                            embedding=args.embeddings, embedding_fn=embedding_fn))
