@@ -245,7 +245,7 @@ class Decoder(nn.Module):
      #   smiling_cond = self.smilingEmbedding(parents[:, 0, :, :].long()).permute(0,3,1,2)
      #   eye_cond = self.eyeglassesEmbedding(parents[:,1,:,:].long()).permute(0,3,1,2)
      #   parents = torch.cat((smiling_cond, eye_cond), dim=1)
-        
+
         bias = {r.shape[2]: r for r in self.bias}
         h = z = bias[1].repeat(parents.shape[0], 1, 1, 1)  # initial state
         # conditioning dropout: stochastic path (p_sto), deterministic path (p_det)
@@ -443,7 +443,7 @@ class DGaussNet(nn.Module):
 
 class CelebaCondHVAE(CondHVAE):
 
-    def __init__(self, attr_size, params, cf_fine_tune=True, evaluate=True, name="image_hvae"):
+    def __init__(self, attr_size, params, cf_fine_tune=False, evaluate=True, name="image_hvae"):
 
         params["context_dim"] = sum(attr_size.values())
         self.cf_fine_tune = cf_fine_tune
@@ -452,14 +452,14 @@ class CelebaCondHVAE(CondHVAE):
         encoder = Encoder(params)
         decoder = Decoder(params)
         likelihood = DGaussNet(params)
-        
+
         if self.cf_fine_tune:
             self.name = name + "_finetuned"
-        
-        
+
+
 
         super().__init__(encoder, decoder, likelihood, params, self.cf_fine_tune, self.evaluate, self.name)
-        
+
         if not self.cf_fine_tune:
             self.apply(init_bias)
 

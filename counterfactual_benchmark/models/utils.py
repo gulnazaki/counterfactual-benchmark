@@ -73,4 +73,4 @@ def rgbify(image, normalized=True):
             image = (image + 1) / 2
         image = image.repeat(1, 3, 1, 1)
 
-    return image
+    return torch.clamp(image, min=0, max=1)

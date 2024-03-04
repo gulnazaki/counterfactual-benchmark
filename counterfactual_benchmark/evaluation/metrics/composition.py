@@ -28,11 +28,16 @@ def l1_distance(images, cond, steps, embedding, embedding_model, unnormalize_fn)
         embedding_fn = lambda x: embedding_model(vgg_normalize(rgbify(x, normalized=True), to_0_1=False)).detach().cpu().numpy()
     elif embedding == "clfs":
         embedding_fn = lambda x: embedding_model(x, cond, only_intensity=True).detach().cpu().numpy()
+    elif embedding == "lpips":
+        embedding_fn = lambda x, y: embedding_model(rgbify(x, normalized=True), rgbify(y, normalized=True)).detach().cpu().numpy()
     else:
         exit(f"Invalid embedding: {embedding}")
 
     distances = {}
     for step in steps:
-        distances[step] = np.mean(np.abs(embedding_fn(images[step]) - embedding_fn(images[0])), axis=(1,2,3) if embedding is None else 1)
+        if embedding == "lpips":
+            distances[step] = np.array([embedding_fn(images[step], images[0])])
+        else:
+            distances[step] = np.mean(np.abs(embedding_fn(images[step]) - embedding_fn(images[0])), axis=(1,2,3) if embedding is None else 1)
 
     return distances
