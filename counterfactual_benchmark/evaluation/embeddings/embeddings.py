@@ -3,6 +3,7 @@ from .classifier_embeddings import ClassifierEmbeddings
 from torchmetrics.image.lpip import LearnedPerceptualImagePatchSimilarity as LPIPS
 import numpy as np
 import sys
+import torch
 from functools import partial
 sys.path.append("../../")
 from models.utils import rgbify
@@ -21,14 +22,18 @@ def get_embedding_model(embedding, pretrained_vgg, classifier_config=None):
                 "intensity": 1,
                 "digit": 10
             }
-            return MmnistCondVAE(params, attribute_size).eval().to('cuda')
+            model = MmnistCondVAE(params, attribute_size).eval().to('cuda')
+            model.load_state_dict(torch.load('../../methods/deepscm/checkpoints/trained_scm/uncond_image_vae-epoch=269.ckpt', map_location=torch.device('cuda'))["state_dict"])
         else:
             params = {'latent_dim': 16, 'hidden_dim': 256, 'n_chan': [3, 32, 64, 128, 256, 256], 'beta': 5, 'lr': 0.0005, 'weight_decay': 0, 'fixed_logvar': "False"}
             attribute_size = {
                 "Smiling": 1,
                 "Eyeglasses": 1
             }
-            return CelebaCondVAE(params, attribute_size).eval().to('cuda')
+            model = CelebaCondVAE(params, attribute_size).eval().to('cuda')
+            model.load_state_dict(torch.load('../../methods/deepscm/checkpoints_celeba/trained_scm/uncond_image_vae-epoch=44.ckpt', map_location=torch.device('cuda'))["state_dict"])
+            return model
+        return model
     elif embedding == "lpips":
         return LPIPS(net_type='vgg', normalize=True).to('cuda')
     else:
