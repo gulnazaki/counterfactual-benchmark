@@ -39,7 +39,8 @@ if __name__ == "__main__":
     attribute_size = config["attribute_size"]
 
     for variable in config["causal_graph"].keys():
-        if variable not in config["mechanism_models"]:
+        # if variable not in config["mechanism_models"]:
+        if variable != "image":
             continue
 
         model_config = config["mechanism_models"][variable]

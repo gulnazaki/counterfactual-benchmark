@@ -27,7 +27,7 @@ class Encoder(nn.Module):
             ]))
             )
         self.fc = nn.Sequential(nn.Linear(n_chan[-1] * 4 * 4, self.hidden_dim), activation_fn)
-        self.embed = nn.Sequential(nn.Linear(self.hidden_dim + self.cond_dim, self.hidden_dim), activation_fn)
+        self.embed = nn.Sequential(nn.Linear(self.hidden_dim, self.hidden_dim), activation_fn)
         # latent encoding
         self.mu = nn.Linear(self.hidden_dim, self.latent_dim)
         self.logvar = nn.Linear(self.hidden_dim, self.latent_dim)
@@ -40,7 +40,7 @@ class Encoder(nn.Module):
         #     print(x.shape)
         x = self.conv(x).reshape(batch, -1)
         x = self.fc(x)
-        hidden = self.embed(torch.cat((x, cond), dim=-1))
+        hidden = self.embed(x)
         # get distribution components
         mu = self.mu(hidden)
         logvar = self.logvar(hidden).clamp(min=-9)
@@ -63,7 +63,7 @@ class Decoder(nn.Module):
         activation_fns = [nn.LeakyReLU(), nn.LeakyReLU(), nn.LeakyReLU(), nn.LeakyReLU(), nn.Sigmoid()]
 
         self.fc = nn.Sequential(
-            nn.Linear(self.latent_dim + self.cond_dim, self.hidden_dim),
+            nn.Linear(self.latent_dim, self.hidden_dim),
             nn.ReLU(),
             nn.Linear(self.hidden_dim, self.n_chan[0] * 4 * 4)
         )
@@ -80,7 +80,7 @@ class Decoder(nn.Module):
         )
 
     def forward(self, u, cond):
-        x = torch.cat([u, cond], dim=1)
+        x = u
         x = self.fc(x)
         x = x.view(-1, self.n_chan[0], 4, 4)
         # print(x.shape)
