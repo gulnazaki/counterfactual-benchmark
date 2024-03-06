@@ -198,4 +198,5 @@ class MmnistCondGAN(CondGAN):
 
         super().__init__(encoder, decoder, discriminator, latent_dim, d_updates_per_g_update, gradient_clip_val,finetune, lr, name)
 
-        self.embeddings = ClassifierEmbeddings('/home/v1tmelis/counterfactual-benchmark/counterfactual_benchmark/methods/deepscm/configs/morphomnist_classifier_config.json')
+        # add classifier config here
+        self.embeddings = ClassifierEmbeddings('')

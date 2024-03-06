@@ -34,10 +34,12 @@ class ClassifierEmbeddings():
             clf.eval()
             clf.to('cuda')
 
-    def __call__(self, x, cond, only_intensity=False):
+    def __call__(self, x, cond, only_intensity=False, skip_attribute=None):
         intensity = cond if only_intensity else cond[:, 1].view(-1, 1)
         embeddings = []
         for name, clf in self.predictors.items():
+            if name == skip_attribute:
+                continue
             embeddings.append(clf.forward(x, y = intensity if name == "thickness" else None))
 
         return torch.cat(embeddings, dim=1)

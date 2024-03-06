@@ -168,18 +168,27 @@ def evaluate_minimality(real_set: Dataset, test_set: Dataset, batch_size: int, s
         counterfactual_batch = produce_counterfactuals(factual_batch, scm, do_parent, intervention_source=real_set,
                                                         force_change=True, possible_values=test_set.possible_values, bins=real_set.bins)
 
-        factual_cond = factual_batch["intensity"] if "intensity" in factual_batch else None
-        counterfactual_cond = counterfactual_batch["intensity"] if "intensity" in counterfactual_batch else None
+        if embedding == "vae":
+            factual_cond = torch.cat([factual_batch[att] for att in attributes], dim=1).to('cuda')
+            counterfactual_cond = torch.cat([counterfactual_batch[att] for att in attributes], dim=1)
+        elif "intensity" in factual_batch:
+            factual_cond = factual_batch["intensity"].to('cuda')
+            counterfactual_cond = counterfactual_batch["intensity"]
+        else:
+            factual_cond = None
+            counterfactual_cond = None
 
-        factual_features = embedding_fn(factual_batch["image"], factual_cond)
+        factual_features = embedding_fn(factual_batch["image"].to('cuda'), factual_cond)
         counterfactual_features = embedding_fn(counterfactual_batch["image"], counterfactual_cond)
 
-        factuals += list(zip(*(factual_features, factual_batch[do_parent])))
-        counterfactuals += list(zip(*(counterfactual_features, counterfactual_batch[do_parent])))
+        factuals += list(zip(*(factual_features, factual_batch[do_parent].numpy())))
+        counterfactuals += list(zip(*(counterfactual_features, counterfactual_batch[do_parent].cpu().numpy())))
         interventions += [do_parent] * len(factual_batch["image"])
 
-    minimality_scores = minimality(real=torch.cat(factuals), generated=torch.cat(counterfactuals), interventions=torch.cat(interventions), bins=real_set.bins)
+    minimality_scores, prob1s, prob2s = minimality(real=factuals, generated=counterfactuals, interventions=interventions, bins=real_set.bins, embedding=embedding)
     print(f"Minimality score: mean {round(np.mean(minimality_scores), 3)}, std {round(np.std(minimality_scores), 3)}")
+
+    print(f"Prob 1: {np.mean(prob1s)}, Prob 2: {np.mean(prob2s)}")
 
     return
 
@@ -197,8 +206,8 @@ def parse_arguments():
     parser.add_argument("--cycles", '-cc', nargs="+", type=int, help="Composition cycles.", default=[1, 10])
     parser.add_argument("--qualitative", '-qn', type=int, help="Number of qualitative results to produce", default=20)
     # parser.add_argument("--pretrained-vgg", action='store_true', help="Whether to use pretrained vgg for feature extraction")
-    parser.add_argument("--embeddings", type=str, choices=["vgg", "clfs", "lpips"], help="What embeddings to use for composition metric. "
-                        "Supported: [vgg, clfs, lpips]. If not set, will compute distance on image space")
+    parser.add_argument("--embeddings", type=str, choices=["vgg", "clfs", "vae", "lpips"], help="What embeddings to use for composition metric. "
+                        "Supported: [vgg, clfs, vae, lpips]. If not set, will compute distance on image space")
     parser.add_argument("--sampling-temperature", '-temp', type=float, default=0.1, help="Sampling temperature, used for VAE, HVAE.")
     return parser.parse_args()
 

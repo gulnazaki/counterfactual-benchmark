@@ -24,6 +24,6 @@ def l1_distance(images, cond, steps, embedding, embedding_fn):
         if embedding == "lpips":
             distances[step] = np.array([embedding_fn(images[step], images[0])])
         else:
-            distances[step] = np.mean(np.abs(embedding_fn(images[step], cond) - embedding_fn(images[0]), cond), axis=(1,2,3) if embedding is None else 1)
+            distances[step] = np.mean(np.abs(embedding_fn(images[step], cond) - embedding_fn(images[0], cond)), axis=(1,2,3) if embedding is None else 1)
 
     return distances
