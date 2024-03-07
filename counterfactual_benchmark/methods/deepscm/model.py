@@ -19,7 +19,7 @@ class SCM(nn.Module):
     def __load_parameters(self):
         # load pre-trained model for first file name starting with model name
         for model in self.models.values():
-            file_name = next((file for file in os.listdir(self.checkpoint_dir) if file.startswith(model.name)), None)
+            file_name = next((file for file in os.listdir(self.checkpoint_dir) if file.startswith(model.name + '-epoch')), None)
             print(file_name)
             device = "cuda" #if file_name.startswith("hvae") else "cpu" #evaluate hvae on gpu
            # print(device)

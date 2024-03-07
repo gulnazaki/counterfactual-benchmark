@@ -17,7 +17,7 @@
                 "n_chan" : [3, 32, 64, 128, 256, 256],
                 "latent_dim" : 16,
                 "hidden_dim": 256,
-                "beta" : 1,
+                "beta" : 5,
                 "lr" : 0.0005,
                 "gradient_clip_val": 350,
                 "batch_size_train" : 128,
