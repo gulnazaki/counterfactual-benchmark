@@ -36,7 +36,7 @@ def to_value(tensor, name):
 
 def save_plots(data, fig_idx, parents, unnormalize_fn, save_dir="qualitative_samples"):
     fig, axs = plt.subplots(1, len(data), figsize=(20, 5))
-    titles = ["factual" + " (" + ", ".join([f"{v} = {to_value(data[0][v], v)}" for v in data[0].keys() if v != "image"]) + ")"]
+    titles = [" " + " ".join([f"{v} = {to_value(data[0][v], v)}" + "\n" for v in data[0].keys() if v != "image"])]
 
     for idx, do_parent in enumerate(parents):
         titles.append(f"do({do_parent} = {to_value(data[idx+1][do_parent], do_parent)})")
@@ -47,7 +47,7 @@ def save_plots(data, fig_idx, parents, unnormalize_fn, save_dir="qualitative_sam
             axs[i].imshow(img.permute(1, 2, 0))
         else:
             axs[i].imshow(img[0], cmap='gray')
-        axs[i].set_title(titles[i])
+        axs[i].set_title(titles[i], fontsize= 20)
         axs[i].axis('off')
         plt.tight_layout()
 
