@@ -3,7 +3,9 @@ from pytorch_lightning import Trainer
 from json import load
 import sys
 sys.path.append("../../")
-import sys
+import sys, os
+import argparse
+import joblib 
 
 from datasets.morphomnist.dataset import MorphoMNISTLike
 from datasets.celeba.dataset import Celeba
@@ -43,21 +45,29 @@ dataclass_mapping = {
     "celeba": Celeba
 }
 
-import joblib 
+
+def parse_arguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--classifier-config", '-clf', type=str, help="Classifier config file."
+                        , default="./configs/celeba_classifier_config.json")
+
+    return parser.parse_args()
+
 if __name__ == "__main__":
     torch.manual_seed(42)
-    config_file = "configs/celeba_vae_config.json"
-    config_file_cls = "configs/celeba_classifier_config.json"
 
-    with open(config_file, 'r') as f:
-        config = load(f)
+    args = parse_arguments()
+   # torch.manual_seed(42)
 
-    with open(config_file_cls, 'r') as f1:
-        config_cls = load(f1)
+    assert os.path.isfile(args.classifier_config), f"{args.classifier_config} is not a file"
 
-    dataset = config["dataset"]
+    with open(args.classifier_config, 'r') as f:
+        config_cls = load(f)
+
+
+    dataset = config_cls["dataset"]
    # attributes = config["causal_graph"]["image"]
-    attribute_size = config["attribute_size"]
+    attribute_size = config_cls["attribute_size"]
 
     if dataset == "celeba": #celeba
         tr_transforms = Compose([RandomHorizontalFlip()])
@@ -118,7 +128,7 @@ if __name__ == "__main__":
             train_classifier(classifier, attribute, data_tr, data_val, config_cls, default_root_dir=config_cls["ckpt_path"], weights=weights)
 
     else:#morphomnist
-        data = dataclass_mapping[dataset](attribute_size=attribute_size, normalize_=True, train=True)
+        data = dataclass_mapping[dataset](attribute_size=attribute_size, split="train", normalize_=True)
 
         train_set, val_set = torch.utils.data.random_split(data, [config_cls["train_val_split"],
                                                               1-config_cls["train_val_split"]])
