@@ -53,7 +53,7 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
         self.lmbda = nn.Parameter(0.0 * torch.ones(1))
         self.elbo_constraint = 2.320
         self.register_buffer("eps", self.elbo_constraint * torch.ones(1))
-       # self.register_buffer("log2", torch.tensor(2.0).log())
+    #    self.register_buffer("log2", torch.tensor(2.0).log())
        
 
         if self.cf_fine_tune:
@@ -61,8 +61,8 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
                 self.load_hvae_checkpoint_for_finetuning()
 
             device = "cuda"
-            smiling_cls = CelebaClassifier(attr="Smiling", width=64).eval()
-            eye_cls = CelebaClassifier(attr="Eyeglasses", width=64).eval()
+            smiling_cls = CelebaClassifier(attr="Smiling").eval()
+            eye_cls = CelebaClassifier(attr="Eyeglasses").eval()
 
             for model in [smiling_cls, eye_cls]:
                 for param in model.parameters():
@@ -71,7 +71,7 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
             smiling_cls.load_state_dict(torch.load("../../methods/deepscm/checkpoints_celeba/trained_classifiers/Smiling_classifier-epoch=23.ckpt",
                                      map_location=torch.device("cuda"))["state_dict"])
             
-            eye_cls.load_state_dict(torch.load("../../methods/deepscm/checkpoints_celeba/trained_classifiers/Eyeglasses_classifier-epoch=17.ckpt",
+            eye_cls.load_state_dict(torch.load("../../methods/deepscm/checkpoints_celeba/trained_classifiers/Eyeglasses_classifier-epoch=10.ckpt",
                                   map_location=torch.device("cuda"))["state_dict"])
             
             self.smiling_cls = smiling_cls.to(device)
@@ -384,7 +384,7 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
 
     def decode(self, u, cond):
         z , e , f_pa, obs = u
-        t_u = 0.5  ##temp parameter
+        t_u = 0.4  ##temp parameter
       #  f_pa = self.expand_parents(f_pa)
      #   print(cond.shape)
         cf_pa =  self.expand_parents(cond)

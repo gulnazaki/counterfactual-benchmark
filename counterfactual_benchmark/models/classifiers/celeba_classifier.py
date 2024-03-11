@@ -9,7 +9,7 @@ sys.path.append("../../")
 from datasets.celeba.dataset import Celeba
 
 class CelebaClassifier(pl.LightningModule):
-    def __init__(self, attr, in_shape = (3, 64, 64), width=64, num_outputs = 1, lr=1e-3):
+    def __init__(self, attr, in_shape = (3, 64, 64), num_outputs = 1, lr=1e-3):
         super().__init__()
         self.variable = attr
 
@@ -24,7 +24,8 @@ class CelebaClassifier(pl.LightningModule):
         in_channels = in_shape[0]
        # res = in_shape[1]
         #s = 2 if res > 64 else 1
-        activation = nn.LeakyReLU()
+       # activation = nn.LeakyReLU()
+        self.num_outputs = num_outputs
 
         self.cnn = nn.Sequential(
                         nn.Conv2d(3, 16, 3, 1, 1),
@@ -52,62 +53,9 @@ class CelebaClassifier(pl.LightningModule):
                     nn.Linear(128, 128),
                     nn.BatchNorm1d(128),
                     nn.ReLU(),
-                    nn.Linear(128, 1)
+                    nn.Linear(128, self.num_outputs)
                 )
-        
-#self.fc = nn.Sequential(
-#nn.Linear(128, 128),
-#nn.BatchNorm1d(128),
-#nn.ReLU(),
-#nn.Linear(128, 1)
-#)
 
-        ''' self.cnn = nn.Sequential(
-            nn.Conv2d(in_channels, width, kernel_size=2, stride=1, padding=1, bias=False),
-            nn.BatchNorm2d(width),
-            nn.Dropout(0.2),
-            activation,
-
-            #  (nn.MaxPool2d(2, 2) if res > 32 else nn.Identity()),
-            nn.Conv2d(width, 2 * width, kernel_size=7, stride=2, padding=1, bias=False),
-            nn.BatchNorm2d(2 * width),
-            nn.Dropout(0.2),
-            activation,
-
-            nn.Conv2d(2 * width, 4 * width, kernel_size=5, stride=2, padding=1, bias=False),
-            nn.BatchNorm2d(4 * width),
-            nn.Dropout(0.2),
-            activation,
-
-            nn.Conv2d(4 * width, 4 * width, kernel_size=7, stride=2, padding=1, bias=False),
-            nn.BatchNorm2d(4 * width),
-            nn.Dropout(0.2),
-            activation,
-
-            nn.Conv2d(4 * width, 8 * width, kernel_size=4, stride=1, padding=1, bias=False),
-            nn.BatchNorm2d(8 * width),
-            nn.Dropout(0.5),
-            activation,
-
-            nn.Conv2d(8 * width, 8 * width, kernel_size=1, stride=1, padding=1, bias=False),
-            nn.BatchNorm2d(8 * width),
-            nn.Dropout(0.5),
-            nn.Identity()   #activation,
-        )
-
-        self.fc = nn.Sequential(
-            nn.Linear(8 * width, 2 * width, bias=False),
-            nn.Dropout(0.5),
-            nn.ReLU(),
-
-            nn.Linear(2 * width, 2 * width, bias=False),
-            nn.Dropout(0.5),
-            nn.ReLU(),
-
-            nn.Linear(2 * width, num_outputs),
-            nn.Dropout(0.5)
-        )
-'''
     def forward(self, x, y=None):
         x = self.cnn(x)
         x = x.mean(dim=(-2, -1))  # avg pooling
@@ -137,12 +85,18 @@ class CelebaClassifier(pl.LightningModule):
         loss = nn.BCEWithLogitsLoss()(y_hat, y.type(torch.float32).view(-1, 1)) #applies sigmoid      
        # val_acc =   self.accuracy(y_hat, y.type(torch.long).view(-1,1))
         val_f1 = self.f1_score(y_hat, y.type(torch.long).view(-1,1))
+        metrics = {'val_loss': loss, 'val_f1': val_f1}
+        self.log_dict(metrics, prog_bar=True, logger=True, on_epoch=True)
+        #self.log('val_loss', loss, on_step=False, on_epoch=True)
+        #self.log('val_f1', val_f1, on_step=False, on_epoch=True)
+        
+        #return {'val_loss': loss, 'val_f1': val_f1}
 
       #  self.log('val_F1', val_f1, on_step=False , on_epoch=True, prog_bar=True)
-        self.log("val_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
-        self.log('val_F1', val_f1, on_step=False , on_epoch=True, prog_bar=True)
+      #  self.log("val_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
+      #  self.log('val_F1', val_F1, on_step=False , on_epoch=True, prog_bar=True)
 
-        return loss
+     #   return  val_F1
 
 
     def configure_optimizers(self):
