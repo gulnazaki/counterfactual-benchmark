@@ -10,7 +10,7 @@ from datasets.celeba.dataset import Celeba
 from models.classifiers.classifier import Classifier
 from models.classifiers.celeba_classifier import CelebaClassifier
 from models.utils import generate_checkpoint_callback, generate_early_stopping_callback, generate_ema_callback
-from torchvision.transforms import Compose, AutoAugment, RandomHorizontalFlip, ConvertImageDtype
+from torchvision.transforms import Compose, AutoAugment, RandomHorizontalFlip
 
 
 def train_classifier(classifier, attr, train_set, val_set, config, default_root_dir, weights = None):
@@ -64,43 +64,43 @@ if __name__ == "__main__":
         data_tr = dataclass_mapping[dataset](attribute_size=attribute_size, 
                                              split="train", transform_cls=tr_transforms)
 
-        from tqdm import tqdm
-        weights_smile = []
-        weights_eyes = []
-        for i in tqdm(range(len(data_tr))):
-            x , attr = data_tr[i]
-            if attr[0] == 1: #has smile
-                weights_smile.append(1/1000)
+ #       from tqdm import tqdm
+ #       weights_smile = []
+ #       weights_eyes = []
+ #       for i in tqdm(range(len(data_tr))):
+ #           x , attr = data_tr[i]
+ #           if attr[0] == 1: #has smile
+ #               weights_smile.append(1/1000)
                # pass
 
-            if attr[0] == 0:
-                weights_smile.append(1/10000)
+#            if attr[0] == 0:
+#                weights_smile.append(1/10000)
                 #pass
 
-            if attr[1] == 1:
-                  weights_eyes.append(1/1000)#has glasses
+#            if attr[1] == 1:
+#                  weights_eyes.append(1/1000)#has glasses
                 #pass
             
-            if attr[1] == 0:
-                weights_eyes.append(1/10000)  #does not have glasses
-                pass
+#            if attr[1] == 0:
+#                weights_eyes.append(1/10000)  #does not have glasses
+#                pass
 
-        print(len(weights_eyes), len(weights_smile))
+#       print(len(weights_eyes), len(weights_smile))
         
-      #  weights_s = joblib.load("weights_smiling.pkl")
-      #  weights_e = joblib.load("weights_eyes.pkl") #[1/4246, 1/158524]
-      #  weights_s = torch.tensor(weights_s).double()
-      #  weights_e = torch.tensor(weights_e).double()
-        weights_s = torch.tensor(weights_smile).double()
-        weights_e = torch.tensor(weights_eyes).double()
+        weights_s = joblib.load("weights_smiling.pkl") #load weights for sampler
+        weights_e = joblib.load("weights_eyes.pkl") 
+        weights_s = torch.tensor(weights_s).double()
+        weights_e = torch.tensor(weights_e).double()
+    #    weights_s = torch.tensor(weights_smile).double()
+    #    weights_e = torch.tensor(weights_eyes).double()
 
-        sampler = torch.utils.data.sampler.WeightedRandomSampler(weights_e, len(data_tr), replacement = True)
-        train_data_loader = torch.utils.data.DataLoader(data_tr, sampler=sampler, batch_size=128)
+    #    sampler = torch.utils.data.sampler.WeightedRandomSampler(weights_e, len(data_tr), replacement = True)
+    #    train_data_loader = torch.utils.data.DataLoader(data_tr, sampler=sampler, batch_size=128)
       #  iterator = iter(train_data_loader)
       #  batch = next(iterator)
-        for batch in train_data_loader:
-            x , attrs = batch
-            print(attrs[:,1].sum()/128)
+    #    for batch in train_data_loader:
+    #        x , attrs = batch
+    #        print(attrs[:,1].sum()/128)
 
         data_val = dataclass_mapping[dataset](attribute_size=attribute_size, split="valid")
 
