@@ -70,7 +70,10 @@
                 "patience" : 100,
                 "max_epochs" : 1000,
                 "train_val_split" : 0.8,
-                "ema": "True"
+                "ema": "True",
+                "load_pretrained_ckpt": "False",
+                "cf_fine_tune": "False",
+                "evaluate": "False"            
             }
         }
     },

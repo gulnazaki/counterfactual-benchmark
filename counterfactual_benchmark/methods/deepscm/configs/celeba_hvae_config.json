@@ -41,6 +41,9 @@
                 "max_epochs" : 1000,
                 "train_val_split" : 0.8,
                 "ema": "False",
+                "load_pretrained_ckpt": "False",
+                "cf_fine_tune": "True",
+                "evaluate": "False",
                 "checkpoint_file": "./checkpoints_celeba/trained_scm/image_hvae-epoch=34.ckpt"
             }
         }
