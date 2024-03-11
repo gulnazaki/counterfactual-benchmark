@@ -43,7 +43,7 @@
                 "ema": "False",
                 "load_pretrained_ckpt": "False",
                 "cf_fine_tune": "True",
-                "evaluate": "False",
+                "evaluate_cf_model": "False",
                 "checkpoint_file": "./checkpoints_celeba/trained_scm/image_hvae-epoch=34.ckpt"
             }
         }

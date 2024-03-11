@@ -73,7 +73,7 @@
                 "ema": "True",
                 "load_pretrained_ckpt": "False",
                 "cf_fine_tune": "False",
-                "evaluate": "False"            
+                "evaluate_cf_model": "False"            
             }
         }
     },

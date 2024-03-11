@@ -442,7 +442,7 @@ class MmnistCondHVAE(CondHVAE):
 
         params["context_dim"] = sum(attr_size.values())
         self.cf_fine_tune = json.loads(params["cf_fine_tune"].lower())  
-        self.evaluate = json.loads(params["evaluate"].lower())
+        self.evaluate = json.loads(params["evaluate_cf_model"].lower())
         self.load_ckpt = json.loads(params["load_pretrained_ckpt"].lower())
         self.name = name
         encoder = Encoder(params)
