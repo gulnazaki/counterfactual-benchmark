@@ -206,8 +206,8 @@ def parse_arguments():
     parser.add_argument("--cycles", '-cc', nargs="+", type=int, help="Composition cycles.", default=[1, 10])
     parser.add_argument("--qualitative", '-qn', type=int, help="Number of qualitative results to produce", default=20)
     # parser.add_argument("--pretrained-vgg", action='store_true', help="Whether to use pretrained vgg for feature extraction")
-    parser.add_argument("--embeddings", type=str, choices=["vgg", "clfs", "vae", "lpips"], help="What embeddings to use for composition metric. "
-                        "Supported: [vgg, clfs, vae, lpips]. If not set, will compute distance on image space")
+    parser.add_argument("--embeddings", type=str, choices=["vgg", "clfs", "vae", "lpips", "clip"], help="What embeddings to use for composition metric. "
+                        "Supported: [vgg, clfs, vae, lpips, clip]. If not set, will compute distance on image space")
     parser.add_argument("--sampling-temperature", '-temp', type=float, default=0.1, help="Sampling temperature, used for VAE, HVAE.")
     return parser.parse_args()
 

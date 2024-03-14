@@ -8,6 +8,10 @@ from functools import partial
 sys.path.append("../../")
 from models.utils import rgbify
 from models.vaes import MmnistCondVAE, CelebaCondVAE
+from torchvision.transforms import InterpolationMode
+BICUBIC = InterpolationMode.BICUBIC
+from torchvision.transforms import Compose, Resize, CenterCrop, ToTensor, Normalize
+import clip
 
 def get_embedding_model(embedding, pretrained_vgg, classifier_config=None):
     if embedding == "vgg":
@@ -22,7 +26,7 @@ def get_embedding_model(embedding, pretrained_vgg, classifier_config=None):
                 "intensity": 1,
                 "digit": 10
             }
-            model = MmnistCondVAE(params, attribute_size).eval().to('cuda')
+            model = MmnistCondVAE(params, attribute_size, unconditional=True).eval().to('cuda')
             model.load_state_dict(torch.load('../../methods/deepscm/checkpoints/trained_scm/uncond_image_vae-epoch=269.ckpt', map_location=torch.device('cuda'))["state_dict"])
         else:
             params = {'latent_dim': 16, 'hidden_dim': 256, 'n_chan': [3, 32, 64, 128, 256, 256], 'beta': 5, 'lr': 0.0005, 'weight_decay': 0, 'fixed_logvar': "False"}
@@ -30,12 +34,21 @@ def get_embedding_model(embedding, pretrained_vgg, classifier_config=None):
                 "Smiling": 1,
                 "Eyeglasses": 1
             }
-            model = CelebaCondVAE(params, attribute_size).eval().to('cuda')
+            model = CelebaCondVAE(params, attribute_size, unconditional=True).eval().to('cuda')
             model.load_state_dict(torch.load('../../methods/deepscm/checkpoints_celeba/trained_scm/uncond_image_vae-epoch=44.ckpt', map_location=torch.device('cuda'))["state_dict"])
             return model
         return model
     elif embedding == "lpips":
         return LPIPS(net_type='vgg', normalize=True).to('cuda')
+    elif embedding == "clip":
+        model = clip.load("ViT-B/32", device='cuda')[0]
+        def _transform(n_px):
+            return Compose([
+                Resize(n_px, interpolation=BICUBIC),
+                CenterCrop(n_px),
+                Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711)),
+            ])
+        return model, _transform(model.visual.input_resolution)
     else:
         return None
 
@@ -50,6 +63,8 @@ def get_embedding_fn(embedding, unnormalize_fn, embedding_model):
         return partial(vae_embedding_fn, embedding_model)
     elif embedding == "lpips":
         return partial(lpips_embedding_fn, embedding_model)
+    elif embedding == "clip":
+        return partial(clip_embedding_fn,  embedding_model)
     else:
         exit(f"Invalid embedding: {embedding}")
 
@@ -68,3 +83,10 @@ def vae_embedding_fn(embedding_model, x, cond):
 
 def lpips_embedding_fn(embedding_model, x, y):
     return embedding_model(rgbify(x, normalized=True), rgbify(y, normalized=True)).detach().cpu().numpy()
+
+def clip_embedding_fn(embedding_model, x, _):
+    model, preprocess = embedding_model
+    image = preprocess(rgbify(x, normalized=False))
+    with torch.no_grad():
+        image_features = model.encode_image(image)
+        return image_features.detach().cpu().numpy()
