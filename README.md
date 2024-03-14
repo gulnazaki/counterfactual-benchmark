@@ -48,6 +48,12 @@ python evaluate.py -c configs/morphomnist_vae_config.json -clf configs/morphomni
 ```
 A description of all possible arguments for the evaluation script can be obtained with `python evaluate.py -h`.
 
+**To fine-tune HVAE with the counterfactual loss described in the paper, the config should change to:**
+```
+"cf_fine_tune": True,
+"checkpoint_path": "<insert_checkpoint_path>",
+```
+
 **To fine-tune GAN with the cyclic cost minimisation described in the paper, the config should change to:**
 ```
 "finetune": 1,
