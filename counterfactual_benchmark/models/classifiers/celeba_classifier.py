@@ -15,13 +15,13 @@ class CelebaClassifier(pl.LightningModule):
 
         self.accuracy = BinaryAccuracy()
         self.f1_score = BinaryF1Score()
-        
+
 
         self.lr = lr
         self.variables = {"Smiling":0, "Eyeglasses":1}
         self.attr = self.variables[attr] #select attribute
         in_channels = in_shape[0]
-       
+
         self.num_outputs = num_outputs
 
         '''cnn layer implementation taken from https://openreview.net/forum?id=lZOUQQvwI3q'''
@@ -46,7 +46,7 @@ class CelebaClassifier(pl.LightningModule):
                         nn.ReLU(),
                         nn.AdaptiveAvgPool2d(1),
                     )
-        
+
         self.fc = nn.Sequential(
                     nn.Linear(128, 128),
                     nn.BatchNorm1d(128),
@@ -63,7 +63,7 @@ class CelebaClassifier(pl.LightningModule):
 
     def training_step(self, batch):
         x, attrs_ = batch
-        
+
         y = attrs_[:, self.attr] #select attribute to train
 
         y_hat = self(x)
@@ -71,20 +71,20 @@ class CelebaClassifier(pl.LightningModule):
 
         self.log("train_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
         return loss
-    
+
 
     def validation_step(self, batch):
         x, attrs_ = batch
-        
-        y = attrs_[:, self.attr] 
+
+        y = attrs_[:, self.attr]
 
         y_hat = self(x)
 
-        loss = nn.BCEWithLogitsLoss()(y_hat, y.type(torch.float32).view(-1, 1)) #applies sigmoid      
+        loss = nn.BCEWithLogitsLoss()(y_hat, y.type(torch.float32).view(-1, 1)) #applies sigmoid
         val_f1 = self.f1_score(y_hat, y.type(torch.long).view(-1,1))
         metrics = {'val_loss': loss, 'val_f1': val_f1}
         self.log_dict(metrics, prog_bar=True, logger=True, on_epoch=True)
-       
+
 
 
     def configure_optimizers(self):
@@ -101,8 +101,7 @@ if __name__ == "__main__":
     }
 
     train_set = Celeba(attribute_size, split="train")
-  #  print(train_set[0])
-  #  print(train_set[0][0].shape)
+
     tr_data_loader = torch.utils.data.DataLoader(train_set, batch_size=2, shuffle=False)
     iterator = iter(tr_data_loader)
     batch = next(iterator)
@@ -110,12 +109,12 @@ if __name__ == "__main__":
     print(attrs, attrs.argmax(-1))
     print(x.shape)
     print(attrs[: , 0].shape, attrs[:, 0].view(-1, 1).shape)
-  #  print(attrs.shape, attrs[:,0], attrs[:, 1])
+
     cls_smiling = CelebaClassifier(attr="Smiling", width=64).eval()
     cls_eyeglasses = CelebaClassifier(attr="Eyeglasses", width=64).eval()
     out1= cls_smiling(x)
     out2 = cls_eyeglasses(x)
-  #  out3 = cls_digit(x)
+
     print("this is out1" , out1.shape)
     print("this is out2:", out2.shape)
     print(attrs[:,0].view(-1,1).shape)

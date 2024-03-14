@@ -15,6 +15,7 @@ sys.path.append("../../")
 
 class CondGAN(pl.LightningModule):
     def __init__(self, encoder, decoder, discriminator, latent_dim, d_updates_per_g_update, gradient_clip_val, finetune, lr=1e-4, name="image_gan"):
+        super().__init__()
         self.latent_dim = latent_dim
         self.name = name
         self.encoder = encoder
