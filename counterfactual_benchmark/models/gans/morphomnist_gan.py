@@ -198,5 +198,5 @@ class MmnistCondGAN(CondGAN):
 
         super().__init__(encoder, decoder, discriminator, latent_dim, d_updates_per_g_update, gradient_clip_val,finetune, lr, name)
 
-        # add classifier config here
-        self.embeddings = ClassifierEmbeddings('')
+        clf_config_file = "../../methods/deepscm/configs/morphomnist_classifier_config.json"
+        self.embeddings = ClassifierEmbeddings(clf_config_file)

@@ -33,5 +33,5 @@
     },
 
     "dataset": "celeba",
-    "checkpoint_dir": "./checkpoints_celeba/trained_scm_gan"
+    "checkpoint_dir": "./checkpoints_celeba/trained_scm"
 }

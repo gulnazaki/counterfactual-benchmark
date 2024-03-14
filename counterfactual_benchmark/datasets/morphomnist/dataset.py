@@ -1,6 +1,3 @@
-"""A lot here was simply copied over from
-   https://github.com/biomedia-mira/deepscm/datasets/morphomnist/__init__.py, but also extended/changed."""
-
 import torch
 import os
 import pandas as pd
@@ -42,37 +39,7 @@ def load_morphomnist_like(root_dir, train= True, columns=None):
     metrics = pd.read_csv(metrics_path, usecols=usecols, index_col='index')
     return images, labels, metrics
 
-def normalize(data, load=False, save=True, path='./data/norm_params.pt'):
-    # # Normalize images
-    # if load:
-    #     norm_params = torch.load(path)
-    #     img_mean = norm_params['img_mean']
-    #     img_std = norm_params['img_std']
-    #     thickn_mean = norm_params['thickn_mean']
-    #     thickn_std = norm_params['thickn_std']
-    #     intens_mean = norm_params['intens_mean']
-    #     intens_std = norm_params['intens_std']
-    # else:
-    #     img_mean = torch.mean(data.images)
-    #     img_std = torch.std(data.images)
-    #     # thickness
-    #     thickn_mean = torch.mean(data.metrics['thickness'])
-    #     thickn_std = torch.std(data.metrics['thickness'])
-    #     # intensity
-    #     intens_mean = torch.mean(data.metrics['intensity'])
-    #     intens_std = torch.std(data.metrics['intensity'])
-    #     if save:
-    #         norm_params = {'img_mean': img_mean, 'img_std': img_std, 'thickn_mean': thickn_mean,
-    #                        'thickn_std': thickn_std, 'intens_mean': intens_mean, 'intens_std': intens_std}
-    #         torch.save(norm_params, path)
-
-    # normalize = transforms.Normalize(mean=img_mean, std=img_std)
-    # normalized_images = transforms.Compose([normalize])(data.images)
-
-    # normalized_thickn = (data.metrics['thickness'] - thickn_mean)/thickn_std
-    # normalized_intens = (data.metrics['intensity'] - intens_mean)/intens_std
-
-    # return normalized_images, normalized_intens, normalized_thickn
+def normalize(data):
     normalized = {}
     for k, v in MIN_MAX.items():
         value = data.images if k == "image" else data.metrics[k]
@@ -102,7 +69,7 @@ class MorphoMNISTLike(Dataset):
         columns = [att for att in attribute_size.keys() if att != 'digit']
 
         images, labels, metrics_df = load_morphomnist_like(data_dir, self.train, columns)
-        # .copy() removes annoying warning
+
         self.images = self.pad(torch.as_tensor(images.copy(), dtype=torch.float32))
         self.labels = F.one_hot(torch.as_tensor(labels.copy(), dtype=torch.long), num_classes=10)
 
@@ -112,7 +79,7 @@ class MorphoMNISTLike(Dataset):
         self.columns = columns
         assert len(self.images) == len(self.labels) and len(self.images) == len(metrics_df)
         if normalize_:
-            self.images, self.metrics['intensity'], self.metrics['thickness'] = normalize(self, path=os.path.join(data_dir, 'norm_params.pt'))
+            self.images, self.metrics['intensity'], self.metrics['thickness'] = normalize(self)
 
         if "digit" in attribute_size.keys():
             self.metrics["digit"] = self.labels

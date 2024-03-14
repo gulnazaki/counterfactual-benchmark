@@ -12,22 +12,14 @@ def load_data(data_dir, split):
     data = CelebA(root=data_dir, split=split, transform=transforms, download=False)
     return data
 
-# def normalize(value, name):
-#     # already in [0,1]
-#     # [0,1] -> [-1,1]
-#     value = 2 * value - 1
-#     return value
-
 def unnormalize(value, name):
-    # [-1,1] -> [0,1]
-    # value = (value + 1) / 2
     # [0,1] -> [min,max]
     value = (value * (MIN_MAX[name][1] - MIN_MAX[name][0])) +  MIN_MAX[name][0]
     return value.to(torch.uint8)
 
 class Celeba(Dataset):
-    def __init__(self, attribute_size, split='train', normalize_=True, 
-                 transform=None, transform_cls=None, data_dir='/storage/th.melistas/'):
+    def __init__(self, attribute_size, split='train', normalize_=True,
+                 transform=None, transform_cls=None, data_dir='./data/'):
         super().__init__()
         self.has_valid_set = True
         self.transform = transform
@@ -48,7 +40,7 @@ class Celeba(Dataset):
     def __getitem__(self, idx):
         if self.transform:
             return self.transform(self.data[idx][0], self.attrs[idx])
-        
+
         if self.transform_cls:
             return self.transform_cls(self.data[idx][0]), self.attrs[idx]
 
