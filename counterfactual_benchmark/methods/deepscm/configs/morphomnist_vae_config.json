@@ -50,7 +50,7 @@
                 "beta" : 1,
                 "lr" : 1e-3,
                 "gradient_clip_val": 350,
-                "batch_size_train" : 512,
+                "batch_size_train" : 128,
                 "batch_size_val" : 512,
                 "patience" : 10,
                 "max_epochs" : 1000,

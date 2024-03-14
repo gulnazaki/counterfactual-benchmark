@@ -44,6 +44,7 @@ Inside `methods/deepscm` the following can be used to train and evaluate any sup
 We give an example for training a VAE on MorphoMNIST. All experiments can be reproduced and extended with the configuration files inside `methods/deepscm/configs/`
 ```
 python train.py -c configs/morphomnist_vae_config.json
+python train_classifier.py -clf configs/morphomnist_classifier_config.json # this is optional as we provide classifier checkpoints
 python evaluate.py -c configs/morphomnist_vae_config.json -clf configs/morphomnist_classifier_config.json
 ```
 A description of all possible arguments for the evaluation script can be obtained with `python evaluate.py -h`
@@ -58,7 +59,9 @@ A description of all possible arguments for the evaluation script can be obtaine
 
 **To fine-tune HVAE with the counterfactual loss described in the paper, the config should change to:**
 ```
-"load_pretrained_ckpt": True
+"lr" : 1e-4,
+...
+"load_pretrained_ckpt": True,
 "cf_fine_tune": True,
 "evaluate_cf_model":False
 "checkpoint_path": "<insert_checkpoint_path>",
