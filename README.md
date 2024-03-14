@@ -41,12 +41,12 @@ pip install -r requirements.txt
 
 ## How to Run
 Inside `methods/deepscm` the following can be used to train and evaluate any supported model for a given dataset.
-We give an example for training a VAE on MorphoMNIST. All experiments can be reproduced and extended with the configuration files inside `methods/deepscm/configs/`.
+We give an example for training a VAE on MorphoMNIST. All experiments can be reproduced and extended with the configuration files inside `methods/deepscm/configs/`
 ```
 python train.py -c configs/morphomnist_vae_config.json
 python evaluate.py -c configs/morphomnist_vae_config.json -clf configs/morphomnist_classifier_config.json
 ```
-A description of all possible arguments for the evaluation script can be obtained with `python evaluate.py -h`.
+A description of all possible arguments for the evaluation script can be obtained with `python evaluate.py -h`
 
 **To fine-tune HVAE with the counterfactual loss described in the paper, the config should change to:**
 ```

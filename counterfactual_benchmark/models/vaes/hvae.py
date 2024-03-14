@@ -84,7 +84,7 @@ class CondHVAE(pl.LightningModule):
 
 
     def load_hvae_checkpoint_for_finetuning(self):
-        file_name = self.params["checkpoint_file"]
+        file_name = self.params["checkpoint_path"]
         print(file_name)
         device = "cuda"
         self.load_state_dict(torch.load(file_name, map_location=torch.device(device))["state_dict"])
