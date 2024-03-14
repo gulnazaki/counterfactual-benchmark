@@ -57,10 +57,11 @@ A description of all possible arguments for the evaluation script can be obtaine
 ```
 
 **To evaluate the fine-tuned HVAE the config should change to:**
+```
 "load_pretrained_ckpt": False
 "cf_fine_tune": True,
 "evaluate_cf_model":True
-
+```
 
 **To fine-tune GAN with the cyclic cost minimisation described in the paper, the config should change to:**
 ```
