@@ -48,6 +48,14 @@ python evaluate.py -c configs/morphomnist_vae_config.json -clf configs/morphomni
 ```
 A description of all possible arguments for the evaluation script can be obtained with `python evaluate.py -h`.
 
+
+**To pretrained HVAE with the standard ELBO loss, the config should change to:**
+```
+"load_pretrained_ckpt": False
+"cf_fine_tune": False,
+"evaluate_cf_model":False
+```
+
 **To fine-tune HVAE with the counterfactual loss described in the paper, the config should change to:**
 ```
 "load_pretrained_ckpt": True
