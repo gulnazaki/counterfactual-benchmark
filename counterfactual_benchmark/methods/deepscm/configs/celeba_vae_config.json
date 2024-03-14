@@ -21,7 +21,7 @@
                 "lr" : 0.0005,
                 "gradient_clip_val": 350,
                 "batch_size_train" : 128,
-                "batch_size_val" : 256,
+                "batch_size_val" : 128,
                 "patience" : 10,
                 "max_epochs" : 1000,
                 "weight_decay": 0,
