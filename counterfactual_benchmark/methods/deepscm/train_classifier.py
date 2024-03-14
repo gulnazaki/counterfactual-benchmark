@@ -3,19 +3,21 @@ from pytorch_lightning import Trainer
 from json import load
 import sys
 sys.path.append("../../")
-import sys
+import sys, os
+import argparse
+import joblib 
 
 from datasets.morphomnist.dataset import MorphoMNISTLike
 from datasets.celeba.dataset import Celeba
 from models.classifiers.classifier import Classifier
 from models.classifiers.celeba_classifier import CelebaClassifier
 from models.utils import generate_checkpoint_callback, generate_early_stopping_callback, generate_ema_callback
-from torchvision.transforms import Compose, AutoAugment, RandomHorizontalFlip, ConvertImageDtype
+from torchvision.transforms import Compose, AutoAugment, RandomHorizontalFlip
 
 
-def train_classifier(classifier, attr, train_set, val_set, config, default_root_dir):
+def train_classifier(classifier, attr, train_set, val_set, config, default_root_dir, weights = None):
 
-    ckp_callback = generate_checkpoint_callback(attr + "_classifier", config["ckpt_path"])
+    ckp_callback = generate_checkpoint_callback(attr + "_classifier", config["ckpt_path"], monitor="val_loss")
     callbacks = [ckp_callback]
 
     if config["ema"] == "True":
@@ -23,10 +25,17 @@ def train_classifier(classifier, attr, train_set, val_set, config, default_root_
 
     trainer = Trainer(accelerator="auto", devices="auto", strategy="auto",
                       callbacks=[ckp_callback,
-                                 generate_early_stopping_callback(patience=config["patience"])],
+                                 generate_early_stopping_callback(patience=config["patience"], monitor="val_loss")],
                       default_root_dir=default_root_dir, max_epochs=config["max_epochs"])
 
-    train_data_loader = torch.utils.data.DataLoader(train_set, batch_size=config["batch_size_train"], shuffle=True, drop_last=True)
+    if weights!=None:
+        sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(train_set), replacement=True)
+        print("USE SAMPLER!!!")
+        train_data_loader = torch.utils.data.DataLoader(train_set, sampler=sampler, batch_size=config["batch_size_train"],  drop_last=False)
+    else:
+        train_data_loader = torch.utils.data.DataLoader(train_set, batch_size=config["batch_size_train"],  shuffle=True, drop_last=False)
+
+
     val_data_loader = torch.utils.data.DataLoader(val_set, batch_size=config["batch_size_val"], shuffle=False)
     trainer.fit(classifier, train_data_loader, val_data_loader)
 
@@ -37,27 +46,72 @@ dataclass_mapping = {
 }
 
 
+def parse_arguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--classifier-config", '-clf', type=str, help="Classifier config file."
+                        , default="./configs/celeba_classifier_config.json")
+
+    return parser.parse_args()
+
 if __name__ == "__main__":
     torch.manual_seed(42)
-    config_file = "configs/celeba_vae_config.json"
-    config_file_cls = "configs/celeba_classifier_config.json"
 
-    with open(config_file, 'r') as f:
-        config = load(f)
+    args = parse_arguments()
+   # torch.manual_seed(42)
 
-    with open(config_file_cls, 'r') as f1:
-        config_cls = load(f1)
+    assert os.path.isfile(args.classifier_config), f"{args.classifier_config} is not a file"
 
-    dataset = config["dataset"]
+    with open(args.classifier_config, 'r') as f:
+        config_cls = load(f)
+
+
+    dataset = config_cls["dataset"]
    # attributes = config["causal_graph"]["image"]
-    attribute_size = config["attribute_size"]
+    attribute_size = config_cls["attribute_size"]
 
     if dataset == "celeba": #celeba
-        tr_transforms = Compose([RandomHorizontalFlip(), 
-                                 ConvertImageDtype(dtype=torch.uint8), AutoAugment(),  ConvertImageDtype(dtype=torch.float32)])
+        tr_transforms = Compose([RandomHorizontalFlip()])
         data_tr = dataclass_mapping[dataset](attribute_size=attribute_size, 
                                              split="train", transform_cls=tr_transforms)
+
+ #       from tqdm import tqdm
+ #       weights_smile = []
+ #       weights_eyes = []
+ #       for i in tqdm(range(len(data_tr))):
+ #           x , attr = data_tr[i]
+ #           if attr[0] == 1: #has smile
+ #               weights_smile.append(1/1000)
+               # pass
+
+#            if attr[0] == 0:
+#                weights_smile.append(1/10000)
+                #pass
+
+#            if attr[1] == 1:
+#                  weights_eyes.append(1/1000)#has glasses
+                #pass
+            
+#            if attr[1] == 0:
+#                weights_eyes.append(1/10000)  #does not have glasses
+#                pass
+
+#       print(len(weights_eyes), len(weights_smile))
         
+        weights_s = joblib.load("weights_smiling.pkl") #load weights for sampler
+        weights_e = joblib.load("weights_eyes.pkl") 
+        weights_s = torch.tensor(weights_s).double()
+        weights_e = torch.tensor(weights_e).double()
+    #    weights_s = torch.tensor(weights_smile).double()
+    #    weights_e = torch.tensor(weights_eyes).double()
+
+    #    sampler = torch.utils.data.sampler.WeightedRandomSampler(weights_e, len(data_tr), replacement = True)
+    #    train_data_loader = torch.utils.data.DataLoader(data_tr, sampler=sampler, batch_size=128)
+      #  iterator = iter(train_data_loader)
+      #  batch = next(iterator)
+    #    for batch in train_data_loader:
+    #        x , attrs = batch
+    #        print(attrs[:,1].sum()/128)
+
         data_val = dataclass_mapping[dataset](attribute_size=attribute_size, split="valid")
 
 
@@ -66,13 +120,20 @@ if __name__ == "__main__":
             classifier = CelebaClassifier(attr=attribute, width=64, 
                                           num_outputs=config_cls[attribute +"_num_out"], lr=config_cls["lr"])
             
-            train_classifier(classifier, attribute, data_tr, data_val, config_cls, default_root_dir=config_cls["ckpt_path"])
+            if attribute == "Smiling":
+                weights = weights_s
+            else:
+                weights = weights_e
+                
+            train_classifier(classifier, attribute, data_tr, data_val, config_cls, default_root_dir=config_cls["ckpt_path"], weights=weights)
 
     else:#morphomnist
-        data = dataclass_mapping[dataset](attribute_size=attribute_size, normalize_=True, train=True)
+        data = dataclass_mapping[dataset](attribute_size=attribute_size, split="train", normalize_=True)
 
         train_set, val_set = torch.utils.data.random_split(data, [config_cls["train_val_split"],
                                                               1-config_cls["train_val_split"]])
+        
+        
 
         for attribute in attribute_size.keys():
             print("Train "+ attribute +" classfier!!")

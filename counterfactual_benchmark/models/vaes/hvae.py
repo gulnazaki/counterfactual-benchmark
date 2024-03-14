@@ -32,7 +32,7 @@ def gaussian_kl(q_loc, q_logscale, p_loc, p_logscale):
 
 class CondHVAE(StructuralEquation, pl.LightningModule):
     
-    def __init__(self, encoder, decoder, likelihood, params, cf_fine_tune, evaluate, name):
+    def __init__(self, encoder, decoder, likelihood, params, load_ckpt, cf_fine_tune, evaluate, name):
 
         super().__init__()
 
@@ -46,31 +46,35 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
         self.beta = params["beta"]
         self.automatic_optimization = False
         self.evaluate = evaluate
+        self.load_ckpt = load_ckpt
 
         self.cond_prior =  json.loads(params["cond_prior"].lower())
         self.free_bits = params["kl_free_bits"]
         self.cf_fine_tune = cf_fine_tune
-        self.lmbda = nn.Parameter(0.0 * torch.ones(1))
-        self.elbo_constraint = 2.320
-        self.register_buffer("eps", self.elbo_constraint * torch.ones(1))
+
+        if self.cf_fine_tune  or self.load_ckpt:
+            self.lmbda = nn.Parameter(0.0 * torch.ones(1))
+            self.elbo_constraint = 2.320
+            self.register_buffer("eps", self.elbo_constraint * torch.ones(1))
+    #    self.register_buffer("log2", torch.tensor(2.0).log())
        
 
-        if self.cf_fine_tune:
+        if self.cf_fine_tune:   
             if not self.evaluate:
                 self.load_hvae_checkpoint_for_finetuning()
 
             device = "cuda"
-            smiling_cls = CelebaClassifier(attr="Smiling", width=64).eval()
-            eye_cls = CelebaClassifier(attr="Eyeglasses", width=64).eval()
+            smiling_cls = CelebaClassifier(attr="Smiling").eval()
+            eye_cls = CelebaClassifier(attr="Eyeglasses").eval()
 
             for model in [smiling_cls, eye_cls]:
                 for param in model.parameters():
                     param.requires_grad = False
             
-            smiling_cls.load_state_dict(torch.load("../../methods/deepscm/checkpoints_celeba/trained_classifiers/Smiling_classifier-epoch=09.ckpt",
+            smiling_cls.load_state_dict(torch.load("../../methods/deepscm/checkpoints_celeba/trained_classifiers/Smiling_classifier-epoch=23.ckpt",
                                      map_location=torch.device("cuda"))["state_dict"])
             
-            eye_cls.load_state_dict(torch.load("../../methods/deepscm/checkpoints_celeba/trained_classifiers/Eyeglasses_classifier-epoch=13.ckpt",
+            eye_cls.load_state_dict(torch.load("../../methods/deepscm/checkpoints_celeba/trained_classifiers/Eyeglasses_classifier-epoch=10.ckpt",
                                   map_location=torch.device("cuda"))["state_dict"])
             
             self.smiling_cls = smiling_cls.to(device)
@@ -383,7 +387,7 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
 
     def decode(self, u, cond):
         z , e , f_pa, obs = u
-        t_u = 0.3  ##temp parameter
+        t_u = 0.4  ##temp parameter
       #  f_pa = self.expand_parents(f_pa)
      #   print(cond.shape)
         cf_pa =  self.expand_parents(cond)

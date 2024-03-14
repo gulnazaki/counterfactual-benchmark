@@ -275,8 +275,7 @@ if __name__ == "__main__":
 
 
         else:
-             predictors = {atr: CelebaClassifier(attr=atr, width=64,
-                                          num_outputs=config_cls[atr +"_num_out"], lr=config_cls["lr"]) for atr in attribute_size.keys()}
+             predictors = {atr: CelebaClassifier(attr=atr, num_outputs=config_cls[atr +"_num_out"], lr=config_cls["lr"]) for atr in attribute_size.keys()}
 
 
         # load checkpoints of the predictors
