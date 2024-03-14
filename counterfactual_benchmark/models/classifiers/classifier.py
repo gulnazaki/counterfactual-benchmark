@@ -87,12 +87,10 @@ class Classifier(pl.LightningModule):
                 loss = nn.MSELoss()(y_hat, y.type(torch.float32).view(-1, 1))
 
             else: #digit
-              #  print(y_hat.shape, y.argmax(-1).type(torch.long).shape)
                 loss = nn.CrossEntropyLoss()(y_hat, y.argmax(-1).type(torch.long))
 
 
-        #loss = nn.BCEWithLogitsLoss()(y_hat, y.type(torch.float32).view(-1, 1))
-        #loss = nn.MSELoss()(y_hat, y.type(torch.float32).view(-1, 1))
+       
         self.log("train_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
 
         #loss = nn.CrossEntropyLoss()(y_hat, y.type(torch.long))
@@ -122,7 +120,6 @@ class Classifier(pl.LightningModule):
             else: #digit
                 loss = nn.CrossEntropyLoss()(y_hat, y.argmax(-1).type(torch.long))
 
-              #  self.log("val_acc", loss, on_step=False, on_epoch=True, prog_bar=True)
                 val_acc =   self.accuracy(y_hat, y.argmax(-1).type(torch.long))
 
                 self.log('val_acc', val_acc, on_step=False , on_epoch=True, prog_bar=True)

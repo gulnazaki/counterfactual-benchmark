@@ -56,7 +56,6 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
             self.lmbda = nn.Parameter(0.0 * torch.ones(1))
             self.elbo_constraint = 2.320
             self.register_buffer("eps", self.elbo_constraint * torch.ones(1))
-    #    self.register_buffer("log2", torch.tensor(2.0).log())
        
 
         if self.cf_fine_tune:   
@@ -206,8 +205,7 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
             if torch.rand(1) < 0.8: #select a parent to intervene
                 cf_pa[:,attr] = 1-cond[:,attr] #flip smile
             
-         #   if torch.rand(1) < 0.6:
-         #       cf_pa[:, 1] = 1-cond[:,1] #flip eye
+         
              
             cf_x = self.decode(u, cf_pa)
             y_s_target = cf_pa[:, 0]
@@ -218,7 +216,6 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
             eye_cond_loss = nn.BCEWithLogitsLoss()(y_hat_e, y_e_target.type(torch.float32).view(-1, 1))
 
             conditional_loss = 0.5*smiling_cond_loss + 0.5*eye_cond_loss
-           # total_loss = 0.5*nelbo_loss + 0.5*conditional_loss
             
             optimizer.zero_grad(set_to_none=True)
             lagrange_opt.zero_grad(set_to_none=True)
@@ -235,21 +232,17 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
                 lagrange_opt.step()  # gradient ascent on lmbda
                 self.lmbda.data.clamp_(min=0)
                 
-               # total_loss = 0.5*nelbo_loss + 0.5*conditional_loss
-               # self.log("nelbo", nelbo_loss, on_step=False, on_epoch=True, prog_bar=True)
-               # self.log("cond_loss", conditional_loss, on_step=False, on_epoch=True, prog_bar=True)
+              
                 self.log("total_loss", total_loss, on_step=False, on_epoch=True, prog_bar=True)
 
             else:
                total_loss = None
 
-           # total_loss = 0.5*nelbo_loss + 0.5*conditional_loss
 
             return total_loss
         
         else:
             optimizer = self.optimizers()
-            #optimizer = optimizers["optimizer"]
             scheduler = self.lr_schedulers()
 
             cond_ = self.expand_parents(cond)
@@ -264,10 +257,8 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
                 self.manual_backward(loss)
                 self.clip_gradients(optimizer, gradient_clip_val=350, gradient_clip_algorithm="norm")
                 optimizer.step()
-             #   scheduler.step()
 
                 for key , value in nelbo_loss.items():
-                    #if value!=None :
                     self.log(key, value, on_step=False, on_epoch=True, prog_bar=True)
                 
                 if self.trainer.is_last_batch == 0:
@@ -277,11 +268,6 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
         
             return loss
 
-
- #   def on_train_epoch_end(self, training_step_outputs):
- #       # Step the learning rate scheduler at the end of each epoch
-  #      self.trainer.lr_schedulers[0]['scheduler'].step()  
-        
     
     def validation_step(self, val_batch, batch_idx):
         x, cond = val_batch
@@ -315,7 +301,6 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
 
             conditional_loss = 0.5*smiling_cond_loss + 0.5*eye_cond_loss
 
-           # total_loss = 0.5*nelbo_loss + 0.5*conditional_loss
             if conditional_loss!=None and out["elbo"]!=None:
                 with torch.no_grad():
                     sg = self.eps - out["elbo"]
@@ -323,14 +308,12 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
                 damp = 100 * sg
                 val_loss = conditional_loss - (self.lmbda - damp) * (self.eps - out["elbo"])
 
-               # total_loss = 0.5*nelbo_loss + 0.5*conditional_loss
-               # self.log("val_nelbo", nelbo_loss, on_step=False, on_epoch=True, prog_bar=True)
+              
                 self.log("val_loss", val_loss, on_step=False, on_epoch=True, prog_bar=True)
 
             else:
                val_loss = None
 
-           # total_loss = 0.5*nelbo_loss + 0.5*conditional_loss
 
             return val_loss
 
@@ -377,8 +360,7 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
 
         rec_loc, rec_scale = self.forward_latents(z, parents=cond, return_loc=True)
         # abduct exogenous noise u
-      #  t_u = 0.1
-      #  rec_scale = rec_scale * t_u
+     
         eps = (x - rec_loc) / rec_scale.clamp(min=1e-12)
 
         return  z , eps, cond , x
@@ -386,18 +368,11 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
 
 
     def decode(self, u, cond):
-        z , e , f_pa, obs = u
-        t_u = 0.4  ##temp parameter
-      #  f_pa = self.expand_parents(f_pa)
-     #   print(cond.shape)
+        z , e , _, _ = u
+        t_u = 0.3  ##temp parameter
+     
         cf_pa =  self.expand_parents(cond)
 
-      #  if self.cond_prior:
-      #      cf_z = self.abduct(x=obs, parents=f_pa, cf_parents=cf_pa, alpha=0.65, t=0.1)
-      #      cf_loc, cf_scale = self.forward_latents(cf_z, parents=cf_pa, return_loc = True)
-        
-        
-      #  else:
         cf_loc, cf_scale = self.forward_latents(z, parents=cf_pa, return_loc=True)
 
 

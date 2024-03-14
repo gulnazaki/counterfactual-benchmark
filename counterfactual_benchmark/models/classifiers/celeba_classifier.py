@@ -18,15 +18,13 @@ class CelebaClassifier(pl.LightningModule):
         
 
         self.lr = lr
-        # TODO add digit classifier
         self.variables = {"Smiling":0, "Eyeglasses":1}
         self.attr = self.variables[attr] #select attribute
         in_channels = in_shape[0]
-       # res = in_shape[1]
-        #s = 2 if res > 64 else 1
-       # activation = nn.LeakyReLU()
+       
         self.num_outputs = num_outputs
 
+        '''cnn layer implementation taken from https://openreview.net/forum?id=lZOUQQvwI3q'''
         self.cnn = nn.Sequential(
                         nn.Conv2d(3, 16, 3, 1, 1),
                         nn.BatchNorm2d(16),
@@ -83,24 +81,13 @@ class CelebaClassifier(pl.LightningModule):
         y_hat = self(x)
 
         loss = nn.BCEWithLogitsLoss()(y_hat, y.type(torch.float32).view(-1, 1)) #applies sigmoid      
-       # val_acc =   self.accuracy(y_hat, y.type(torch.long).view(-1,1))
         val_f1 = self.f1_score(y_hat, y.type(torch.long).view(-1,1))
         metrics = {'val_loss': loss, 'val_f1': val_f1}
         self.log_dict(metrics, prog_bar=True, logger=True, on_epoch=True)
-        #self.log('val_loss', loss, on_step=False, on_epoch=True)
-        #self.log('val_f1', val_f1, on_step=False, on_epoch=True)
-        
-        #return {'val_loss': loss, 'val_f1': val_f1}
-
-      #  self.log('val_F1', val_f1, on_step=False , on_epoch=True, prog_bar=True)
-      #  self.log("val_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
-      #  self.log('val_F1', val_F1, on_step=False , on_epoch=True, prog_bar=True)
-
-     #   return  val_F1
+       
 
 
     def configure_optimizers(self):
-       # optimizer = Adam(self.parameters(), lr=self.lr)
         optimizer = AdamW(self.parameters(), lr=self.lr, weight_decay=0.01, betas=[0.9, 0.999])
         return optimizer
 
@@ -132,8 +119,3 @@ if __name__ == "__main__":
     print("this is out1" , out1.shape)
     print("this is out2:", out2.shape)
     print(attrs[:,0].view(-1,1).shape)
-  #  print(out2.shape)
-  #  print(out3.shape)
-  #  y = attrs[:, 2:]
-  #  loss = F.cross_entropy(out3, y.argmax(-1).type(torch.long))
-  #  print(loss)

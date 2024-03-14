@@ -57,7 +57,6 @@ if __name__ == "__main__":
     torch.manual_seed(42)
 
     args = parse_arguments()
-   # torch.manual_seed(42)
 
     assert os.path.isfile(args.classifier_config), f"{args.classifier_config} is not a file"
 
@@ -66,59 +65,25 @@ if __name__ == "__main__":
 
 
     dataset = config_cls["dataset"]
-   # attributes = config["causal_graph"]["image"]
     attribute_size = config_cls["attribute_size"]
 
     if dataset == "celeba": #celeba
         tr_transforms = Compose([RandomHorizontalFlip()])
         data_tr = dataclass_mapping[dataset](attribute_size=attribute_size, 
                                              split="train", transform_cls=tr_transforms)
-
- #       from tqdm import tqdm
- #       weights_smile = []
- #       weights_eyes = []
- #       for i in tqdm(range(len(data_tr))):
- #           x , attr = data_tr[i]
- #           if attr[0] == 1: #has smile
- #               weights_smile.append(1/1000)
-               # pass
-
-#            if attr[0] == 0:
-#                weights_smile.append(1/10000)
-                #pass
-
-#            if attr[1] == 1:
-#                  weights_eyes.append(1/1000)#has glasses
-                #pass
-            
-#            if attr[1] == 0:
-#                weights_eyes.append(1/10000)  #does not have glasses
-#                pass
-
-#       print(len(weights_eyes), len(weights_smile))
         
         weights_s = joblib.load("weights_smiling.pkl") #load weights for sampler
         weights_e = joblib.load("weights_eyes.pkl") 
         weights_s = torch.tensor(weights_s).double()
         weights_e = torch.tensor(weights_e).double()
-    #    weights_s = torch.tensor(weights_smile).double()
-    #    weights_e = torch.tensor(weights_eyes).double()
-
-    #    sampler = torch.utils.data.sampler.WeightedRandomSampler(weights_e, len(data_tr), replacement = True)
-    #    train_data_loader = torch.utils.data.DataLoader(data_tr, sampler=sampler, batch_size=128)
-      #  iterator = iter(train_data_loader)
-      #  batch = next(iterator)
-    #    for batch in train_data_loader:
-    #        x , attrs = batch
-    #        print(attrs[:,1].sum()/128)
 
         data_val = dataclass_mapping[dataset](attribute_size=attribute_size, split="valid")
 
 
         for attribute in attribute_size.keys():
             print("Train "+ attribute +" classfier!!")
-            classifier = CelebaClassifier(attr=attribute, width=64, 
-                                          num_outputs=config_cls[attribute +"_num_out"], lr=config_cls["lr"])
+            classifier = CelebaClassifier(attr=attribute, num_outputs=config_cls[attribute +"_num_out"], 
+                                          lr=config_cls["lr"])
             
             if attribute == "Smiling":
                 weights = weights_s
