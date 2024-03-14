@@ -29,7 +29,7 @@ counterfactual_benchmark
     ├── classifiers
     ├── flows
     ├── gans
-    └── vaes
+    └── vaes                                    # Both VAE and HVAE models are contained here
 ```
 
 ## Setup
