@@ -28,9 +28,9 @@ def train_classifier(classifier, attr, train_set, val_set, config, default_root_
                                  generate_early_stopping_callback(patience=config["patience"], monitor="val_loss")],
                       default_root_dir=default_root_dir, max_epochs=config["max_epochs"])
 
-    if weights!=None:
+    if weights != None:
         sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(train_set), replacement=True)
-        print("USE SAMPLER!!!")
+        print("Using sampler!")
         train_data_loader = torch.utils.data.DataLoader(train_set, sampler=sampler, batch_size=config["batch_size_train"],  drop_last=False)
     else:
         train_data_loader = torch.utils.data.DataLoader(train_set, batch_size=config["batch_size_train"],  shuffle=True, drop_last=False)
