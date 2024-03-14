@@ -40,7 +40,7 @@ pip install -r requirements.txt
 ```
 
 ## How to Run
-Inside `methods/deepscm` the following can be used to train and evaluate any supported model for a given dataset.
+Inside `counterfactual_benchmark/methods/deepscm` the following can be used to train and evaluate any supported model for a given dataset.
 We give an example for training a VAE on MorphoMNIST. All experiments can be reproduced and extended with the configuration files inside `methods/deepscm/configs/`
 ```
 python train.py -c configs/morphomnist_vae_config.json

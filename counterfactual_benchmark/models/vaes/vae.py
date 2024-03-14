@@ -27,6 +27,8 @@ def gaussian_kl(q_loc, q_logscale, p_loc, p_logscale):
 
 class CondVAE(pl.LightningModule):
     def __init__(self, encoder, decoder, likelihood, latent_dim, beta=4, lr=1e-3, weight_decay=0.01, name="image_vae"):
+        super().__init__()
+
         self.latent_dim = latent_dim
         self.name = name
         self.encoder = encoder

@@ -32,7 +32,6 @@ def gaussian_kl(q_loc, q_logscale, p_loc, p_logscale):
 class CondHVAE(pl.LightningModule):
 
     def __init__(self, encoder, decoder, likelihood, params, load_ckpt, cf_fine_tune, evaluate, name):
-
         super().__init__()
 
         self.name = name
