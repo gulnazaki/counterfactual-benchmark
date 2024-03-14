@@ -11,6 +11,7 @@ from datasets.morphomnist.dataset import MorphoMNISTLike
 from datasets.celeba.dataset import Celeba
 
 
+# train_vae is used both for VAEs and HVAEs
 model_to_script = {
     "flow": train_flow,
     "vae": train_vae,

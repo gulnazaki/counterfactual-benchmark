@@ -4,7 +4,6 @@ from torch.optim import Adam
 import pytorch_lightning as pl
 import torch
 import numpy as np
-from models.structural_equation import StructuralEquation
 import sys
 import os
 from torchmetrics.image.fid import FrechetInceptionDistance as FID
@@ -14,10 +13,9 @@ from models.utils import init_weights, rgbify
 sys.path.append("../../")
 
 
-class CondGAN(StructuralEquation, pl.LightningModule):
+class CondGAN(pl.LightningModule):
     def __init__(self, encoder, decoder, discriminator, latent_dim, d_updates_per_g_update, gradient_clip_val, finetune, lr=1e-4, name="image_gan"):
-        super(CondGAN, self).__init__(latent_dim=latent_dim)
-
+        self.latent_dim = latent_dim
         self.name = name
         self.encoder = encoder
         self.decoder = decoder

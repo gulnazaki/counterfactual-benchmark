@@ -157,20 +157,14 @@ class Discriminator(nn.Module):
 
     def forward(self, x, u, cond):
         processed_digit = self.digit_embedding(cond[:, 2:12].argmax(1))
-        # processed_digit = self.digit_embedding(c["digit"].argmax(1))
+
         attr1 = cond[:, 0]
         attr2 = cond[:, 1]
         attr1 = continuous_feature_map(attr1)
         attr2 = continuous_feature_map(attr2)
-        # processed_continuous = {
-        #     k: continuous_feature_map(v, size=(28, 28))
-        #     for k, v in c.items()
-        #     if k != "digit"
-        # }
+
         features = torch.concat((x, processed_digit, attr1, attr2), dim=1)
-        # features = torch.concat([X, processed_digit] + [
-        #     processed_continuous[k]
-        #     for k in sorted(processed_continuous.keys())], dim=1)
+
         dx = self.dx(features)
         dz = self.dz(u)
         z = self.dxz(torch.concat([dx, dz], dim=1)).reshape((-1, 1))
