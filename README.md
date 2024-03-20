@@ -1,8 +1,6 @@
 # Benchmarking Counterfactual Image Generation
 Code to reproduce our paper "Benchmarking Counterfactual Image Generation".
 
-Submitted to ECCV 2024.
-
 ## Repository Organization
 ```
 counterfactual_benchmark
