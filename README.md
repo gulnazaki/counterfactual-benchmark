@@ -1,6 +1,8 @@
 # Benchmarking Counterfactual Image Generation
 Code to reproduce our paper "Benchmarking Counterfactual Image Generation".
 
+[Pre-print](https://arxiv.org/abs/2403.20287)
+
 ## Repository Organization
 ```
 counterfactual_benchmark
