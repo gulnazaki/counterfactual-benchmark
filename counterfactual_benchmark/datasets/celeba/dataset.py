@@ -54,3 +54,18 @@ class Celeba(Dataset):
 
         return self.data[idx][0], self.attrs[idx]
 
+
+if __name__ == "__main__":
+
+    attribute_size = {
+        "Young": 1,
+        "Male": 1,
+        "No_Beard": 1,
+        "Bald" : 1
+    }
+
+    dataset = Celeba(attribute_size)
+    print(len(dataset))
+    a = dataset[2]
+    print(a[0].shape, a[1].shape, a[1])
+
