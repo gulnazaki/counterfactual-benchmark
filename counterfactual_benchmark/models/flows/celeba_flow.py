@@ -20,11 +20,3 @@ class BaldFlow(GCondFlow):
             layers.append(GumbelConditionalFlow(context_nn=context_network))
         
         self.flow = GumbelCondFlow(base, layers)
-
-    
-    @override
-    def training_step(self, train_batch):
-        x, pa_x = train_batch
-        loss = self.flow.forward_kld(x, pa_x)
-        self.log("train_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
-        return loss

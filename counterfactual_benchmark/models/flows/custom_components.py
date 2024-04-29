@@ -107,7 +107,7 @@ class GumbelCondFlow(Flow):
 
     def forward_kld(self, x, context):
         z = x
-        log_prob = 0.0
+        log_prob = torch.zeros(len(x), device=x.device)
         for i in range(len(self.flows) - 1, -1, -1):
             argmax_gumbel_flow = self.flows[i].condition(context)
             z = argmax_gumbel_flow.inverse(z)
