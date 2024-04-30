@@ -92,7 +92,7 @@ class GumbelConditionalFlow(Flow):
 
     def condition(self, context):
         logits = self.context_nn(context)
-        print(logits)
+       # print(logits)
         return ArgMaxGumbelFlow(logits=logits)
     
 

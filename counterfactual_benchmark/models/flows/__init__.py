@@ -1,3 +1,3 @@
 from models.flows.flow import GCondFlow
 from models.flows.morphomnist_flow import ThicknessFlow, IntensityFlow, DigitFlow
-from models.flows.celeba_flow import BaldFlow
+from models.flows.celeba_flow import BaldFlow, NoBeardFlow
