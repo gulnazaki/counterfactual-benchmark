@@ -52,7 +52,7 @@ class ArgMaxGumbelFlow(Flow):
     def forward(self, u_gumbels):
        # logits = self.context_nn(context)
         y = u_gumbels + self.logits
-        return y.argmax(dim=-1, keep_dim = True)
+        return y.argmax(dim=-1)
     
     # infer gumbel noise ε given observation x and parents pa_x
     def inverse(self, x):
@@ -92,6 +92,7 @@ class GumbelConditionalFlow(Flow):
 
     def condition(self, context):
         logits = self.context_nn(context)
+        print(logits)
         return ArgMaxGumbelFlow(logits=logits)
     
 
@@ -119,7 +120,7 @@ class GumbelCondFlow(Flow):
     
     
     def sample(self, context, num_samples=1):
-        z, log_q = self.q0(num_samples)
+        z = self.q0.sample((num_samples,))
         
         for flow in self.flows:
             argmax_gumbel_flow = flow.condition(context)
