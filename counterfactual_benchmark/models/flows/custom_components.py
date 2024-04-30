@@ -116,6 +116,17 @@ class GumbelCondFlow(Flow):
             
     
         return -torch.mean(log_prob)
+    
+    
+    def sample(self, context, num_samples=1):
+        z, log_q = self.q0(num_samples)
+        
+        for flow in self.flows:
+            argmax_gumbel_flow = flow.condition(context)
+            z = argmax_gumbel_flow(z)
+            
+            #log_q -= log_det
+        return z
 
 
 class CondFlow(Flow):
