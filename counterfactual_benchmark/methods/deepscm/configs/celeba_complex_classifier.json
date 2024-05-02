@@ -1,0 +1,23 @@
+{   "Young_num_out": 1,
+    "Male_num_out": 1,
+    "No_Beard_num_out": 1,
+    "Bald_num_out": 1,
+    
+    "attribute_size": {
+        "Young": 1,
+        "Male": 1,
+        "No_Beard": 1,
+        "Bald" : 1
+    },
+    
+    "dataset": "celeba",
+    "ckpt_path" : "./checkpoints_celeba/trained_classifiers/",
+    "in_shape" : [3, 64, 64] ,
+    "patience" : 10,
+    "batch_size_train" : 128,
+    "batch_size_val" : 128,
+    "lr" : 1e-3,
+    "max_epochs" : 1000,
+    "train_val_split" : 0.8,
+    "ema": "True"
+}
