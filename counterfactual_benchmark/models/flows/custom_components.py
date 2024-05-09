@@ -96,6 +96,7 @@ class GumbelConditionalFlow(Flow):
         return ArgMaxGumbelFlow(logits=logits)
     
 
+from torch.distributions.utils import _sum_rightmost
 
 class GumbelCondFlow(Flow):
 
@@ -107,6 +108,26 @@ class GumbelCondFlow(Flow):
 
 
     def forward_kld(self, x, context):
+       
+        log_q = torch.zeros(len(x), device=x.device)
+        z = x
+        for i in range(len(self.flows) - 1, -1, -1):
+            argmax_gumbel_flow = self.flows[i].condition(context)
+            z = argmax_gumbel_flow.inverse(z)
+            
+    
+            #z = self.flows[i].inverse(z, context)
+            
+       # print(self.q0.log_prob(z).shape, log_q.shape, z.shape)
+        log_q += _sum_rightmost(self.q0.log_prob(z) , dim=1)
+        
+        #log_q += self.q0.log_prob(z[: , 0])
+
+        return -torch.mean(log_q)
+    
+    
+    
+    def forward_kld(self, x, context):
         z = x
         log_prob = torch.zeros(len(x), device=x.device)
         for i in range(len(self.flows) - 1, -1, -1):
@@ -117,7 +138,7 @@ class GumbelCondFlow(Flow):
             
     
         return -torch.mean(log_prob)
-    
+
     
     def sample(self, context, num_samples=1):
         z = self.q0.sample((num_samples,))

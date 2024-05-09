@@ -17,7 +17,7 @@ class BaldFlow(GCondFlow):
         n_layers = params.get('n_layers', 1)
         super().__init__(name, lr, n_layers)
        # base = nf.distributions.base.DiagGaussian(1)
-        base = torch.distributions.Gumbel(torch.zeros(1), torch.ones(1))
+        base = torch.distributions.Gumbel(torch.zeros(1).cuda(), torch.ones(1).cuda())
         layers = []
        
         context_network = nf.nets.MLP([2, 64, 64, 2], init_zeros=True)  #context network
@@ -34,7 +34,7 @@ class NoBeardFlow(GCondFlow):
         n_layers = params.get('n_layers', 1)
         super().__init__(name, lr, n_layers)
        # base = nf.distributions.base.DiagGaussian(1)
-        base = torch.distributions.Gumbel(torch.zeros(1), torch.ones(1))
+        base = torch.distributions.Gumbel(torch.zeros(1).cuda(), torch.ones(1).cuda())
         layers = []
        
         context_network = nf.nets.MLP([2, 64, 64, 2], init_zeros=True)  #context network

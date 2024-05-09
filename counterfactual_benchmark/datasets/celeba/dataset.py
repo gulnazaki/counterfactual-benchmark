@@ -66,6 +66,6 @@ if __name__ == "__main__":
 
     dataset = Celeba(attribute_size)
     print(len(dataset))
-    a = dataset[2]
+    a = dataset[0]
     print(a[0].shape, a[1].shape, a[1])
 
