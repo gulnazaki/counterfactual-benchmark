@@ -40,7 +40,6 @@
                 "patience" : 10,
                 "max_epochs" : 1000,
                 "ema": "True",
-                "load_pretrained_ckpt": "False",
                 "cf_fine_tune": "False",
                 "evaluate_cf_model": "False",
                 "checkpoint_path": ""

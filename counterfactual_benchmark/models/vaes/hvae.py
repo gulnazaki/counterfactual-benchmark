@@ -49,10 +49,10 @@ class CondHVAE(pl.LightningModule):
         self.free_bits = params["kl_free_bits"]
         self.cf_fine_tune = cf_fine_tune
 
-        if self.cf_fine_tune  or self.load_ckpt:
-            self.lmbda = nn.Parameter(0.0 * torch.ones(1))
-            self.elbo_constraint = 2.320
-            self.register_buffer("eps", self.elbo_constraint * torch.ones(1))
+        #if self.cf_fine_tune  or self.load_ckpt:
+        self.lmbda = nn.Parameter(0.0 * torch.ones(1))
+        self.elbo_constraint = 2.320
+        self.register_buffer("eps", self.elbo_constraint * torch.ones(1))
 
 
         if self.cf_fine_tune:
