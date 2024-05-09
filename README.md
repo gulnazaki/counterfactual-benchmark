@@ -103,4 +103,4 @@ Download attributes, etc. from:
 Move everything to `counterfactual_benchmark/datasets/celeba/data/`
 
 ## How good is your counterfactual image?
-    ![image](https://github.com/gulnazaki/counterfactual-benchmark/assets/57211914/68e15f1a-21df-4e9f-ad5d-998acf52b403)
+![image](https://github.com/gulnazaki/counterfactual-benchmark/assets/57211914/68e15f1a-21df-4e9f-ad5d-998acf52b403)
