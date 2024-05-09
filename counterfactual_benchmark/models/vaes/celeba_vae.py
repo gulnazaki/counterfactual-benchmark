@@ -40,7 +40,7 @@ class Encoder(nn.Module):
         #     print(x.shape)
         x = self.conv(x).reshape(batch, -1)
         x = self.fc(x)
-        hidden = self.embed(torch.cat((x, cond), dim=-1))
+        hidden = self.embed(torch.cat((x, cond), dim=-1)) if self.cond_dim > 0 else self.embed(x)
         # get distribution components
         mu = self.mu(hidden)
         logvar = self.logvar(hidden).clamp(min=-9)
@@ -80,7 +80,7 @@ class Decoder(nn.Module):
         )
 
     def forward(self, u, cond):
-        x = torch.cat([u, cond], dim=1)
+        x = torch.cat([u, cond], dim=1) if self.cond_dim > 0 else u
         x = self.fc(x)
         x = x.view(-1, self.n_chan[0], 4, 4)
         # print(x.shape)
@@ -95,9 +95,9 @@ class Decoder(nn.Module):
 
 
 class CelebaCondVAE(CondVAE):
-    def __init__(self, params, attr_size, name="image_vae"):
+    def __init__(self, params, attr_size, name="image_vae", unconditional=False):
         # dimensionality of the conditional data
-        cond_dim = sum(attr_size.values())
+        cond_dim = sum(attr_size.values()) if not unconditional else 0
         latent_dim = params["latent_dim"]
         hidden_dim = params["hidden_dim"]
         n_chan = params["n_chan"]

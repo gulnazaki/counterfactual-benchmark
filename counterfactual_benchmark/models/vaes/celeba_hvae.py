@@ -446,9 +446,8 @@ class CelebaCondHVAE(CondHVAE):
     def __init__(self, attr_size, params, name="image_hvae"):
 
         params["context_dim"] = sum(attr_size.values())
-        self.cf_fine_tune = json.loads(params["cf_fine_tune"].lower())  
+        self.cf_fine_tune = json.loads(params["cf_fine_tune"].lower())
         self.evaluate = json.loads(params["evaluate_cf_model"].lower())
-        self.load_ckpt = json.loads(params["load_pretrained_ckpt"].lower())
         self.name = name
         encoder = Encoder(params)
         decoder = Decoder(params)
@@ -459,7 +458,7 @@ class CelebaCondHVAE(CondHVAE):
 
 
 
-        super().__init__(encoder, decoder, likelihood, params, self.load_ckpt,
+        super().__init__(encoder, decoder, likelihood, params,
                          self.cf_fine_tune, self.evaluate, self.name)
 
         if not self.cf_fine_tune:
@@ -499,7 +498,7 @@ if __name__ == "__main__":
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = CelebaCondHVAE(attribute_size, params)
-    model.load_state_dict(torch.load("/home/n.spyrou/counterfactual-benchmark/counterfactual_benchmark/methods/deepscm/checkpoints_celeba/trained_scm/image_hvae-epoch=20.ckpt" ,
+    model.load_state_dict(torch.load("/home/n.spyrou/counterfactual-benchmark/counterfactual_benchmark/methods/deepscm/checkpoints_celeba/trained_scm/image_hvae-epoch=34.ckpt" ,
                                     )["state_dict"])
    # print(model.name)
     model = model.to(device)
