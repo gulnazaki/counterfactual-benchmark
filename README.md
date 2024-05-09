@@ -52,7 +52,6 @@ A description of all possible arguments for the evaluation script can be obtaine
 
 **To pretrain HVAE with the standard ELBO loss, the config should change to:**
 ```
-"load_pretrained_ckpt": False
 "cf_fine_tune": False,
 "evaluate_cf_model":False
 ```
@@ -61,7 +60,6 @@ A description of all possible arguments for the evaluation script can be obtaine
 ```
 "lr" : 1e-4,
 ...
-"load_pretrained_ckpt": True,
 "cf_fine_tune": True,
 "evaluate_cf_model":False
 "checkpoint_path": "<insert_checkpoint_path>",
@@ -69,7 +67,6 @@ A description of all possible arguments for the evaluation script can be obtaine
 
 **To evaluate the fine-tuned HVAE the config should change to:**
 ```
-"load_pretrained_ckpt": False
 "cf_fine_tune": True,
 "evaluate_cf_model":True
 ```
