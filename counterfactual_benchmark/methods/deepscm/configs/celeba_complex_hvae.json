@@ -1,13 +1,19 @@
 {
     "causal_graph": {
-        "Smiling": [],
-        "Eyeglasses": [],
-        "image": ["Smiling", "Eyeglasses"]
+        "Young": [],
+        "Male": [],
+        "No_Beard": [],
+        "Bald" : [],
+        "image": ["Young", "Male", "No_Beard", "Bald"]
     },
+
     "attribute_size": {
-        "Smiling": 1,
-        "Eyeglasses": 1
+        "Young": 1,
+        "Male": 1,
+        "No_Beard": 1,
+        "Bald" : 1
     },
+
     "mechanism_models": {
         "image": {
             "model_type": "vae",
@@ -35,16 +41,16 @@
                 "beta" : 5,
                 "lr" : 1e-3,
                 "gradient_clip_val": 350,
-                "batch_size_train" : 32,
-                "batch_size_val" : 32,
+                "batch_size_train" : 64,
+                "batch_size_val" : 64,
                 "patience" : 5,
                 "max_epochs" : 1000,
                 "train_val_split" : 0.8,
-                "ema": "False",
+                "ema": "True",
                 "load_pretrained_ckpt": "False",
                 "cf_fine_tune": "True",
                 "evaluate_cf_model": "True",
-                "checkpoint_file": "./checkpoints_celeba/trained_scm/image_hvae-epoch=34.ckpt"
+                "checkpoint_file": "/home/n.spyrou/counterfactual-benchmark/counterfactual_benchmark/methods/deepscm/checkpoints_celeba/trained_scm/image_hvae-epoch=20.ckpt"
             }
         }
     },

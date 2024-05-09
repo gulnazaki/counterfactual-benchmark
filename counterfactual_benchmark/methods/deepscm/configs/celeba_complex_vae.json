@@ -2,8 +2,8 @@
     "causal_graph": {
         "Young": [],
         "Male": [],
-        "No_Beard": ["Young", "Male"],
-        "Bald" : ["Young", "Male"],
+        "No_Beard": [],
+        "Bald" : [],
         "image": ["Young", "Male", "No_Beard", "Bald"]
     },
 
@@ -16,37 +16,6 @@
 
     "mechanism_models": {
       
-        "Bald": {
-            "model_type": "flow",
-            "model_class": "BaldFlow",
-            "module": "models.flows",
-            "params": {
-                "layers": 1,
-                "lr": 1e-3,
-                "batch_size_train" : 64,
-                "batch_size_val" : 64,
-                "patience" : 10,
-                "max_epochs" : 1000,
-                "train_val_split" : 0.8
-            }
-        },
-
-
-        "No_Beard": {
-            "model_type": "flow",
-            "model_class": "NoBeardFlow",
-            "module": "models.flows",
-            "params": {
-                "layers": 1,
-                "lr": 1e-3,
-                "batch_size_train" : 64,
-                "batch_size_val" : 64,
-                "patience" : 10,
-                "max_epochs" : 1000,
-                "train_val_split" : 0.8
-            }
-        },
-        
         "image": {
             "model_type": "vae",
             "model_class": "CelebaCondVAE",
@@ -56,19 +25,19 @@
                 "latent_dim" : 16,
                 "hidden_dim": 256,
                 "beta" : 5,
-                "lr" : 0.0005,
+                "lr" : 1e-3,
                 "gradient_clip_val": 350,
                 "batch_size_train" : 128,
                 "batch_size_val" : 256,
-                "patience" : 10,
+                "patience" : 50,
                 "max_epochs" : 1000,
                 "weight_decay": 0,
                 "ema": "True",
-                "fixed_logvar": -5.0
+                "fixed_logvar": "False"
             }
         }
     },
 
     "dataset": "celeba",
-    "checkpoint_dir": "./checkpoints_celeba/trained_scm"
+    "checkpoint_dir": "/home/n.spyrou/counterfactual-benchmark/counterfactual_benchmark/methods/deepscm/checkpoints_celeba/trained_scm"
 }
