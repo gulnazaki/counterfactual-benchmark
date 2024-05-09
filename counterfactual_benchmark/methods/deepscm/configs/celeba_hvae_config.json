@@ -39,11 +39,11 @@
                 "batch_size_val" : 32,
                 "patience" : 10,
                 "max_epochs" : 1000,
-                "train_val_split" : 0.8,
-                "ema": "False",
-                "cf_fine_tune": "True",
-                "evaluate_cf_model": "True",
-                "checkpoint_file": "./checkpoints_celeba/trained_scm/image_hvae-epoch=34.ckpt"
+                "ema": "True",
+                "load_pretrained_ckpt": "False",
+                "cf_fine_tune": "False",
+                "evaluate_cf_model": "False",
+                "checkpoint_path": ""
             }
         }
     },

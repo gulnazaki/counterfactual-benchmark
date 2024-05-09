@@ -27,6 +27,7 @@ def get_embedding_model(embedding, pretrained_vgg, classifier_config=None):
                 "digit": 10
             }
             model = MmnistCondVAE(params, attribute_size, unconditional=True).eval().to('cuda')
+            # add path of an unconditional VAE trained on MorphoMNIST
             model.load_state_dict(torch.load('../../methods/deepscm/checkpoints/trained_scm/uncond_image_vae-epoch=269.ckpt', map_location=torch.device('cuda'))["state_dict"])
         else:
             params = {'latent_dim': 16, 'hidden_dim': 256, 'n_chan': [3, 32, 64, 128, 256, 256], 'beta': 5, 'lr': 0.0005, 'weight_decay': 0, 'fixed_logvar': "False"}
@@ -35,6 +36,7 @@ def get_embedding_model(embedding, pretrained_vgg, classifier_config=None):
                 "Eyeglasses": 1
             }
             model = CelebaCondVAE(params, attribute_size, unconditional=True).eval().to('cuda')
+            # add path of an unconditional VAE trained on CelebA
             model.load_state_dict(torch.load('../../methods/deepscm/checkpoints_celeba/trained_scm/uncond_image_vae-epoch=44.ckpt', map_location=torch.device('cuda'))["state_dict"])
             return model
         return model

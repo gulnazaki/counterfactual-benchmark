@@ -8,7 +8,7 @@
     },
 
     "dataset": "morphomnist",
-    "digit_num_out":10,
+    "digit_num_out": 10,
     "ckpt_path" : "./checkpoints/trained_classifiers/",
     "in_shape" : [1, 32, 32] ,
     "patience" : 10,

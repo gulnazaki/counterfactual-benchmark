@@ -205,7 +205,6 @@ def parse_arguments():
                         default=["composition", "effectiveness", "fid", "minimality"])
     parser.add_argument("--cycles", '-cc', nargs="+", type=int, help="Composition cycles.", default=[1, 10])
     parser.add_argument("--qualitative", '-qn', type=int, help="Number of qualitative results to produce", default=20)
-    # parser.add_argument("--pretrained-vgg", action='store_true', help="Whether to use pretrained vgg for feature extraction")
     parser.add_argument("--embeddings", type=str, choices=["vgg", "clfs", "vae", "lpips", "clip"], help="What embeddings to use for composition metric. "
                         "Supported: [vgg, clfs, vae, lpips, clip]. If not set, will compute distance on image space")
     parser.add_argument("--sampling-temperature", '-temp', type=float, default=0.1, help="Sampling temperature, used for VAE, HVAE.")
@@ -285,7 +284,6 @@ if __name__ == "__main__":
             cls.load_state_dict(torch.load(config_cls["ckpt_path"] + file_name , map_location=torch.device('cuda'))["state_dict"])
             cls.to('cuda')
 
-        #print(predictors)
         for pa in attribute_size.keys():
             evaluate_effectiveness(test_set, unnormalize_fn, batch_size, scm=scm, attributes=list(attribute_size.keys()), do_parent=pa,
                             intervention_source=train_set, predictors=predictors)

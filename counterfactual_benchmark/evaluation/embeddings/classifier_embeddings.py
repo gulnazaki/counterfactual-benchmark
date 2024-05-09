@@ -8,7 +8,6 @@ from models.classifiers.classifier import Classifier
 class ClassifierEmbeddings():
     def __init__(self, config_file) -> None:
         assert os.path.isfile(config_file), f"{config_file} is not a file"
-        # assert config_file.startswith('morphomnist_'), "Only MorphoMNIST classifiers supported"
 
         with open(config_file, 'r') as f:
             config = load(f)

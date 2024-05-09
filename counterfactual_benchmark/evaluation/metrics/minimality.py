@@ -1,6 +1,8 @@
 import numpy as np
 from tqdm import tqdm
 
+W1, W2 = 0.8, 0.2
+
 def gaussian_kl(q_loc, q_logscale, p_loc, p_logscale):
     return (
         -0.5
@@ -64,6 +66,6 @@ def minimality(real, generated, interventions, bins, embedding):
 
         prob1s.append(prob1)
         prob2s.append(prob2)
-        minimality_scores.append(np.log(np.exp(prob1) + np.exp(prob2)))
+        minimality_scores.append(np.log(W1 * np.exp(prob1) + W2 * np.exp(prob2)))
 
     return minimality_scores, prob1s, prob2s

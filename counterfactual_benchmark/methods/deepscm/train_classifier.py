@@ -5,14 +5,14 @@ import sys
 sys.path.append("../../")
 import sys, os
 import argparse
-import joblib 
+import joblib
 
 from datasets.morphomnist.dataset import MorphoMNISTLike
 from datasets.celeba.dataset import Celeba
 from models.classifiers.classifier import Classifier
 from models.classifiers.celeba_classifier import CelebaClassifier
 from models.utils import generate_checkpoint_callback, generate_early_stopping_callback, generate_ema_callback
-from torchvision.transforms import Compose, AutoAugment, RandomHorizontalFlip
+from torchvision.transforms import Compose, RandomHorizontalFlip
 
 
 def train_classifier(classifier, attr, train_set, val_set, config, default_root_dir, weights = None):
@@ -28,9 +28,9 @@ def train_classifier(classifier, attr, train_set, val_set, config, default_root_
                                  generate_early_stopping_callback(patience=config["patience"], monitor="val_loss")],
                       default_root_dir=default_root_dir, max_epochs=config["max_epochs"])
 
-    if weights!=None:
+    if weights != None:
         sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(train_set), replacement=True)
-        print("USE SAMPLER!!!")
+        print("Using sampler!")
         train_data_loader = torch.utils.data.DataLoader(train_set, sampler=sampler, batch_size=config["batch_size_train"],  drop_last=False)
     else:
         train_data_loader = torch.utils.data.DataLoader(train_set, batch_size=config["batch_size_train"],  shuffle=True, drop_last=False)
@@ -67,13 +67,14 @@ if __name__ == "__main__":
     dataset = config_cls["dataset"]
     attribute_size = config_cls["attribute_size"]
 
-    if dataset == "celeba": #celeba
+    if dataset == "celeba":
         tr_transforms = Compose([RandomHorizontalFlip()])
-        data_tr = dataclass_mapping[dataset](attribute_size=attribute_size, 
+        data_tr = dataclass_mapping[dataset](attribute_size=attribute_size,
                                              split="train", transform_cls=tr_transforms)
-        
-        weights_s = joblib.load("weights_smiling.pkl") #load weights for sampler
-        weights_e = joblib.load("weights_eyes.pkl") 
+
+        #load weights for sampler
+        weights_s = joblib.load("../../datasets/celeba/weights/weights_smiling.pkl")
+        weights_e = joblib.load("../../datasets/celeba/weights/weights_eyes.pkl")
         weights_s = torch.tensor(weights_s).double()
         weights_e = torch.tensor(weights_e).double()
 
@@ -82,23 +83,24 @@ if __name__ == "__main__":
 
         for attribute in attribute_size.keys():
             print("Train "+ attribute +" classfier!!")
-            classifier = CelebaClassifier(attr=attribute, num_outputs=config_cls[attribute +"_num_out"], 
+            classifier = CelebaClassifier(attr=attribute, num_outputs=config_cls[attribute +"_num_out"],
                                           lr=config_cls["lr"])
-            
+
             if attribute == "Smiling":
                 weights = weights_s
             else:
                 weights = weights_e
-                
+
             train_classifier(classifier, attribute, data_tr, data_val, config_cls, default_root_dir=config_cls["ckpt_path"], weights=weights)
 
-    else:#morphomnist
+    #morphomnist
+    else:
         data = dataclass_mapping[dataset](attribute_size=attribute_size, split="train", normalize_=True)
 
         train_set, val_set = torch.utils.data.random_split(data, [config_cls["train_val_split"],
                                                               1-config_cls["train_val_split"]])
-        
-        
+
+
 
         for attribute in attribute_size.keys():
             print("Train "+ attribute +" classfier!!")

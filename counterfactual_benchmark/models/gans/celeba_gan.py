@@ -15,15 +15,6 @@ from models.utils import flatten_list, continuous_feature_map
 from models.gans import CondGAN
 
 
-
-#Layer F K S BN D A
-#Conv2D 64 (2,2) (1,1) Y 0.0 LReLU
-#Conv2D 128 (7,7) (2,2) Y 0.0 LReLU
-#Conv2D 256 (5,5) (2,2) Y 0.0 LReLU
-#Conv2D 256 (7,7) (2,2) Y 0.0 LReLU
-#Conv2D 512 (4,4) (1,1) Y 0.0 LReLU
-#Conv2D 512 (1,1) (1,1) Y 0.0 Linea
-
 class Encoder(nn.Module):
     def __init__(self, latent_dim, num_continuous, n_chan=[3, 64, 128, 256, 256, 512, 512], stride=[1, 2, 2, 2, 1, 1],
                  kernel_size=[2, 7, 5, 7, 4, 1], padding=[0, 0, 0, 0, 0, 0, 0]):
@@ -66,13 +57,7 @@ class Encoder(nn.Module):
 
         return features
 
-#Layer F K S BN D A
-#Conv2DT 512 (4,4) (1,1) Y 0.0 LReLU
-#Conv2DT 256 (7,7) (2,2) Y 0.0 LReLU
-#Conv2DT 256 (5,5) (2,2) Y 0.0 LReLU
-#Conv2DT 128 (7,7) (2,2) Y 0.0 LReLU
-#Conv2DT 64 (2,2) (1,1) Y 0.0 LReLU
-#Conv2D 3 (1,1) (1,1) Y 0.0 Sigmoid
+
 class Decoder(nn.Module):
     def __init__(self, latent_dim, num_continuous, n_chan=[512 ,512, 256, 256, 128, 64, 3], stride=[1, 2, 2, 2, 1, 1],
                  kernel_size=[4, 7, 5, 7, 2, 1], padding=[0, 0, 0, 0, 0, 0]):

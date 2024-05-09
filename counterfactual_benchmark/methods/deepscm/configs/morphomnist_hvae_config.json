@@ -67,13 +67,13 @@
                 "gradient_clip_val": 350,
                 "batch_size_train" : 256,
                 "batch_size_val" : 256,
-                "patience" : 100,
+                "patience" : 10,
                 "max_epochs" : 1000,
                 "train_val_split" : 0.8,
                 "ema": "True",
                 "load_pretrained_ckpt": "False",
                 "cf_fine_tune": "False",
-                "evaluate_cf_model": "False"            
+                "evaluate_cf_model": "False"
             }
         }
     },
