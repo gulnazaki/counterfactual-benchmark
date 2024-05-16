@@ -14,7 +14,6 @@
             "model_class": "CelebaCondGAN",
             "module": "models.gans",
             "params": {
-                "n_chan": [1, 32, 32, 32],
                 "n_chan_enc": [3, 64, 128, 256, 256, 512, 512],
                 "n_chan_gen": [512 ,512, 256, 256, 128, 64, 3],
                 "latent_dim": 512,

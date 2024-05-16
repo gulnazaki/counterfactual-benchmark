@@ -435,8 +435,6 @@ class DGaussNet(nn.Module):
 class MmnistCondHVAE(CondHVAE):
 
     def __init__(self, attr_size, params, name="image_hvae"):
-
-        params["context_dim"] = sum(attr_size.values())
         self.cf_fine_tune = json.loads(params["cf_fine_tune"].lower())
         self.evaluate = json.loads(params["evaluate_cf_model"].lower())
         self.load_ckpt = json.loads(params["load_pretrained_ckpt"].lower())

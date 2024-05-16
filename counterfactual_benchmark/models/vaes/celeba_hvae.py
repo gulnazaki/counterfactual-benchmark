@@ -11,15 +11,8 @@ import torch.distributions as dist
 import torch.nn.functional as F
 from torch import Tensor, nn
 from torch.functional import F
-from collections import OrderedDict
 from models.utils import init_bias
 from models.vaes import CondHVAE
-
-import sys
-#sys.path.append("../../")
-from datasets.celeba.dataset import Celeba
-
-#from hps import Hparams
 
 EPS = -9  # minimum logscale
 
@@ -230,8 +223,6 @@ class Decoder(nn.Module):
         self.bias = nn.ParameterList(bias)
         self.cond_prior = json.loads(params["cond_prior"].lower())
         self.is_drop_cond = json.loads(params["is_drop_cond"].lower())
-       # self.smilingEmbedding = nn.Embedding(2,10)
-       # self.eyeglassesEmbedding = nn.Embedding(2,10)
 
     def forward(
         self,
@@ -242,9 +233,6 @@ class Decoder(nn.Module):
         latents: List[Tensor] = [],
     ) -> Tuple[Tensor, List[Dict[str, Tensor]]]:
         # learnt params for each resolution r
-     #   smiling_cond = self.smilingEmbedding(parents[:, 0, :, :].long()).permute(0,3,1,2)
-     #   eye_cond = self.eyeglassesEmbedding(parents[:,1,:,:].long()).permute(0,3,1,2)
-     #   parents = torch.cat((smiling_cond, eye_cond), dim=1)
 
         bias = {r.shape[2]: r for r in self.bias}
         h = z = bias[1].repeat(parents.shape[0], 1, 1, 1)  # initial state
@@ -444,8 +432,6 @@ class DGaussNet(nn.Module):
 class CelebaCondHVAE(CondHVAE):
 
     def __init__(self, attr_size, params, name="image_hvae"):
-
-        params["context_dim"] = sum(attr_size.values())
         self.cf_fine_tune = json.loads(params["cf_fine_tune"].lower())
         self.evaluate = json.loads(params["evaluate_cf_model"].lower())
         self.load_ckpt = json.loads(params["load_pretrained_ckpt"].lower())

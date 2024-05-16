@@ -7,7 +7,7 @@ import torch
 from functools import partial
 sys.path.append("../../")
 from models.utils import rgbify
-from models.vaes import MmnistCondVAE, CelebaCondVAE
+from models.vaes import MmnistCondVAE, CelebaCondVAE, ADNICondVAE
 from torchvision.transforms import InterpolationMode
 BICUBIC = InterpolationMode.BICUBIC
 from torchvision.transforms import Compose, Resize, CenterCrop, ToTensor, Normalize
@@ -29,7 +29,7 @@ def get_embedding_model(embedding, pretrained_vgg, classifier_config=None):
             model = MmnistCondVAE(params, attribute_size, unconditional=True).eval().to('cuda')
             # add path of an unconditional VAE trained on MorphoMNIST
             model.load_state_dict(torch.load('../../methods/deepscm/checkpoints/trained_scm/uncond_image_vae-epoch=269.ckpt', map_location=torch.device('cuda'))["state_dict"])
-        else:
+        elif 'celeba' in classifier_config:
             params = {'latent_dim': 16, 'hidden_dim': 256, 'n_chan': [3, 32, 64, 128, 256, 256], 'beta': 5, 'lr': 0.0005, 'weight_decay': 0, 'fixed_logvar': "False"}
             attribute_size = {
                 "Smiling": 1,
@@ -38,7 +38,19 @@ def get_embedding_model(embedding, pretrained_vgg, classifier_config=None):
             model = CelebaCondVAE(params, attribute_size, unconditional=True).eval().to('cuda')
             # add path of an unconditional VAE trained on CelebA
             model.load_state_dict(torch.load('../../methods/deepscm/checkpoints_celeba/trained_scm/uncond_image_vae-epoch=44.ckpt', map_location=torch.device('cuda'))["state_dict"])
-            return model
+        else:
+            params = {'context_dim': 0, 'latent_dim': 100, 'hidden_dim': 512, 'n_chan': [1, 16, 24, 32, 64, 128, 256], 'beta': 3, 'lr': 1e-3, 'weight_decay': 0.01, 'fixed_logvar': "False"}
+            attribute_size = {
+            "apoE": 2,
+            "age": 1,
+            "sex": 1,
+            "brain_vol": 1,
+            "vent_vol": 1,
+            "slice": 10
+            }
+            model = ADNICondVAE(params, attribute_size, unconditional=True).eval().to('cuda')
+            # add path of an unconditional VAE trained on ADNI
+            model.load_state_dict(torch.load('../../methods/deepscm/checkpoints/adni/trained_uncond_vae/image_vae-epoch=17.ckpt', map_location=torch.device('cuda'))["state_dict"])
         return model
     elif embedding == "lpips":
         return LPIPS(net_type='vgg', normalize=True).to('cuda')
