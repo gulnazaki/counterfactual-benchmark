@@ -1,0 +1,68 @@
+{
+    "causal_graph": {
+        "apoE": [],
+        "age": [],
+        "sex": [],
+        "brain_vol": ["sex", "apoE", "age"],
+        "vent_vol": ["brain_vol", "age"],
+        "slice": [],
+        "image": ["brain_vol", "vent_vol", "slice"]
+    },
+    "attribute_size": {
+        "apoE": 2,
+        "age": 1,
+        "sex": 1,
+        "brain_vol": 1,
+        "vent_vol": 1,
+        "slice": 10
+    },
+    "mechanism_models": {
+        "brain_vol": {
+            "model_type": "flow",
+            "model_class": "BrainVolFlow",
+            "module": "models.flows",
+            "params": {
+                "layers": 3,
+                "lr": 0.005,
+                "batch_size_train" : 64,
+                "batch_size_val" : 10000,
+                "patience" : 10,
+                "max_epochs" : 1000
+            }
+        },
+        "vent_vol": {
+            "model_type": "flow",
+            "model_class": "VentVolFlow",
+            "module": "models.flows",
+            "params": {
+                "layers": 3,
+                "lr": 0.005,
+                "batch_size_train" : 64,
+                "batch_size_val" : 10000,
+                "patience" : 10,
+                "max_epochs" : 1000
+            }
+        },
+        "image": {
+            "model_type": "gan",
+            "model_class": "ADNICondGAN",
+            "module": "models.gans",
+            "params": {
+                "n_chan_enc": [1, 32, 64, 128, 256, 256, 512, 512],
+                "n_chan_gen": [512 ,512, 256, 256, 128, 64, 32, 1],
+                "latent_dim": 512,
+                "d_updates_per_g_update": 1,
+                "gradient_clip_val": 0.5,
+                "finetune": 0,
+                "pretrained_path": "",
+                "lr": 1e-4,
+                "batch_size_train": 128,
+                "batch_size_val": 128,
+                "patience": 10,
+                "max_epochs": 1000
+            }
+        }
+    },
+    "dataset": "adni",
+    "checkpoint_dir": "./checkpoints/adni/trained_scm"
+}
