@@ -33,7 +33,7 @@ def gaussian_kl(q_loc, q_logscale, p_loc, p_logscale):
 
 class CondHVAE(StructuralEquation, pl.LightningModule):
     
-    def __init__(self, encoder, decoder, likelihood, params, load_ckpt, cf_fine_tune, evaluate, name):
+    def __init__(self, encoder, decoder, likelihood, params, cf_fine_tune, evaluate, name):
 
         super().__init__()
 
@@ -47,16 +47,15 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
         self.beta = params["beta"]
         self.automatic_optimization = False
         self.evaluate = evaluate
-        self.load_ckpt = load_ckpt
 
         self.cond_prior =  json.loads(params["cond_prior"].lower())
         self.free_bits = params["kl_free_bits"]
         self.cf_fine_tune = cf_fine_tune
 
-        if self.cf_fine_tune  or self.load_ckpt:
-            self.lmbda = nn.Parameter(0.0 * torch.ones(1))
-            self.elbo_constraint = 2.26
-            self.register_buffer("eps", self.elbo_constraint * torch.ones(1))
+        
+        self.lmbda = nn.Parameter(0.0 * torch.ones(1))
+        self.elbo_constraint = params["elbo_constraint"]
+        self.register_buffer("eps", self.elbo_constraint * torch.ones(1))
        
 
         if self.cf_fine_tune:   

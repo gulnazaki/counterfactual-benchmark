@@ -10,12 +10,12 @@
         "Bald" : 1
     },
     
-    "dataset": "celeba",
-    "ckpt_path" : "./checkpoints_celeba/trained_classifiers/",
-    "in_shape" : [3, 64, 64] ,
+    "dataset": "celebahq",
+    "ckpt_path" : "./checkpoints_celebahq/trained_classifiers/",
+    "in_shape" : [3, 256, 256] ,
     "patience" : 10,
-    "batch_size_train" : 128,
-    "batch_size_val" : 128,
+    "batch_size_train" : 16,
+    "batch_size_val" : 16,
     "lr" : 1e-3,
     "n_channels": [3, 8, 16, 32, 32, 64, 1],
     "max_epochs" : 1000,

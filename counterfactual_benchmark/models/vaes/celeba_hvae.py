@@ -18,6 +18,7 @@ from models.vaes import CondHVAE
 import sys
 #sys.path.append("../../")
 from datasets.celeba.dataset import Celeba
+from datasets.celebahq.dataset import CelebaHQ
 
 #from hps import Hparams
 
@@ -448,7 +449,6 @@ class CelebaCondHVAE(CondHVAE):
         params["context_dim"] = sum(attr_size.values())
         self.cf_fine_tune = json.loads(params["cf_fine_tune"].lower())  
         self.evaluate = json.loads(params["evaluate_cf_model"].lower())
-        self.load_ckpt = json.loads(params["load_pretrained_ckpt"].lower())
         self.name = name
         encoder = Encoder(params)
         decoder = Decoder(params)
@@ -459,7 +459,7 @@ class CelebaCondHVAE(CondHVAE):
 
 
 
-        super().__init__(encoder, decoder, likelihood, params, self.load_ckpt,
+        super().__init__(encoder, decoder, likelihood, params,
                          self.cf_fine_tune, self.evaluate, self.name)
 
         if not self.cf_fine_tune:
@@ -470,20 +470,22 @@ from json import load
 
 if __name__ == "__main__":
 
-    attribute_size = {
-        "Smiling":1,
-        "Eyeglasses":1
+    attribute_size =  {
+        "Young": 1,
+        "Male": 1,
+        "No_Beard": 1,
+        "Bald" : 1
     }
 
 
-
-    config_file = "../../methods/deepscm/configs/celeba_hvae_config.json"
+    config_file = "../../methods/deepscm/configs/celebahq_complex_hvae.json"
+    
     with open(config_file, 'r') as f:
         config = load(f)
 
     params = config["mechanism_models"]["image"]["params"]
 
-    train_set = Celeba(attribute_size=attribute_size, split="train")
+    train_set = CelebaHQ(attribute_size=attribute_size, split="test")
 
     tr_data_loader = torch.utils.data.DataLoader(train_set, batch_size=64, shuffle=False, num_workers=7)
    # iterator = iter(tr_data_loader)
@@ -499,8 +501,8 @@ if __name__ == "__main__":
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = CelebaCondHVAE(attribute_size, params)
-    model.load_state_dict(torch.load("/home/n.spyrou/counterfactual-benchmark/counterfactual_benchmark/methods/deepscm/checkpoints_celeba/trained_scm/image_hvae-epoch=20.ckpt" ,
-                                    )["state_dict"])
+   # model.load_state_dict(torch.load("/home/n.spyrou/counterfactual-benchmark/counterfactual_benchmark/methods/deepscm/checkpoints_celeba/trained_scm/image_hvae-epoch=20.ckpt" ,
+   #                                 )["state_dict"])
    # print(model.name)
     model = model.to(device)
     model.eval()
@@ -514,7 +516,7 @@ if __name__ == "__main__":
     with torch.no_grad():
         for batch in tqdm(tr_data_loader):
             x , attrs = batch[0].to(device) , batch[1]
-            attrs =attrs[..., None, None].repeat(1, 1, *(64,) * 2)
+            attrs =attrs[..., None, None].repeat(1, 1, *(256,) * 2)
             attrs = attrs.to(device)
             out = model(x, attrs, 5)
             #print(out["elbo"])
