@@ -43,7 +43,7 @@ dataclass_mapping = {
     "adni": (ADNI, unnormalize_adni)
 }
 
-def produce_qualitative_samples(dataset, scm, parents, intervention_source, unnormalize_fn, num=20):
+def produce_qualitative_samples(dataset, scm, parents, intervention_source, unnormalize_fn, num=20, show_difference=False):
     data_loader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=True, num_workers=7)
 
     produce_every = len(dataset) // num
@@ -57,7 +57,7 @@ def produce_qualitative_samples(dataset, scm, parents, intervention_source, unno
                                                          force_change=True, possible_values=dataset.possible_values)
                 res.append(counterfactual)
 
-            save_plots(res, fig_idx, parents, unnormalize_fn)
+            save_plots(res, fig_idx, parents, unnormalize_fn, show_difference=show_difference)
             fig_idx += 1
     return
 
@@ -209,6 +209,7 @@ def parse_arguments():
                         default=["composition", "effectiveness", "fid", "minimality"])
     parser.add_argument("--cycles", '-cc', nargs="+", type=int, help="Composition cycles.", default=[1, 10])
     parser.add_argument("--qualitative", '-qn', type=int, help="Number of qualitative results to produce", default=20)
+    parser.add_argument("--show-difference", '-sd', action='store_true' help="Show counterfactual-factual difference on qualitative results")
     parser.add_argument("--embeddings", type=str, choices=["vgg", "clfs", "vae", "lpips", "clip"], help="What embeddings to use for composition metric. "
                         "Supported: [vgg, clfs, vae, lpips, clip]. If not set, will compute distance on image space")
     parser.add_argument("--sampling-temperature", '-temp', type=float, default=0.1, help="Sampling temperature, used for VAE, HVAE.")
@@ -261,7 +262,8 @@ if __name__ == "__main__":
 
     if args.qualitative > 0:
         produce_qualitative_samples(dataset=test_set, scm=scm, parents=list(attribute_size.keys()),
-                                    intervention_source=train_set, unnormalize_fn=unnormalize_fn, num=args.qualitative)
+                                    intervention_source=train_set, unnormalize_fn=unnormalize_fn, num=args.qualitative,
+                                    show_difference=args.show_difference)
 
     embedding_model = get_embedding_model(args.embeddings, pretrained_vgg=True, classifier_config=args.classifier_config)
     embedding_fn = get_embedding_fn(args.embeddings, unnormalize_fn, embedding_model)

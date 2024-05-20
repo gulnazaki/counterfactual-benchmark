@@ -60,7 +60,7 @@ def save_plots(data, fig_idx, parents, unnormalize_fn, save_dir="qualitative_sam
     for i, datum in enumerate(data):
         img = unnormalize_fn(datum["image"].cpu().squeeze(0), name="image")
         if show_difference and i > 0:
-            img = unnormalize_fn(data[0]["image"].cpu().squeeze(0), name="image") - img
+            img -= unnormalize_fn(data[0]["image"].cpu().squeeze(0), name="image")
         if img.shape[0] == 3:
             axs[i].imshow(img.permute(1, 2, 0))
         else:
