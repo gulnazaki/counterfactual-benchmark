@@ -50,7 +50,7 @@ def bin_array(num, m=None, reverse=False):
 
 def ordinal_array(num, m=None, reverse=False):
     if reverse:
-        return torch.count_nonzero(num, dim=1)
+        return torch.count_nonzero(num, dim=1).to(num.device)
     else:
         return np.pad(np.ones(num), (m - num, 0), 'constant').astype(np.float32)
 

@@ -49,15 +49,18 @@ def to_value(tensor, name, unnormalize_fn):
     else:
         return round(value, 2)
 
-def save_plots(data, fig_idx, parents, unnormalize_fn, save_dir="qualitative_samples"):
+def save_plots(data, fig_idx, parents, unnormalize_fn, save_dir="qualitative_samples", show_difference=False):
     fig, axs = plt.subplots(1, len(data), figsize=(20, 5))
     titles = [" " + " ".join([f"{map_label(v)} = {to_value(data[0][v], v, unnormalize_fn)}" + "\n" for v in data[0].keys() if v != "image"])]
 
     for idx, do_parent in enumerate(parents):
-        titles.append(f"do({map_label(do_parent)} = {to_value(data[idx+1][do_parent], do_parent, unnormalize_fn)})")
+        titles.append(f"do({map_label(do_parent)} = {to_value(data[idx+1][do_parent], do_parent, unnormalize_fn)})" + '\n' +
+                      " ".join([f"{map_label(v)} = {to_value(data[idx+1][v], v, unnormalize_fn)}" + "\n" for v in data[idx+1].keys() if v not in [do_parent, "image"]]))
 
     for i, datum in enumerate(data):
         img = unnormalize_fn(datum["image"].cpu().squeeze(0), name="image")
+        if show_difference and i > 0:
+            img = unnormalize_fn(data[0]["image"].cpu().squeeze(0), name="image") - img
         if img.shape[0] == 3:
             axs[i].imshow(img.permute(1, 2, 0))
         else:
