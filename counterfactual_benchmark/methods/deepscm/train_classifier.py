@@ -113,7 +113,8 @@ if __name__ == "__main__":
 
         else:#morphomnist
             classifier = Classifier(attr=attribute, width=8, num_outputs=config_cls[attribute +"_num_out"],
-                                     context_dim=len(list(config_cls["anticausal_cond"])), lr=config_cls["lr"])
+                                     context_dim=len(list(config_cls["anticausal_cond"][attribute])), lr=config_cls["lr"])
+            weights = None
 
 
         train_classifier(classifier, attribute, train_set, val_set, config_cls, default_root_dir=config_cls["ckpt_path"], weights=weights)

@@ -59,7 +59,7 @@ class CelebaComplexClassifier(pl.LightningModule):
 
 
             self.fc = nn.Sequential(
-                nn.Linear(in_features=num_features+ self.context_dim, out_features=num_features),
+                nn.Linear(in_features=num_features + self.context_dim, out_features=num_features),
                 nn.ReLU(),
                 nn.Dropout(0.2),
                 nn.Linear(in_features=num_features, out_features=1),
