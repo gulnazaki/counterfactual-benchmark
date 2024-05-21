@@ -2,6 +2,13 @@
     "Male_num_out": 1,
     "No_Beard_num_out": 1,
     "Bald_num_out": 1,
+
+    "anticausal_cond": {
+        "Young": ["No_Beard", "Bald"],
+        "Male": ["No_Beard", "Bald"],
+        "No_Beard": [],
+        "Bald": []
+    },
     
     "attribute_size": {
         "Young": 1,
@@ -11,12 +18,13 @@
     },
     
     "dataset": "celebahq",
+    "version": "resnet",
     "ckpt_path" : "./checkpoints_celebahq/trained_classifiers/",
     "in_shape" : [3, 256, 256] ,
-    "patience" : 10,
-    "batch_size_train" : 16,
-    "batch_size_val" : 16,
-    "lr" : 1e-3,
+    "patience" : 5,
+    "batch_size_train" : 128,
+    "batch_size_val" : 128,
+    "lr" : 1e-4,
     "n_channels": [3, 8, 16, 32, 32, 64, 1],
     "max_epochs" : 1000,
     "train_val_split" : 0.8,

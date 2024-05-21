@@ -3,14 +3,15 @@ import torch.nn as nn
 import pytorch_lightning as pl
 import torch
 from torchmetrics.classification import BinaryAccuracy, BinaryF1Score
+from torchvision import models
 import torch.nn.functional as F
 import sys
-#from datasets.celeba.dataset import Celeba
 sys.path.append("../../")
 from datasets.celeba.dataset import Celeba
 
 class CelebaComplexClassifier(pl.LightningModule):
-    def __init__(self, attr, in_shape = (3, 64, 64), n_chan = [3, 8, 16, 32, 32, 64, 1], context_dim = 0, num_outputs = 1, lr=1e-3):
+    def __init__(self, attr, in_shape = (3, 64, 64), n_chan = [3, 8, 16, 32, 32, 64, 1], 
+                 context_dim = 0, num_outputs = 1, lr=1e-3, version="standard"):
         super().__init__()
         self.variable = attr
 
@@ -27,26 +28,45 @@ class CelebaComplexClassifier(pl.LightningModule):
         self.context_dim = context_dim
         self.num_outputs = num_outputs
 
-        self.cnn = nn.Sequential(            
-            nn.Conv2d(in_channels=n_chan[0], out_channels=n_chan[1], kernel_size=3, stride=1),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=2),
-            nn.Conv2d(in_channels=n_chan[1], out_channels=n_chan[2], kernel_size=3, stride=1),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=2),
-            nn.Conv2d(in_channels=n_chan[2], out_channels=n_chan[3], kernel_size=3, stride=1),
-            nn.ReLU(),
-            nn.Conv2d(in_channels=n_chan[3], out_channels=n_chan[4], kernel_size=3, stride=1),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=2)
-        )
+        if version == "standard":
+
+            self.cnn = nn.Sequential(            
+                nn.Conv2d(in_channels=n_chan[0], out_channels=n_chan[1], kernel_size=3, stride=1),
+                nn.ReLU(),
+                nn.MaxPool2d(kernel_size=2, stride=2),
+                nn.Conv2d(in_channels=n_chan[1], out_channels=n_chan[2], kernel_size=3, stride=1),
+                nn.ReLU(),
+                nn.MaxPool2d(kernel_size=2, stride=2),
+                nn.Conv2d(in_channels=n_chan[2], out_channels=n_chan[3], kernel_size=3, stride=1),
+                nn.ReLU(),
+                nn.Conv2d(in_channels=n_chan[3], out_channels=n_chan[4], kernel_size=3, stride=1),
+                nn.ReLU(),
+                nn.MaxPool2d(kernel_size=2, stride=2)
+            )
         
-        self.fc = nn.Sequential(
-            nn.Linear(in_features=n_chan[4] + self.context_dim, out_features=n_chan[5]),
-            nn.ReLU(),
-            nn.Dropout(0.2),
-            nn.Linear(in_features=n_chan[5], out_features=n_chan[6]),
-        )
+            self.fc = nn.Sequential(
+                nn.Linear(in_features=n_chan[4] + self.context_dim, out_features=n_chan[5]),
+                nn.ReLU(),
+                nn.Dropout(0.2),
+                nn.Linear(in_features=n_chan[5], out_features=n_chan[6]),
+            )
+        
+        else:
+            net = models.resnet18(pretrained=True)
+            num_features = net.fc.in_features
+            modules = list(net.children())[:-1]
+            self.cnn = torch.nn.Sequential(*modules)
+
+
+            self.fc = nn.Sequential(
+                nn.Linear(in_features=num_features+ self.context_dim, out_features=num_features),
+                nn.ReLU(),
+                nn.Dropout(0.2),
+                nn.Linear(in_features=num_features, out_features=1),
+            )
+
+
+
 
 
     def forward(self, x, y=None):

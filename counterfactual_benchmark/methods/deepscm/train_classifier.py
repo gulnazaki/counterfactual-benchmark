@@ -9,11 +9,13 @@ import joblib
 
 from datasets.morphomnist.dataset import MorphoMNISTLike
 from datasets.celeba.dataset import Celeba
+from datasets.celebahq.dataset import CelebaHQ
 from models.classifiers.classifier import Classifier
 from models.classifiers.celeba_classifier import CelebaClassifier
 from models.classifiers.celeba_complex_classifier import CelebaComplexClassifier
 from models.utils import generate_checkpoint_callback, generate_early_stopping_callback, generate_ema_callback
 from torchvision.transforms import Compose, AutoAugment, RandomHorizontalFlip
+
 
 
 def train_classifier(classifier, attr, train_set, val_set, config, default_root_dir, weights = None):
@@ -43,7 +45,8 @@ def train_classifier(classifier, attr, train_set, val_set, config, default_root_
 
 dataclass_mapping = {
     "morphomnist": MorphoMNISTLike,
-    "celeba": Celeba
+    "celeba": Celeba,
+    "celebahq": CelebaHQ
 }
 
 
@@ -69,75 +72,48 @@ if __name__ == "__main__":
     attribute_size = config_cls["attribute_size"]
 
 
-    if dataset == "celeba": #celeba
+    if dataset in {"celeba", "celebahq"}: #celeba or celebahq
         tr_transforms = Compose([RandomHorizontalFlip()])
-        data_tr = dataclass_mapping[dataset](attribute_size=attribute_size, 
+        train_set = dataclass_mapping[dataset](attribute_size=attribute_size, 
                                              split="train", transform_cls=tr_transforms)
         
-        data_val = dataclass_mapping[dataset](attribute_size=attribute_size, split="valid")
-
-        
-        #complex celeba graph: Male, Young, No_Beard, Bald
-        if sum(attribute_size.values()) == 4:
-            
-            for attribute in attribute_size.keys():
-                print("Train "+ attribute +" classfier!!")
-
-                if attribute in {"Young", "Male"}:
-                    #conditioned on bald, no_beard
-                    classifier = CelebaComplexClassifier(attr=attribute, context_dim=2, 
-                                                  num_outputs=config_cls[attribute +"_num_out"], 
-                                                  lr=config_cls["lr"])
-                
-                else:
-                    classifier = CelebaComplexClassifier(attr=attribute, 
-                                                  num_outputs=config_cls[attribute +"_num_out"], 
-                                                  lr=config_cls["lr"])
-            
-                train_classifier(classifier, attribute, data_tr, data_val, config_cls, default_root_dir=config_cls["ckpt_path"])
-
-        
-
-
-        #simple celeba graph: Smiling, Eyeglasses
-        else:
-            weights_s = joblib.load("weights_smiling.pkl") #load weights for sampler
-            weights_e = joblib.load("weights_eyes.pkl") 
-            weights_s = torch.tensor(weights_s).double()
-            weights_e = torch.tensor(weights_e).double()
-
-
-
-            for attribute in attribute_size.keys():
-                print("Train "+ attribute +" classfier!!")
-                classifier = CelebaClassifier(attr=attribute, num_outputs=config_cls[attribute +"_num_out"], 
-                                          lr=config_cls["lr"])
-            
-                if attribute == "Smiling":
-                    weights = weights_s
-                else:
-                    weights = weights_e
-                
-                train_classifier(classifier, attribute, data_tr, data_val, config_cls, default_root_dir=config_cls["ckpt_path"], weights=weights)
-
-    else:#morphomnist
+        val_set = dataclass_mapping[dataset](attribute_size=attribute_size, split="valid")
+    
+    else:
         data = dataclass_mapping[dataset](attribute_size=attribute_size, split="train", normalize_=True)
 
         train_set, val_set = torch.utils.data.random_split(data, [config_cls["train_val_split"],
                                                               1-config_cls["train_val_split"]])
-        
-        
 
-        for attribute in attribute_size.keys():
-            print("Train "+ attribute +" classfier!!")
-            if attribute == "thickness":
-                classifier = Classifier(attr=attribute, width=8, num_outputs=config_cls[attribute +"_num_out"],
-                                     context_dim=1, lr=config_cls["lr"])
+    for attribute in attribute_size.keys():
+        print("Train "+ attribute +" classfier!!")
 
+        if dataset in {"celeba", "celebahq"}:
+
+            if sum(attribute_size.values()) == 4:
+            
+                classifier = CelebaComplexClassifier(attr=attribute, context_dim=len(list(config_cls["anticausal_cond"][attribute])), 
+                                                  num_outputs=config_cls[attribute +"_num_out"], 
+                                                  lr=config_cls["lr"], version=config_cls["version"])
+                
+
+        #simple celeba graph: Smiling, Eyeglasses
             else:
-                classifier = Classifier(attr=attribute, width=8,
-                                    num_outputs=config_cls[attribute +"_num_out"], lr=config_cls["lr"])
+                classifier = CelebaClassifier(attr=attribute, num_outputs=config_cls[attribute +"_num_out"], 
+                                          lr=config_cls["lr"])
+            
+            if attribute == "Smiling":
+                weights = torch.tensor(joblib.load("../../datasets/celeba/weights/weights_smiling.pkl")).double()
+        
+            elif attribute == "Eyeglasses":
+                weights = torch.tensor(joblib.load("../../datasets/celeba/weights/weights_eyes.pkl")).double()
+            else:
+                weights = None
+                
+
+        else:#morphomnist
+            classifier = Classifier(attr=attribute, width=8, num_outputs=config_cls[attribute +"_num_out"],
+                                     context_dim=len(list(config_cls["anticausal_cond"])), lr=config_cls["lr"])
 
 
-
-            train_classifier(classifier, attribute, train_set, val_set, config_cls, default_root_dir=config_cls["ckpt_path"])
+        train_classifier(classifier, attribute, train_set, val_set, config_cls, default_root_dir=config_cls["ckpt_path"], weights=weights)

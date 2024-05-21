@@ -2,6 +2,14 @@
     "Male_num_out": 1,
     "No_Beard_num_out": 1,
     "Bald_num_out": 1,
+
+    "anticausal_cond": {
+        "Young": ["No_Beard", "Bald"],
+        "Male": ["No_Beard", "Young"],
+        "No_Beard": [],
+        "Bald": []
+    },
+    
     
     "attribute_size": {
         "Young": 1,
@@ -11,6 +19,7 @@
     },
     
     "dataset": "celeba",
+    "version": "standard",
     "ckpt_path" : "./checkpoints_celeba/trained_classifiers/",
     "in_shape" : [3, 64, 64] ,
     "patience" : 10,

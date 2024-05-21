@@ -1,6 +1,13 @@
 {   "thickness_num_out":1,
     "intensity_num_out":1,
 
+    "anticausal_cond": {
+        "thickness": ["intensity"],
+        "intensity": [],
+        "digit": []
+    },
+    
+
     "attribute_size": {
         "thickness": 1,
         "intensity": 1,
