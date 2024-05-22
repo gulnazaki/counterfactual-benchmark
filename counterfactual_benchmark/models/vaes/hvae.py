@@ -480,7 +480,7 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
 
     def decode(self, u, cond):
         z , e , _, _ = u
-        t_u = 0.1  ##temp parameter
+        t_u = 0.2  ##temp parameter
      
         cf_pa =  self.expand_parents(cond)
 
