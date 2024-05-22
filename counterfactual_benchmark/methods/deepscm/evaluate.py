@@ -17,8 +17,10 @@ sys.path.append("../../")
 
 from models.classifiers.classifier import Classifier
 from models.classifiers.celeba_classifier import CelebaClassifier
+from models.classifiers.celeba_complex_classifier import CelebaComplexClassifier
 from datasets.morphomnist.dataset import MorphoMNISTLike
 from datasets.celeba.dataset import Celeba
+from datasets.celebahq.dataset import CelebaHQ
 from datasets.transforms import ReturnDictTransform
 
 from evaluation.metrics.composition import composition
@@ -36,7 +38,8 @@ rng = np.random.default_rng()
 
 dataclass_mapping = {
     "morphomnist": (MorphoMNISTLike, unnormalize_morphomnist),
-    "celeba": (Celeba, unnormalize_celeba)
+    "celeba": (Celeba, unnormalize_celeba),
+    "celebahq": (CelebaHQ, unnormalize_celeba)
 }
 
 def produce_qualitative_samples(dataset, scm, parents, intervention_source, unnormalize_fn, num=20):
@@ -116,7 +119,7 @@ def produce_counterfactuals(factual_batch: torch.Tensor, scm: nn.Module, do_pare
 
 
 def evaluate_effectiveness(test_set: Dataset, unnormalize_fn, batch_size:int , scm: nn.Module, attributes: List[str], do_parent:str,
-                           intervention_source: Dataset, predictors: Dict[str, Classifier]):
+                           intervention_source: Dataset, predictors: Dict[str, Classifier], dataset: str):
 
     test_data_loader = torch.utils.data.DataLoader(test_set, batch_size=batch_size, shuffle=False, num_workers=7)
 
@@ -124,7 +127,7 @@ def evaluate_effectiveness(test_set: Dataset, unnormalize_fn, batch_size:int , s
     for factual_batch in tqdm(test_data_loader):
         counterfactuals = produce_counterfactuals(factual_batch, scm, do_parent, intervention_source,
                                                   force_change=True, possible_values=test_set.possible_values, bins=test_set.bins)
-        e_score = effectiveness(counterfactuals, unnormalize_fn, predictors)
+        e_score = effectiveness(counterfactuals, unnormalize_fn, predictors, dataset)
 
         for attr in attributes:
             effectiveness_scores[attr].append(e_score[attr])
@@ -195,8 +198,8 @@ def evaluate_minimality(real_set: Dataset, test_set: Dataset, batch_size: int, s
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", '-c', type=str, help="Config file for experiment.", default="./configs/celeba_hvae_config.json")
-    parser.add_argument("--classifier-config", '-clf', type=str, help="Classifier config file.", default="./configs/celeba_classifier_config.json")
+    parser.add_argument("--config", '-c', type=str, help="Config file for experiment.", default="./configs/celebahq_complex_hvae.json")
+    parser.add_argument("--classifier-config", '-clf', type=str, help="Classifier config file.", default="./configs/celebahq_classifier.json")
     parser.add_argument("--metrics", '-m',
                         nargs="+", type=str,
                         help="Metrics to calculate. "
@@ -269,17 +272,26 @@ if __name__ == "__main__":
 
     if "effectiveness" in args.metrics:
         if dataset == "morphomnist":
-            predictors = {atr: Classifier(attr=atr, width=8, num_outputs=config_cls[atr +"_num_out"], context_dim=1)
-                                        if atr=="thickness"
-                                        else Classifier(attr=atr, width=8, num_outputs=config_cls[atr +"_num_out"]) for atr in attribute_size.keys()}
+            predictors = {atr: Classifier(attr=atr, width=8, num_outputs=config_cls[atr +"_num_out"],
+                                     context_dim=len(list(config_cls["anticausal_cond"][atr])), lr=config_cls["lr"]) for atr in attribute_size.keys()}
 
 
-        else:
-             predictors = {atr: CelebaClassifier(attr=atr, num_outputs=config_cls[atr +"_num_out"], lr=config_cls["lr"]) for atr in attribute_size.keys()}
+        elif dataset in {"celeba", "celebahq"}:
+            if sum(attribute_size.values()) == 4:
+                predictors = {atr: CelebaComplexClassifier(attr=atr, context_dim=len(list(config_cls["anticausal_cond"][atr])), 
+                                                  num_outputs=config_cls[atr +"_num_out"], 
+                                                  lr=config_cls["lr"], version=config_cls["version"]) for atr in attribute_size.keys()}
+            else:
+                predictors = {atr: CelebaClassifier(attr=atr, num_outputs=config_cls[atr +"_num_out"], lr=config_cls["lr"]) for atr in attribute_size.keys()}
+
+        elif dataset == "adni":
+            #ADNI CODE HERE
+            pass
 
 
         # load checkpoints of the predictors
         for key , cls in predictors.items():
+            print(key)
             file_name = next((file for file in os.listdir(config_cls["ckpt_path"]) if file.startswith(key)), None)
             print(file_name)
             cls.load_state_dict(torch.load(config_cls["ckpt_path"] + file_name , map_location=torch.device('cuda'))["state_dict"])
@@ -288,7 +300,7 @@ if __name__ == "__main__":
         #print(predictors)
         for pa in attribute_size.keys():
             evaluate_effectiveness(test_set, unnormalize_fn, batch_size, scm=scm, attributes=list(attribute_size.keys()), do_parent=pa,
-                            intervention_source=train_set, predictors=predictors)
+                            intervention_source=train_set, predictors=predictors, dataset = dataset)
 
     if "fid" in args.metrics:
         feat_dict = evaluate_fid(real_set=train_set, test_set=test_set, batch_size=batch_size, scm=scm, attributes=list(attribute_size.keys()))

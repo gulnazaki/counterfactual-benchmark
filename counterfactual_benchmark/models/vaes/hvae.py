@@ -83,32 +83,54 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
                 self.eye_cls = eye_cls.to(device)
 
             else: #complex celeba graph: context = 4
-                cls_young = CelebaComplexClassifier(attr="Young", context_dim=2).eval()
-                cls_male = CelebaComplexClassifier(attr="Male", context_dim=2).eval()
-                cls_no_beard = CelebaComplexClassifier(attr="No_Beard").eval()
-                cls_bald = CelebaComplexClassifier(attr="Bald").eval()
+                self.attributes = ["Young", "Male", "No_Beard", "Bald"]
+                self.anti_causal_cond = {
+                                            "Young": ["No_Beard", "Bald"],
+                                            "Male": ["No_Beard", "Bald"],
+                                            "No_Beard": [],
+                                            "Bald": []
+                                        }
+                
+               # version=self.params["classifiers_arch"]
+                self.classifiers = {atr: CelebaComplexClassifier(attr=atr, context_dim=len(list(self.anti_causal_cond[atr])), 
+                                        version=self.params["classifiers_arch"]).eval() for atr in self.anti_causal_cond.keys()}
 
-                for model in [cls_young, cls_male, cls_no_beard, cls_bald]:
-                    for param in model.parameters():
+                
+                for key , cls in self.classifiers.items():
+                   # print(key)
+                    file_name = next((file for file in os.listdir(self.params["ckpt_cls_path"]) if file.startswith(key)), None)
+                    #print(file_name)
+                    cls.load_state_dict(torch.load(self.params["ckpt_cls_path"] + file_name , map_location=torch.device('cuda'))["state_dict"])
+                    cls.to('cuda')
+
+                    for param in cls.parameters():
                         param.requires_grad = False
+               # cls_young = CelebaComplexClassifier(attr="Young", context_dim=2, version=version).eval()
+              #  cls_male = CelebaComplexClassifier(attr="Male", context_dim=2, version=version).eval()
+               # cls_no_beard = CelebaComplexClassifier(attr="No_Beard", version=version).eval()
+               # cls_bald = CelebaComplexClassifier(attr="Bald", version=version).eval()
 
-                cls_young.load_state_dict(torch.load("../../methods/deepscm/checkpoints_celeba/trained_classifiers/Young_classifier-epoch=51.ckpt",
-                                     map_location=torch.device("cuda"))["state_dict"])
+              #  for key, model in [cls_young, cls_male, cls_no_beard, cls_bald]:
+              #      for param in model.parameters():
+              #          param.requires_grad = False
+
+                #cls_young.load_state_dict(torch.load("../../methods/deepscm/checkpoints_celeba/trained_classifiers/Young_classifier-epoch=51.ckpt",
+               #                      map_location=torch.device("cuda"))["state_dict"])
             
-                cls_male.load_state_dict(torch.load("../../methods/deepscm/checkpoints_celeba/trained_classifiers/Male_classifier-epoch=52.ckpt",
-                                  map_location=torch.device("cuda"))["state_dict"])
+                #cls_male.load_state_dict(torch.load("../../methods/deepscm/checkpoints_celeba/trained_classifiers/Male_classifier-epoch=52.ckpt",
+                #                  map_location=torch.device("cuda"))["state_dict"])
                 
 
-                cls_no_beard.load_state_dict(torch.load("../../methods/deepscm/checkpoints_celeba/trained_classifiers/No_Beard_classifier-epoch=51.ckpt",
-                                     map_location=torch.device("cuda"))["state_dict"])
+                #cls_no_beard.load_state_dict(torch.load("../../methods/deepscm/checkpoints_celeba/trained_classifiers/No_Beard_classifier-epoch=51.ckpt",
+                 #                    map_location=torch.device("cuda"))["state_dict"])
             
-                cls_bald.load_state_dict(torch.load("../../methods/deepscm/checkpoints_celeba/trained_classifiers/Bald_classifier-epoch=28.ckpt",
-                                  map_location=torch.device("cuda"))["state_dict"])
+                #cls_bald.load_state_dict(torch.load("../../methods/deepscm/checkpoints_celeba/trained_classifiers/Bald_classifier-epoch=28.ckpt",
+                #                  map_location=torch.device("cuda"))["state_dict"])
             
-                self.cls_young = cls_young.to(device)
-                self.cls_male = cls_male.to(device)
-                self.cls_no_beard = cls_no_beard.to(device)
-                self.cls_bald = cls_bald.to(device)
+                #self.cls_young = cls_young.to(device)
+               # self.cls_male = cls_male.to(device)
+               # self.cls_no_beard = cls_no_beard.to(device)
+               # self.cls_bald = cls_bald.to(device)
 
 
 
@@ -263,10 +285,10 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
                 
                 condition = torch.cat((cf_pa[:,2].view(-1,1), cf_pa[:,3].view(-1,1)), dim = 1)
 
-                y_hat_young = self.cls_young(cf_x, y = condition)
-                y_hat_male = self.cls_male(cf_x, y = condition)
-                y_hat_no_beard = self.cls_no_beard(cf_x)
-                y_hat_bald = self.cls_bald(cf_x)
+                y_hat_young = self.classifiers["Young"](cf_x, y = condition)
+                y_hat_male = self.classifiers["Male"](cf_x, y = condition)
+                y_hat_no_beard = self.classifiers["No_Beard"](cf_x)
+                y_hat_bald = self.classifiers["Bald"](cf_x)
 
                 young_cond_loss = nn.BCEWithLogitsLoss()(y_hat_young, y_young_target.type(torch.float32).view(-1, 1))
                 male_cond_loss = nn.BCEWithLogitsLoss()(y_hat_male, y_male_target.type(torch.float32).view(-1, 1))
@@ -377,10 +399,10 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
                 
                 condition = torch.cat((cf_pa[:,2].view(-1,1), cf_pa[:,3].view(-1,1)), dim = 1)
 
-                y_hat_young = self.cls_young(cf_x, y = condition)
-                y_hat_male = self.cls_male(cf_x, y = condition)
-                y_hat_no_beard = self.cls_no_beard(cf_x)
-                y_hat_bald = self.cls_bald(cf_x)
+                y_hat_young = self.classifiers["Young"](cf_x, y = condition)
+                y_hat_male = self.classifiers["Male"](cf_x, y = condition)
+                y_hat_no_beard = self.classifiers["No_Beard"](cf_x)
+                y_hat_bald = self.classifiers["Bald"](cf_x)
 
                 young_cond_loss = nn.BCEWithLogitsLoss()(y_hat_young, y_young_target.type(torch.float32).view(-1, 1))
                 male_cond_loss = nn.BCEWithLogitsLoss()(y_hat_male, y_male_target.type(torch.float32).view(-1, 1))
@@ -416,7 +438,7 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
     def configure_optimizers(self):
 
         if self.cf_fine_tune:
-            self.lr = 1e-5
+           # self.lr = 1e-5
             optimizer = AdamW([p for n, p in self.named_parameters() if n != "lmbda"], lr=self.lr, 
                               weight_decay=self.weight_decay, betas=[0.9, 0.9])
             

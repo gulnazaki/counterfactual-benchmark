@@ -21,6 +21,10 @@ class CelebaComplexClassifier(pl.LightningModule):
 
         self.lr = lr
         self.variables =  {"Young": 0, "Male": 1, "No_Beard": 2, "Bald" : 3}
+        self.conditions = {"Young":["No_Beard", "Bald"], "Male":["No_Beard", "Bald"], 
+                             "No_Beard":None, "Bald":None}
+        
+        #self.conditions = self.accociations[attr]
         self.attr = self.variables[attr] #select attribute
         in_channels = in_shape[0]
         #n_chan = [3, 8, 16, 32, 32, 64, 1]
