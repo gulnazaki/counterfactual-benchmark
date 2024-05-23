@@ -19,6 +19,7 @@
     },
 
     "dataset": "adni",
+    "arch": "resnet",
     "num_slices": 10,
     "ckpt_path" : "./checkpoints/adni/trained_classifiers/",
     "in_shape" : [1, 192, 192],

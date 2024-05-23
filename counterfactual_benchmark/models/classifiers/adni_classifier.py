@@ -5,13 +5,15 @@ import torch
 import numpy as np
 from torchmetrics.classification import F1Score, BinaryF1Score
 import sys
+from torchvision import models
 sys.path.append("../../")
 from models.classifiers.networks import CNN, MLP
 from datasets.adni.dataset import bin_array, ordinal_array
 
 
 class ADNIClassifier(pl.LightningModule):
-    def __init__(self, attr, in_shape=(1, 192, 192), num_outputs=1, children=None, num_slices=10, attribute_ids=None, lr=1e-4):
+    def __init__(self, attr, in_shape=(1, 192, 192), num_outputs=1, 
+                 children=None, num_slices=10, attribute_ids=None, lr=1e-4, arch="standard"):
         super().__init__()
         self.variable = attr
 
@@ -35,7 +37,27 @@ class ADNIClassifier(pl.LightningModule):
         self.image_as_input = False
         if 'image' in children:
             self.image_as_input = True
-            self.network = CNN(in_shape=in_shape, num_outputs=num_outputs, context_dim=len(children)-1)
+            if arch == "resnet":
+                net = models.resnet18(pretrained=True)
+                net.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+                pretrained_weights = net.conv1.weight.clone()
+                net.conv1.weight.data = pretrained_weights.mean(dim=1, keepdim=True)
+
+                num_features = net.fc.in_features
+                modules = list(net.children())[:-1]
+                self.cnn = torch.nn.Sequential(*modules)
+
+                self.fc = nn.Sequential(
+                    nn.Linear(in_features=num_features + (len(children)-1), out_features=num_features),
+                    nn.ReLU(),
+                    nn.Dropout(0.2),
+                    nn.Linear(in_features=num_features, out_features=num_outputs),
+                )
+
+                self.network = torch.nn.Sequential(self.cnn, self.fc)
+            else: 
+                self.network = CNN(in_shape=in_shape, num_outputs=num_outputs, context_dim=len(children)-1)
+            
             if 'image' in children:
                 children.remove('image')
         else:
@@ -48,7 +70,18 @@ class ADNIClassifier(pl.LightningModule):
 
 
     def forward(self, x, y=None):
-        return self.network.forward(x, y)
+
+        if isinstance(self.network, MLP):
+            return self.network.forward(x, y)
+
+        else:
+            x = self.network[0](x)
+            x = x.mean(dim=(-2, -1))  # avg pooling
+
+            if y is not None:
+                x = torch.cat([x, y], dim=-1)
+
+            return self.network[1](x)
 
 
     def training_step(self, batch, batch_idx):

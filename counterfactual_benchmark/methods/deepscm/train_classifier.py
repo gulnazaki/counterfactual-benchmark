@@ -59,7 +59,7 @@ def train_classifier(classifier, attr, train_set, val_set, config, default_root_
 def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("--classifier-config", '-clf', type=str, help="Classifier config file."
-                        , default="./configs/celeba_classifier_config.json")
+                        , default="./configs/adni_classifier_config.json")
 
     return parser.parse_args()
 
@@ -96,7 +96,7 @@ if __name__ == "__main__":
         if dataset == "adni":
             classifier = classifier_mapping[dataset](attr=attribute, num_outputs=config_cls["attribute_size"][attribute],
                                     lr=config_cls["lr"], children=config_cls["anticausal_graph"][attribute], num_slices=config_cls["num_slices"],
-                                    attribute_ids=attribute_ids)
+                                    attribute_ids=attribute_ids, arch=config_cls["arch"])
         else:
             classifier = classifier_mapping[dataset](attr=attribute, num_outputs=config_cls["attribute_size"][attribute],
                                     lr=config_cls["lr"], context_dim=config_cls[attribute +"_context_dim"])
