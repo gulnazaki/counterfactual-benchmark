@@ -26,7 +26,7 @@ dataclass_mapping = {
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", '-c', type=str, help="Config file for experiment.", default="/home/n.spyrou/counterfactual-benchmark/counterfactual_benchmark/methods/deepscm/configs/celebahq_complex_hvae.json")
+    parser.add_argument("--config", '-c', type=str, help="Config file for experiment.", default="/home/n.spyrou/counterfactual-benchmark/counterfactual_benchmark/methods/deepscm/configs/celeba_complex_vae.json")
     return parser.parse_args()
 
 if __name__ == "__main__":
@@ -62,4 +62,3 @@ if __name__ == "__main__":
                  attribute_size=attribute_size,
                  checkpoint_dir=config["checkpoint_dir"],
                  normalize_=True)
-

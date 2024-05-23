@@ -198,8 +198,8 @@ def evaluate_minimality(real_set: Dataset, test_set: Dataset, batch_size: int, s
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", '-c', type=str, help="Config file for experiment.", default="./configs/celebahq_complex_hvae.json")
-    parser.add_argument("--classifier-config", '-clf', type=str, help="Classifier config file.", default="./configs/celebahq_classifier.json")
+    parser.add_argument("--config", '-c', type=str, help="Config file for experiment.", default="./configs/celeba_complex_vae.json")
+    parser.add_argument("--classifier-config", '-clf', type=str, help="Classifier config file.", default="./configs/celeba_complex_classifier.json")
     parser.add_argument("--metrics", '-m',
                         nargs="+", type=str,
                         help="Metrics to calculate. "

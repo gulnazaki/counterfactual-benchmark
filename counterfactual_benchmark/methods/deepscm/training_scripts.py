@@ -11,7 +11,7 @@ def get_dataloaders(data_class, attribute_size, config, transform=None, **kwargs
 
     if data.has_valid_set:
         train_set = data
-        val_set = data_class(attribute_size=attribute_size, split='valid', **kwargs)
+        val_set = data_class(attribute_size=attribute_size, transform=transform, split='valid', **kwargs)
     else:
         train_set, val_set = torch.utils.data.random_split(data, [config["train_val_split"], 1 - config["train_val_split"]])
 
