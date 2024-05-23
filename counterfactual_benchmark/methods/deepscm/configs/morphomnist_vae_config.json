@@ -19,8 +19,8 @@
                 "layers": 3,
                 "lr": 1e-3,
                 "batch_size_train" : 64,
-                "batch_size_val" : 10000,
-                "patience" : 2,
+                "batch_size_val" : 64,
+                "patience" : 5,
                 "max_epochs" : 1000,
                 "train_val_split" : 0.8
             }
@@ -33,8 +33,8 @@
                 "layers": 3,
                 "lr": 1e-3,
                 "batch_size_train" : 64,
-                "batch_size_val" : 10000,
-                "patience" : 2,
+                "batch_size_val" : 64,
+                "patience" : 5,
                 "max_epochs" : 1000,
                 "train_val_split" : 0.8
             }

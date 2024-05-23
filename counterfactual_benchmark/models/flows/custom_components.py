@@ -38,6 +38,50 @@ class SigmoidFlow(Flow):
         return inv, log_deriv
 
 
+class SoftmaxCentered(Flow):
+    """
+    Implements softmax as a bijection, the forward transformation appends a value to the
+    input and the inverse removes it. The appended coordinate represents a pivot, e.g., 
+    softmax(x) = exp(x-c) / sum(exp(x-c)) where c is the implicit last coordinate.
+
+    Adapted from a Tensorflow implementation: https://tinyurl.com/48vuh7yw 
+    """
+   # domain = constraints.real_vector
+   # codomain = constraints.simplex
+
+    def __init__(self, temperature: float = 1.):
+        super().__init__()
+        self.temperature = temperature
+
+    def forward(self, x):
+        zero_pad = torch.zeros(*x.shape[:-1], 1, device=x.device)
+        x_padded = torch.cat([x, zero_pad], dim=-1)
+        return (x_padded / self.temperature).softmax(dim=-1)
+
+    def inverse(self, y):
+        log_y = torch.log(y.clamp(min=1e-12))
+        unorm_log_probs = log_y[..., :-1] - log_y[..., -1:]
+        return unorm_log_probs * self.temperature
+
+    # def log_abs_det_jacobian(self, x: Tensor, y: Tensor): 
+    #     """ -log|det(dx/dy)| """
+    #     Kplus1 = torch.tensor(x.size(-1) + 1, dtype=x.dtype, device=x.device)
+    #     return 0.5 * kp1.log() + torch.sum(x, dim=-1) - \
+    #         Kplus1 * F.softplus(torch.logsumexp(x, dim=-1))
+
+    def log_abs_det_jacobian(self, x, y):
+        """ log|det(dy/dx)| """
+        Kplus1 = torch.tensor(y.size(-1), dtype=y.dtype, device=y.device)
+        return 0.5 * Kplus1.log() + torch.sum(torch.log(y.clamp(min=1e-12)), dim=-1)
+
+    def forward_shape(self, shape: torch.Size):
+        return shape[:-1] + (shape[-1] + 1,)  # forward appends one dim
+
+    def inverse_shape(self, shape: torch.Size):
+        if shape[-1] <= 1:
+            raise ValueError
+        return shape[:-1] + (shape[-1] - 1,)  # inverse removes last dim
+
 
 class ArgMaxGumbelFlow(Flow):
     def __init__(self, logits):
@@ -107,6 +151,7 @@ class GumbelCondFlow(Flow):
         self.p = p
 
 
+    '''
     def forward_kld(self, x, context):
        
         log_q = torch.zeros(len(x), device=x.device)
@@ -125,7 +170,7 @@ class GumbelCondFlow(Flow):
 
         return -torch.mean(log_q)
     
-    
+    '''
     
     def forward_kld(self, x, context):
         z = x

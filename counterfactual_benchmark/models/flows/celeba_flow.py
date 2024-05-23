@@ -13,7 +13,7 @@ from json import load
 
 class BaldFlow(GCondFlow):
     def __init__(self, params, name="Bald_flow", **kwargs):
-        lr = params.get('lr', 1e-6)
+        lr = params.get('lr', 1e-3)
         n_layers = params.get('n_layers', 1)
         super().__init__(name, lr, n_layers)
        # base = nf.distributions.base.DiagGaussian(1)
@@ -30,7 +30,7 @@ class BaldFlow(GCondFlow):
 
 class NoBeardFlow(GCondFlow):
     def __init__(self, params, name="No_Beard_flow", **kwargs):
-        lr = params.get('lr', 1e-6)
+        lr = params.get('lr', 1e-3)
         n_layers = params.get('n_layers', 1)
         super().__init__(name, lr, n_layers)
        # base = nf.distributions.base.DiagGaussian(1)

@@ -14,6 +14,36 @@
         "Bald" : 1
     },
 
+    "No_Beard": {
+        "model_type": "flow",
+        "model_class": "NoBeardFlow",
+        "module": "models.flows",
+        "params": {
+            "layers": 3,
+            "lr": 1e-3,
+            "batch_size_train" : 64,
+            "batch_size_val" : 64,
+            "patience" : 5,
+            "max_epochs" : 1000,
+            "train_val_split" : 0.8
+        }
+    },
+
+    "Bald": {
+        "model_type": "flow",
+        "model_class": "BaldFlow",
+        "module": "models.flows",
+        "params": {
+            "layers": 3,
+            "lr": 1e-3,
+            "batch_size_train" : 64,
+            "batch_size_val" : 64,
+            "patience" : 5,
+            "max_epochs" : 1000,
+            "train_val_split" : 0.8
+        }
+    },
+
     "mechanism_models": {
         "image": {
             "model_type": "vae",
@@ -39,7 +69,7 @@
                 "input_res": 64,
                 "wd":0.01,
                 "beta" : 5,
-                "lr" : 1e-3,
+                "lr" : 1e-5,
                 "gradient_clip_val": 350,
                 "batch_size_train" : 64,
                 "batch_size_val" : 64,
@@ -47,8 +77,8 @@
                 "max_epochs" : 1000,
                 "train_val_split" : 0.8,
                 "ema": "True",
-                "cf_fine_tune": "True",
-                "classifiers_arch": "resnet",
+                "cf_fine_tune": "False",
+                "classifiers_arch": "standard",
                 "ckpt_cls_path" : "./checkpoints_celeba/trained_classifiers/",
                 "evaluate_cf_model": "True",
                 "elbo_constraint": 2.26,

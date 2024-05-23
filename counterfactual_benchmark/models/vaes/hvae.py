@@ -91,7 +91,7 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
                                             "Bald": []
                                         }
                 
-               # version=self.params["classifiers_arch"]
+                version=self.params["classifiers_arch"]
                 self.classifiers = {atr: CelebaComplexClassifier(attr=atr, context_dim=len(list(self.anti_causal_cond[atr])), 
                                         version=self.params["classifiers_arch"]).eval() for atr in self.anti_causal_cond.keys()}
 
@@ -101,10 +101,12 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
                     file_name = next((file for file in os.listdir(self.params["ckpt_cls_path"]) if file.startswith(key)), None)
                     #print(file_name)
                     cls.load_state_dict(torch.load(self.params["ckpt_cls_path"] + file_name , map_location=torch.device('cuda'))["state_dict"])
-                    cls.to('cuda')
-
                     for param in cls.parameters():
                         param.requires_grad = False
+                    
+                    cls.to(device)
+
+                    
                # cls_young = CelebaComplexClassifier(attr="Young", context_dim=2, version=version).eval()
               #  cls_male = CelebaComplexClassifier(attr="Male", context_dim=2, version=version).eval()
                # cls_no_beard = CelebaComplexClassifier(attr="No_Beard", version=version).eval()
@@ -174,6 +176,7 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
             return dict(elbo=nelbo, nll=nll_pp, kl=kl_pp)
 
         else:
+           # print("CHECK LOSSES FOR NAN!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", dict(elbo=None, nll=None, kl=None))
             return dict(elbo=None, nll=None, kl=None)
 
 
@@ -315,7 +318,7 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
                 self.lmbda.data.clamp_(min=0)
                 
               
-                self.log("total_loss", total_loss, on_step=False, on_epoch=True, prog_bar=True)
+                self.log("total_loss", total_loss, on_step=True, on_epoch=True, prog_bar=True)
 
             else:
                total_loss = None
@@ -341,7 +344,7 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
                 optimizer.step()
 
                 for key , value in nelbo_loss.items():
-                    self.log(key, value, on_step=False, on_epoch=True, prog_bar=True)
+                    self.log(key, value, on_step=True, on_epoch=True, prog_bar=True)
                 
                 if self.trainer.is_last_batch == 0:
                     scheduler.step()
@@ -424,6 +427,7 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
 
             else:
                val_loss = None
+               #self.log("val_loss", val_loss, on_step=True, on_epoch=True, prog_bar=True)
 
 
             return val_loss
@@ -477,10 +481,9 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
         return  z , eps, cond , x
 
 
-
     def decode(self, u, cond):
         z , e , _, _ = u
-        t_u = 0.2  ##temp parameter
+        t_u = 0.1  ##temp parameter
      
         cf_pa =  self.expand_parents(cond)
 
