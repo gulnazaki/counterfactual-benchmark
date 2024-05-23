@@ -15,15 +15,6 @@ from models.utils import flatten_list, continuous_feature_map
 from models.gans import CondGAN
 
 
-
-#Layer F K S BN D A
-#Conv2D 64 (2,2) (1,1) Y 0.0 LReLU
-#Conv2D 128 (7,7) (2,2) Y 0.0 LReLU
-#Conv2D 256 (5,5) (2,2) Y 0.0 LReLU
-#Conv2D 256 (7,7) (2,2) Y 0.0 LReLU
-#Conv2D 512 (4,4) (1,1) Y 0.0 LReLU
-#Conv2D 512 (1,1) (1,1) Y 0.0 Linea
-
 class Encoder(nn.Module):
     def __init__(self, latent_dim, num_continuous, n_chan=[3, 64, 128, 256, 256, 512, 512], stride=[1, 2, 2, 2, 1, 1],
                  kernel_size=[2, 7, 5, 7, 4, 1], padding=[0, 0, 0, 0, 0, 0, 0]):
@@ -55,24 +46,22 @@ class Encoder(nn.Module):
 
     def forward(self, x: torch.Tensor, cond):
 
-
+       
         attr1 = cond[:, 0]
         attr2 = cond[:, 1]
         attr1 = continuous_feature_map(attr1, size=(x.shape[2], x.shape[3]))
         attr2 = continuous_feature_map(attr2, size=(x.shape[2], x.shape[3]))
-
-        features = torch.concat((x, attr1, attr2), dim=1)
+        attr3 = cond[:, 2]
+        attr4 = cond[:, 3]
+        attr3 = continuous_feature_map(attr3, size=(x.shape[2], x.shape[3]))
+        attr4 = continuous_feature_map(attr4, size=(x.shape[2], x.shape[3]))
+        features = torch.concat((x, attr1, attr2, attr3, attr4), dim=1)
+        
         features = self.layers(features)
 
         return features
 
-#Layer F K S BN D A
-#Conv2DT 512 (4,4) (1,1) Y 0.0 LReLU
-#Conv2DT 256 (7,7) (2,2) Y 0.0 LReLU
-#Conv2DT 256 (5,5) (2,2) Y 0.0 LReLU
-#Conv2DT 128 (7,7) (2,2) Y 0.0 LReLU
-#Conv2DT 64 (2,2) (1,1) Y 0.0 LReLU
-#Conv2D 3 (1,1) (1,1) Y 0.0 Sigmoid
+
 class Decoder(nn.Module):
     def __init__(self, latent_dim, num_continuous, n_chan=[512 ,512, 256, 256, 128, 64, 3], stride=[1, 2, 2, 2, 1, 1],
                  kernel_size=[4, 7, 5, 7, 2, 1], padding=[0, 0, 0, 0, 0, 0]):
@@ -102,15 +91,21 @@ class Decoder(nn.Module):
         self.layers.append(sig)
 
     def forward(self, u, cond):
-
+       
         attr1 = cond[:, 0]
         attr2 = cond[:, 1]
         attr1 = continuous_feature_map(attr1, size=(1, 1))
         attr2 = continuous_feature_map(attr2, size=(1, 1))
 
+        attr3 = cond[:, 2]
+        attr4 = cond[:, 3]
+        attr3 = continuous_feature_map(attr3, size=(1, 1))
+        attr4 = continuous_feature_map(attr4, size=(1, 1))
 
-        features = torch.concat((u, attr1, attr2), dim=1)
-
+        features = torch.concat((u, attr1, attr2, attr3, attr4), dim=1)
+        
+      
+      
         features = self.layers(features)
 
         return features
@@ -171,7 +166,13 @@ class Discriminator(nn.Module):
         attr2 = cond[:, 1]
         attr1 = continuous_feature_map(attr1, size=(x.shape[2], x.shape[3]))
         attr2 = continuous_feature_map(attr2, size=(x.shape[2], x.shape[3]))
-        features = torch.concat((x, attr1, attr2), dim=1)
+        attr3 = cond[:, 2]
+        attr4 = cond[:, 3]
+        attr3 = continuous_feature_map(attr3, size=(x.shape[2], x.shape[3]))
+        attr4 = continuous_feature_map(attr4, size=(x.shape[2], x.shape[3]))
+        
+        
+        features = torch.concat((x, attr1, attr2,attr3, attr4), dim=1)
 
         dx = self.dx(features)
         dz = self.dz(u)
