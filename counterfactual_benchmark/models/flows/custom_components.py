@@ -14,13 +14,13 @@ class ConstAddScaleFlow(Flow):
         super().__init__()
         self.const = const
         self.scale = scale
-      
+
     def forward(self, z):
         return z/self.scale - self.const, torch.ones(len(z), device=z.device)/self.scale
-    
+
     def inverse(self, z):
         return (z + self.const)*self.scale, torch.ones(len(z), device=z.device)/self.scale
-    
+
 class SigmoidFlow(Flow):
     """
     Performs a sigmoid transformation on the input.
@@ -31,7 +31,7 @@ class SigmoidFlow(Flow):
     def forward(self, z):
         log_deriv = (z - 2*torch.log(1 + torch.exp(z))).squeeze()
         return torch.sigmoid(z), log_deriv
-    
+
     def inverse(self, z):
         inv = torch.log(z) - torch.log(1 - z)
         log_deriv = (z - 2*torch.log(1 + torch.exp(z))).squeeze()
@@ -41,10 +41,10 @@ class SigmoidFlow(Flow):
 class SoftmaxCentered(Flow):
     """
     Implements softmax as a bijection, the forward transformation appends a value to the
-    input and the inverse removes it. The appended coordinate represents a pivot, e.g., 
+    input and the inverse removes it. The appended coordinate represents a pivot, e.g.,
     softmax(x) = exp(x-c) / sum(exp(x-c)) where c is the implicit last coordinate.
 
-    Adapted from a Tensorflow implementation: https://tinyurl.com/48vuh7yw 
+    Adapted from a Tensorflow implementation: https://tinyurl.com/48vuh7yw
     """
    # domain = constraints.real_vector
    # codomain = constraints.simplex
@@ -63,7 +63,7 @@ class SoftmaxCentered(Flow):
         unorm_log_probs = log_y[..., :-1] - log_y[..., -1:]
         return unorm_log_probs * self.temperature
 
-    # def log_abs_det_jacobian(self, x: Tensor, y: Tensor): 
+    # def log_abs_det_jacobian(self, x: Tensor, y: Tensor):
     #     """ -log|det(dx/dy)| """
     #     Kplus1 = torch.tensor(x.size(-1) + 1, dtype=x.dtype, device=x.device)
     #     return 0.5 * kp1.log() + torch.sum(x, dim=-1) - \
@@ -86,22 +86,22 @@ class SoftmaxCentered(Flow):
 class ArgMaxGumbelFlow(Flow):
     def __init__(self, logits):
         super().__init__()
-        
-        #self.context_nn = context_nn
+
+        # self.context_nn = context_nn
         self.logits = logits
         self.categorical_distr = Categorical(logits=self.logits)
-        
-        
+
+
 
     def forward(self, u_gumbels):
-       # logits = self.context_nn(context)
+        # logits = self.context_nn(context)
         y = u_gumbels + self.logits
-        return y.argmax(dim=-1)
-    
+        return y.argmax(dim=-1).unsqueeze(-1)
+
     # infer gumbel noise ε given observation x and parents pa_x
     def inverse(self, x):
        # logits = self.context_nn(context)
-        
+
         uniforms = torch.rand(
             self.logits.shape,
             dtype=self.logits.dtype,
@@ -121,30 +121,30 @@ class ArgMaxGumbelFlow(Flow):
         g = gumbels + self.logits
         # (batch_size, num_classes)
         epsilons = -torch.log(mask * torch.exp(-g) + torch.exp(-topgumbel)) - (mask * self.logits)
-      
+
         return epsilons
-    
+
     def compute_log_prob(self, x):
         return -self.categorical_distr.log_prob(x.squeeze(-1)).unsqueeze(-1)
-    
+
 
 class GumbelConditionalFlow(Flow):
     def __init__(self, context_nn):
         super().__init__()
         self.context_nn = context_nn
-    
+
 
     def condition(self, context):
         logits = self.context_nn(context)
        # print(logits)
         return ArgMaxGumbelFlow(logits=logits)
-    
+
 
 from torch.distributions.utils import _sum_rightmost
 
 class GumbelCondFlow(Flow):
 
-    def __init__(self, q0, flows, p=None): 
+    def __init__(self, q0, flows, p=None):
         super().__init__()
         self.q0 = q0
         self.flows = nn.ModuleList(flows)
@@ -153,25 +153,25 @@ class GumbelCondFlow(Flow):
 
     '''
     def forward_kld(self, x, context):
-       
+
         log_q = torch.zeros(len(x), device=x.device)
         z = x
         for i in range(len(self.flows) - 1, -1, -1):
             argmax_gumbel_flow = self.flows[i].condition(context)
             z = argmax_gumbel_flow.inverse(z)
-            
-    
+
+
             #z = self.flows[i].inverse(z, context)
-            
+
        # print(self.q0.log_prob(z).shape, log_q.shape, z.shape)
         log_q += _sum_rightmost(self.q0.log_prob(z) , dim=1)
-        
+
         #log_q += self.q0.log_prob(z[: , 0])
 
         return -torch.mean(log_q)
-    
+
     '''
-    
+
     def forward_kld(self, x, context):
         z = x
         log_prob = torch.zeros(len(x), device=x.device)
@@ -180,27 +180,41 @@ class GumbelCondFlow(Flow):
             z = argmax_gumbel_flow.inverse(z)
 
             log_prob = log_prob - argmax_gumbel_flow.compute_log_prob(x)
-            
-    
+
+
         return -torch.mean(log_prob)
 
-    
+
     def sample(self, context, num_samples=1):
         z = self.q0.sample((num_samples,))
-        
+
         for flow in self.flows:
             argmax_gumbel_flow = flow.condition(context)
             z = argmax_gumbel_flow(z)
-            
+
             #log_q -= log_det
         return z
 
+    def forward(self, z, context):
+        for flow in self.flows:
+            argmax_gumbel_flow = flow.condition(context)
+            z = argmax_gumbel_flow(z)
+
+        return z
+
+
+    def inverse(self, x, context):
+        for i in range(len(self.flows) - 1, -1, -1):
+            argmax_gumbel_flow = self.flows[i].condition(context)
+            x = argmax_gumbel_flow.inverse(x)
+
+        return x
 
 class CondFlow(Flow):
     """
     Normalizing Flow model to approximate target distribution, with context layers.
     """
-    def __init__(self, q0, flows, p=None): 
+    def __init__(self, q0, flows, p=None):
         super().__init__()
         self.q0 = q0
         self.flows = nn.ModuleList(flows)
@@ -248,11 +262,11 @@ class CondFlow(Flow):
         for i in range(len(self.flows) - 1, -1, -1):
             if self.flows[i].__class__.__name__  == 'MaskedAffineAutoregressive':
                 z, log_det = self.flows[i].inverse(z, context)
-            
+
             else:
                 z, log_det = self.flows[i].inverse(z)
             log_q += log_det
-        
+
         log_q += self.q0.log_prob(z)
         return -torch.mean(log_q)
 
