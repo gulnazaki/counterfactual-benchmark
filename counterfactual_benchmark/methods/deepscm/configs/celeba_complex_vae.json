@@ -45,7 +45,7 @@
                 "train_val_split" : 0.8
             }
         },
-      
+
         "image": {
             "model_type": "vae",
             "model_class": "CelebaCondVAE",
@@ -69,5 +69,5 @@
     },
 
     "dataset": "celeba",
-    "checkpoint_dir": "/home/n.spyrou/counterfactual-benchmark/counterfactual_benchmark/methods/deepscm/checkpoints_celeba/trained_scm"
+    "checkpoint_dir": "./checkpoints_celeba/trained_scm"
 }
