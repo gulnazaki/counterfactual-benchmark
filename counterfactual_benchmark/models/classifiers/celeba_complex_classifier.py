@@ -121,7 +121,7 @@ class CelebaComplexClassifier(pl.LightningModule):
 
         loss = nn.BCEWithLogitsLoss()(y_hat, y.type(torch.float32).view(-1, 1)) #applies sigmoid      
         val_f1 = self.f1_score(y_hat, y.type(torch.long).view(-1,1))
-        metrics = {'val_loss': loss, 'val_f1': val_f1}
+        metrics = {'val_f1': val_f1, 'val_loss': loss,}
         self.log_dict(metrics, prog_bar=True, logger=True, on_epoch=True)
        
 

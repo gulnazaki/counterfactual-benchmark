@@ -20,7 +20,7 @@ from torchvision.transforms import Compose, AutoAugment, RandomHorizontalFlip
 
 def train_classifier(classifier, attr, train_set, val_set, config, default_root_dir, weights = None):
 
-    ckp_callback = generate_checkpoint_callback(attr + "_classifier", config["ckpt_path"], monitor="val_loss")
+    ckp_callback = generate_checkpoint_callback(attr + "_classifier", config["ckpt_path"], monitor="val_f1", mode="max")
     callbacks = [ckp_callback]
 
     if config["ema"] == "True":
@@ -28,13 +28,17 @@ def train_classifier(classifier, attr, train_set, val_set, config, default_root_
 
     trainer = Trainer(accelerator="auto", devices="auto", strategy="auto",
                       callbacks=[ckp_callback,
-                                 generate_early_stopping_callback(patience=config["patience"], monitor="val_loss")],
+                                 generate_early_stopping_callback(patience=config["patience"], monitor="val_f1", mode="max")],
                       default_root_dir=default_root_dir, max_epochs=config["max_epochs"])
 
     if weights!=None:
         sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(train_set), replacement=True)
         print("USE SAMPLER!!!")
-        train_data_loader = torch.utils.data.DataLoader(train_set, sampler=sampler, batch_size=config["batch_size_train"],  drop_last=False)
+        train_data_loader = torch.utils.data.DataLoader(train_set, sampler=sampler, batch_size=config_cls["batch_size_train"],  drop_last=False)
+      #  data_iter = iter(train_data_loader)
+      #  train_batch = next(data_iter)
+      #  _ , labels = train_batch
+      #  print(((labels.squeeze(0)) == 1).sum(), ((labels.squeeze(0)) == 0).sum())
     else:
         train_data_loader = torch.utils.data.DataLoader(train_set, batch_size=config["batch_size_train"],  shuffle=True, drop_last=False)
 
@@ -86,7 +90,7 @@ if __name__ == "__main__":
                                                               1-config_cls["train_val_split"]])
 
     for attribute in attribute_size.keys():
-        print("Train "+ attribute +" classfier!!")
+        print("Train "+ attribute +" classifier!!")
 
         if dataset in {"celeba", "celebahq"}:
 
@@ -102,11 +106,35 @@ if __name__ == "__main__":
                 classifier = CelebaClassifier(attr=attribute, num_outputs=config_cls[attribute +"_num_out"], 
                                           lr=config_cls["lr"])
             
+            #do oversampling for these attributes
             if attribute == "Smiling":
                 weights = torch.tensor(joblib.load("../../datasets/celeba/weights/weights_smiling.pkl")).double()
         
             elif attribute == "Eyeglasses":
                 weights = torch.tensor(joblib.load("../../datasets/celeba/weights/weights_eyes.pkl")).double()
+            
+            elif attribute in {"No_Beard", "Bald"}:
+                if dataset == "celeba":
+                    samples = [train_set.data[i][0] for i in range(len(train_set))]
+                else:
+                    samples = [train_set.data[i] for i in range(len(train_set))]
+                
+                labels = train_set.attrs[: , classifier.variables[attribute]].long()
+                print((labels == 1).sum(), (labels==0).sum())
+              #  print(labels.shape)
+              #  print(labels)
+                class_count = torch.tensor([(labels == t).sum() for t in torch.unique(labels, sorted=True)])
+                print(class_count)
+                class_weights = 1. / class_count.float()
+
+                weights = class_weights[labels]
+                print(weights)
+
+
+            
+            elif attribute == "Bald":
+                pass
+
             else:
                 weights = None
                 
