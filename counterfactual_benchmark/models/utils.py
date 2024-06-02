@@ -58,6 +58,8 @@ def init_bias(m):
 
 def init_weights(layer, std=0.01):
     name = layer.__class__.__name__
+    if name == 'ConvBlock':
+        return
     if name.startswith('Conv'):
         torch.nn.init.normal_(layer.weight, mean=0, std=std)
         if layer.bias is not None:
@@ -68,7 +70,7 @@ def continuous_feature_map(c: torch.Tensor, size: tuple = (32, 32)):
 
 def rgbify(image, normalized=True):
     if image.shape[1] == 1:
-        if normalized:
+        if normalized and torch.min(image) < -0.5:
             # MorphoMNIST: [-1, 1] -> [0, 1]
             image = (image + 1) / 2
         image = image.repeat(1, 3, 1, 1)

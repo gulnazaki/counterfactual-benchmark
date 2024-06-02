@@ -48,9 +48,9 @@ def bin_array(num, m=None, reverse=False):
     else:
         return np.array(list(np.binary_repr(num).zfill(m))).astype(np.float32)
 
-def ordinal_array(num, m=None, reverse=False):
+def ordinal_array(num, m=None, reverse=False, scale=1):
     if reverse:
-        return torch.count_nonzero(num, dim=1).to(num.device)
+        return scale * torch.count_nonzero(num, dim=1).to(num.device)
     else:
         return np.pad(np.ones(num), (m - num, 0), 'constant').astype(np.float32)
 
@@ -157,15 +157,17 @@ def load_extra_attributes(csv_path, attributes, attribute_dict, subject_dates_di
 
 class ADNI(Dataset):
     def __init__(self, attribute_size, split='train', normalize_=True,
-                 transform=None, transform_cls=None, num_of_slices=10, keep_only_screening=False,
-                 data_dir='/storage/th.melistas/ADNI/ADNI1_Complete_1Yr/preprocessed_data',
-                 csv_path='/storage/th.melistas/ADNI/ADNIMERGE_22Apr2024.csv'):
+                 transform=None, transform_cls=None, num_of_slices=30, keep_only_screening=False,
+                 data_dir='/home/ubuntu/ADNI/preprocessed_data',
+                 csv_path='/home/ubuntu/ADNI/ADNIMERGE_22Apr2024.csv'):
         super().__init__()
         self.has_valid_set = True
         self.transform = transform
         self.transform_cls = transform_cls
         # pad: 180x180 -> 192x192
         self.pad = transforms.Pad(padding=6)
+
+        num_of_slices = attribute_size['slice']
 
         assert num_of_slices <= 30, "The 30 middle slices have been saved"
         images, attribute_dict, subject_dates_dict = load_data(data_dir, num_of_slices=num_of_slices,

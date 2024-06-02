@@ -14,7 +14,7 @@
         "sex": 1,
         "brain_vol": 1,
         "vent_vol": 1,
-        "slice": 10
+        "slice": 20
     },
     "mechanism_models": {
         "brain_vol": {
@@ -48,21 +48,22 @@
             "model_class": "ADNICondGAN",
             "module": "models.gans",
             "params": {
-                "n_chan_enc": [1, 32, 64, 128, 256, 256, 512, 512],
-                "n_chan_gen": [512 ,512, 256, 256, 128, 64, 32, 1],
                 "latent_dim": 512,
+                "kernel_size": 3,
+                "input_size": 192,
+                "initial_filters": 32,
                 "d_updates_per_g_update": 1,
                 "gradient_clip_val": 0.5,
                 "finetune": 0,
                 "pretrained_path": "",
                 "lr": 1e-4,
-                "batch_size_train": 128,
+                "batch_size_train": 64,
                 "batch_size_val": 128,
-                "patience": 10,
+                "patience": 40,
                 "max_epochs": 1000
             }
         }
     },
     "dataset": "adni",
-    "checkpoint_dir": "./checkpoints/adni/trained_scm"
+"checkpoint_dir": "./checkpoints/adni/trained_scm"
 }
