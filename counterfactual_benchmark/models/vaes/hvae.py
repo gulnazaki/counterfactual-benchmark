@@ -32,7 +32,7 @@ def gaussian_kl(q_loc, q_logscale, p_loc, p_logscale):
 
 
 class CondHVAE(StructuralEquation, pl.LightningModule):
-    
+
     def __init__(self, encoder, decoder, likelihood, params, cf_fine_tune, evaluate, name):
 
         super().__init__()
@@ -52,19 +52,19 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
         self.free_bits = params["kl_free_bits"]
         self.cf_fine_tune = cf_fine_tune
 
-        
+
         self.lmbda = nn.Parameter(0.0 * torch.ones(1))
         self.elbo_constraint = params["elbo_constraint"]
         self.register_buffer("eps", self.elbo_constraint * torch.ones(1))
-       
 
-        if self.cf_fine_tune:   
+
+        if self.cf_fine_tune:
             if not self.evaluate:
                 self.load_hvae_checkpoint_for_finetuning()   #load pretrained checkpoint
 
             device = "cuda"
 
-            if self.params["context_dim"] == 2: #simple celeba graph 
+            if self.params["context_dim"] == 2: #simple celeba graph
 
                 smiling_cls = CelebaClassifier(attr="Smiling").eval()
                 eye_cls = CelebaClassifier(attr="Eyeglasses").eval()
@@ -72,13 +72,13 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
                 for model in [smiling_cls, eye_cls]:
                     for param in model.parameters():
                         param.requires_grad = False
-            
+
                 smiling_cls.load_state_dict(torch.load("../../methods/deepscm/checkpoints_celeba/trained_classifiers/Smiling_classifier-epoch=23.ckpt",
                                      map_location=torch.device("cuda"))["state_dict"])
-            
+
                 eye_cls.load_state_dict(torch.load("../../methods/deepscm/checkpoints_celeba/trained_classifiers/Eyeglasses_classifier-epoch=10.ckpt",
                                   map_location=torch.device("cuda"))["state_dict"])
-            
+
                 self.smiling_cls = smiling_cls.to(device)
                 self.eye_cls = eye_cls.to(device)
 
@@ -90,12 +90,12 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
                                             "No_Beard": [],
                                             "Bald": []
                                         }
-                
+
                 version=self.params["classifiers_arch"]
-                self.classifiers = {atr: CelebaComplexClassifier(attr=atr, context_dim=len(list(self.anti_causal_cond[atr])), 
+                self.classifiers = {atr: CelebaComplexClassifier(attr=atr, context_dim=len(list(self.anti_causal_cond[atr])),
                                         version=self.params["classifiers_arch"]).eval() for atr in self.anti_causal_cond.keys()}
 
-                
+
                 for key , cls in self.classifiers.items():
                    # print(key)
                     file_name = next((file for file in os.listdir(self.params["ckpt_cls_path"]) if file.startswith(key)), None)
@@ -103,10 +103,10 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
                     cls.load_state_dict(torch.load(self.params["ckpt_cls_path"] + file_name , map_location=torch.device('cuda'))["state_dict"])
                     for param in cls.parameters():
                         param.requires_grad = False
-                    
+
                     cls.to(device)
 
-                    
+
                # cls_young = CelebaComplexClassifier(attr="Young", context_dim=2, version=version).eval()
               #  cls_male = CelebaComplexClassifier(attr="Male", context_dim=2, version=version).eval()
                # cls_no_beard = CelebaComplexClassifier(attr="No_Beard", version=version).eval()
@@ -118,17 +118,17 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
 
                 #cls_young.load_state_dict(torch.load("../../methods/deepscm/checkpoints_celeba/trained_classifiers/Young_classifier-epoch=51.ckpt",
                #                      map_location=torch.device("cuda"))["state_dict"])
-            
+
                 #cls_male.load_state_dict(torch.load("../../methods/deepscm/checkpoints_celeba/trained_classifiers/Male_classifier-epoch=52.ckpt",
                 #                  map_location=torch.device("cuda"))["state_dict"])
-                
+
 
                 #cls_no_beard.load_state_dict(torch.load("../../methods/deepscm/checkpoints_celeba/trained_classifiers/No_Beard_classifier-epoch=51.ckpt",
                  #                    map_location=torch.device("cuda"))["state_dict"])
-            
+
                 #cls_bald.load_state_dict(torch.load("../../methods/deepscm/checkpoints_celeba/trained_classifiers/Bald_classifier-epoch=28.ckpt",
                 #                  map_location=torch.device("cuda"))["state_dict"])
-            
+
                 #self.cls_young = cls_young.to(device)
                # self.cls_male = cls_male.to(device)
                # self.cls_no_beard = cls_no_beard.to(device)
@@ -138,7 +138,7 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
 
     def expand_parents(self, pa):
         return pa[..., None, None].repeat(1, 1, *(self.params["input_res"],) * 2) #expand the parents
-    
+
 
     def load_hvae_checkpoint_for_finetuning(self):
         file_name = self.params["checkpoint_file"]
@@ -147,7 +147,7 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
         self.load_state_dict(torch.load(file_name, map_location=torch.device(device))["state_dict"])
         print("checkpoint loaded!")
         return
-    
+
     def forward(self, x, parents, beta):
         acts = self.encoder(x)
         h, stats = self.decoder(parents=parents, x=acts)
@@ -251,21 +251,21 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
             optimizer , lagrange_opt = self.optimizers()
 
             cond_ = self.expand_parents(cond)
-            out = self.forward(x, cond_, beta = self.beta)  
+            out = self.forward(x, cond_, beta = self.beta)
             nelbo_loss = out
-            
+
             z , e , f_pa, obs = self.encode(x , cond)
             u = z , e , f_pa, obs
             cf_pa = cond
-            
+
             if self.params["context_dim"] == 2: #simple causal graph
                 attr = random.choice([0,1])
-            
+
                 if torch.rand(1) < 0.8: #select a parent to intervene
                     cf_pa[:,attr] = 1-cond[:,attr] #flip smile
-            
-         
-             
+
+
+
                 cf_x = self.decode(u, cf_pa)
                 y_s_target = cf_pa[:, 0]
                 y_e_target = cf_pa[:, 1]
@@ -278,14 +278,14 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
 
             else: #comple causal graph context_dim:4
                 attr = random.choice([0,1,2,3])
-                
+
                 if torch.rand(1) < 0.8: #select a parent to intervene
                     cf_pa[:,attr] = 1-cond[:,attr] #flip attr
 
-                
+
                 cf_x = self.decode(u, cf_pa)
                 y_young_target, y_male_target , y_no_beard_target, y_bald_target = cf_pa[:, 0], cf_pa[:, 1], cf_pa[:, 2], cf_pa[:, 3]
-                
+
                 condition = torch.cat((cf_pa[:,2].view(-1,1), cf_pa[:,3].view(-1,1)), dim = 1)
 
                 y_hat_young = self.classifiers["Young"](cf_x, y = condition)
@@ -300,8 +300,8 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
 
                 conditional_loss = 0.25 * (young_cond_loss + male_cond_loss + no_beard_cond_loss + bald_cond_loss)
 
-            
-            
+
+
             optimizer.zero_grad(set_to_none=True)
             lagrange_opt.zero_grad(set_to_none=True)
 
@@ -316,8 +316,8 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
                 optimizer.step()
                 lagrange_opt.step()  # gradient ascent on lmbda
                 self.lmbda.data.clamp_(min=0)
-                
-              
+
+
                 self.log("total_loss", total_loss, on_step=True, on_epoch=True, prog_bar=True)
 
             else:
@@ -325,7 +325,7 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
 
 
             return total_loss
-        
+
         else:
             optimizer = self.optimizers()
             scheduler = self.lr_schedulers()
@@ -336,50 +336,50 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
 
             optimizer.zero_grad()
             loss = nelbo_loss["elbo"]
-            
+
             if loss!=None:
-              
+
                 self.manual_backward(loss)
                 self.clip_gradients(optimizer, gradient_clip_val=350, gradient_clip_algorithm="norm")
                 optimizer.step()
 
                 for key , value in nelbo_loss.items():
                     self.log(key, value, on_step=True, on_epoch=True, prog_bar=True)
-                
+
                 if self.trainer.is_last_batch == 0:
                     scheduler.step()
 
                 return loss
-        
+
             return loss
 
-    
+
     def validation_step(self, val_batch, batch_idx):
         x, cond = val_batch
 
         cond_ = self.expand_parents(cond)
-        out = self.forward(x, cond_, beta=self.beta)  
+        out = self.forward(x, cond_, beta=self.beta)
 
         nelbo_loss = out["elbo"]
 
         if self.cf_fine_tune: #
 
             cond_ = self.expand_parents(cond)
-            out = self.forward(x, cond_, beta = self.beta)  
+            out = self.forward(x, cond_, beta = self.beta)
             nelbo_loss = out
-            
+
             z , e , f_pa, obs = self.encode(x , cond)
             u = z , e , f_pa, obs
             cf_pa = cond
-            
+
             if self.params["context_dim"] == 2: #simple causal graph
                 attr = random.choice([0,1])
-            
+
                 if torch.rand(1) < 0.8: #select a parent to intervene
                     cf_pa[:,attr] = 1-cond[:,attr] #flip smile
-            
-         
-             
+
+
+
                 cf_x = self.decode(u, cf_pa)
                 y_s_target = cf_pa[:, 0]
                 y_e_target = cf_pa[:, 1]
@@ -392,14 +392,14 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
 
             else: #comple causal graph context_dim:4
                 attr = random.choice([0,1,2,3])
-                
+
                 if torch.rand(1) < 0.8: #select a parent to intervene
                     cf_pa[:,attr] = 1-cond[:,attr] #flip attr
 
-                
+
                 cf_x = self.decode(u, cf_pa)
                 y_young_target, y_male_target , y_no_beard_target, y_bald_target = cf_pa[:, 0], cf_pa[:, 1], cf_pa[:, 2], cf_pa[:, 3]
-                
+
                 condition = torch.cat((cf_pa[:,2].view(-1,1), cf_pa[:,3].view(-1,1)), dim = 1)
 
                 y_hat_young = self.classifiers["Young"](cf_x, y = condition)
@@ -422,7 +422,7 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
                 damp = 100 * sg
                 val_loss = conditional_loss - (self.lmbda - damp) * (self.eps - out["elbo"])
 
-              
+
                 self.log("val_loss", val_loss, on_step=False, on_epoch=True, prog_bar=True)
 
             else:
@@ -435,7 +435,7 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
         val_loss = nelbo_loss
         if nelbo_loss!=None:
             self.log("val_loss", val_loss, on_step=False, on_epoch=True, prog_bar=True)
-        
+
         return nelbo_loss
 
 
@@ -443,13 +443,13 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
 
         if self.cf_fine_tune:
            # self.lr = 1e-5
-            optimizer = AdamW([p for n, p in self.named_parameters() if n != "lmbda"], lr=self.lr, 
+            optimizer = AdamW([p for n, p in self.named_parameters() if n != "lmbda"], lr=self.lr,
                               weight_decay=self.weight_decay, betas=[0.9, 0.9])
-            
-            lagrange_opt = torch.optim.AdamW([self.lmbda], lr=1e-2, betas=[0.9, 0.9], 
+
+            lagrange_opt = torch.optim.AdamW([self.lmbda], lr=1e-2, betas=[0.9, 0.9],
                                              weight_decay=0, maximize=True)
-            
-            
+
+
             return optimizer , lagrange_opt
 
 
@@ -475,16 +475,22 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
 
         rec_loc, rec_scale = self.forward_latents(z, parents=cond, return_loc=True)
         # abduct exogenous noise u
-     
+
         eps = (x - rec_loc) / rec_scale.clamp(min=1e-12)
 
-        return  z , eps, cond , x
+        return z, eps, cond, x
 
 
-    def decode(self, u, cond):
-        z , e , _, _ = u
+    def decode(self, u, cond, latent_mediator=False):
+        z, e, pa, x = u
+
+        # if using latent mediator we abduct also a counterfactual z
+        if latent_mediator:
+            t = self.temperature if hasattr(self, 'temperature') else 0.1
+            z = self.abduct(x, pa, t=t, cf_parents=cond, alpha=0.65)
+
         t_u = 0.1  ##temp parameter
-     
+
         cf_pa =  self.expand_parents(cond)
 
         cf_loc, cf_scale = self.forward_latents(z, parents=cf_pa, return_loc=True)
