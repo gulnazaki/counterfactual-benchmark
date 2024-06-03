@@ -47,12 +47,12 @@ def train_classifier(classifier, attr, train_set, val_set, config, default_root_
     if weights != None:
         sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(train_set), replacement=True)
         print("Using sampler!")
-        train_data_loader = torch.utils.data.DataLoader(train_set, sampler=sampler, batch_size=config["batch_size_train"],  drop_last=False)
+        train_data_loader = torch.utils.data.DataLoader(train_set, sampler=sampler, batch_size=config["batch_size_train"],  drop_last=False, num_workers=7)
     else:
-        train_data_loader = torch.utils.data.DataLoader(train_set, batch_size=config["batch_size_train"], shuffle=True, drop_last=False)
+        train_data_loader = torch.utils.data.DataLoader(train_set, batch_size=config["batch_size_train"], shuffle=True, drop_last=False, num_workers=7)
 
 
-    val_data_loader = torch.utils.data.DataLoader(val_set, batch_size=config["batch_size_val"], shuffle=False)
+    val_data_loader = torch.utils.data.DataLoader(val_set, batch_size=config["batch_size_val"], shuffle=False, num_workers=7)
     trainer.fit(classifier, train_data_loader, val_data_loader)
 
 
@@ -95,7 +95,7 @@ if __name__ == "__main__":
         print("Train "+ attribute +" classfier!!")
         if dataset == "adni":
             classifier = classifier_mapping[dataset](attr=attribute, num_outputs=config_cls["attribute_size"][attribute],
-                                    lr=config_cls["lr"], children=config_cls["anticausal_graph"][attribute], num_slices=config_cls["num_slices"],
+                                    lr=config_cls["lr"], children=config_cls["anticausal_graph"][attribute], num_slices=config_cls["attribute_size"][attribute],
                                     attribute_ids=attribute_ids, arch=config_cls["arch"])
         else:
             classifier = classifier_mapping[dataset](attr=attribute, num_outputs=config_cls["attribute_size"][attribute],

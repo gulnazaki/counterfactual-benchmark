@@ -281,7 +281,7 @@ if __name__ == "__main__":
         else:
             attribute_ids = get_attribute_ids(attribute_size)
             predictors = {atr: ADNIClassifier(attr=atr, num_outputs=attribute_size[atr], children=config_cls["anticausal_graph"][atr],
-                                              num_slices=config_cls["num_slices"], attribute_ids=attribute_ids) for atr in attribute_size.keys()}
+                                              num_slices=attribute_size['slice'], attribute_ids=attribute_ids, arch=config_cls['arch']) for atr in attribute_size.keys()}
 
         # load checkpoints of the predictors
         for key , cls in predictors.items():

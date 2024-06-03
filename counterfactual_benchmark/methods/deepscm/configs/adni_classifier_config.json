@@ -15,12 +15,11 @@
         "sex": 1,
         "brain_vol": 1,
         "vent_vol": 1,
-        "slice": 10
+        "slice": 20
     },
 
     "dataset": "adni",
     "arch": "resnet",
-    "num_slices": 10,
     "ckpt_path" : "./checkpoints/adni/trained_classifiers/",
     "in_shape" : [1, 192, 192],
     "patience" : 20,

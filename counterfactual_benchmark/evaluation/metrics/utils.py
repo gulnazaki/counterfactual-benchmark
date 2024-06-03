@@ -1,7 +1,11 @@
+import sys
+sys.path.append("../../")
+
 import matplotlib.pyplot as plt
 import numpy as np
 import os
 import torch
+from datasets.adni.dataset import bin_array, ordinal_array
 
 # make large label names smaller
 label_mapping = {
@@ -36,18 +40,21 @@ def save_selected_images(images, scores, save_dir, lower_better=True, n_best=10,
     return
 
 def to_value(tensor, name, unnormalize_fn):
-    value = tensor.item() if tensor.shape[1] == 1 else torch.argmax(tensor, dim=1).item()
     if name in ['Smiling', 'Eyeglasses']:
-        return "True" if value == 1.0 else "False"
+        return "True" if tensor.item() == 1.0 else "False"
     elif name == 'sex':
-        return 'Female' if value == 0.0 else 'Male'
+        return 'Female' if tensor.item() == 0.0 else 'Male'
     elif name in ['age', 'brain_vol', 'vent_vol']:
-        unnormalized = unnormalize_fn(value, name)
+        unnormalized = unnormalize_fn(tensor.item(), name)
         return round(unnormalized) if name == 'age' else f'{round((unnormalized/1000), 2)} ml'
-    elif name== 'slice':
-        return int(value)
+    elif name == 'slice':
+        return int(ordinal_array(tensor, reverse=True))
+    elif name == 'apoE':
+        return int(bin_array(tensor, reverse=True))
+    elif name == "digit":
+        return torch.argmax(tensor, dim=1).item()
     else:
-        return round(value, 2)
+        return round(tensor.item(), 2)
 
 def save_plots(data, fig_idx, parents, unnormalize_fn, save_dir="qualitative_samples", show_difference=False):
     fig, axs = plt.subplots(1, len(data), figsize=(20, 5))

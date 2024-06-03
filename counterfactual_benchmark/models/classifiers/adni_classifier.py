@@ -12,8 +12,8 @@ from datasets.adni.dataset import bin_array, ordinal_array
 
 
 class ADNIClassifier(pl.LightningModule):
-    def __init__(self, attr, in_shape=(1, 192, 192), num_outputs=1, 
-                 children=None, num_slices=10, attribute_ids=None, lr=1e-4, arch="standard"):
+    def __init__(self, attr, in_shape=(1, 192, 192), num_outputs=1,
+                 children=None, num_slices=30, attribute_ids=None, lr=1e-4, arch="standard"):
         super().__init__()
         self.variable = attr
 
@@ -29,7 +29,7 @@ class ADNIClassifier(pl.LightningModule):
                 (ordinal_array(torch.round(x), reverse=True), ordinal_array(torch.round(y), reverse=True))
             self.loss = nn.CrossEntropyLoss()
         elif self.variable in ['age', 'brain_vol', 'vent_vol']:
-            self.metric = nn.MSELoss()
+            self.metric = nn.L1Loss()
             self.loss = nn.MSELoss()
         else:
             raise RuntimeError(f'Invalid attribute: {self.variable}')
@@ -38,7 +38,7 @@ class ADNIClassifier(pl.LightningModule):
         if 'image' in children:
             self.image_as_input = True
             if arch == "resnet":
-                net = models.resnet18(pretrained=True)
+                net = models.resnet101(weights=models.ResNet101_Weights.DEFAULT)
                 net.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
                 pretrained_weights = net.conv1.weight.clone()
                 net.conv1.weight.data = pretrained_weights.mean(dim=1, keepdim=True)
@@ -55,9 +55,9 @@ class ADNIClassifier(pl.LightningModule):
                 )
 
                 self.network = torch.nn.Sequential(self.cnn, self.fc)
-            else: 
+            else:
                 self.network = CNN(in_shape=in_shape, num_outputs=num_outputs, context_dim=len(children)-1)
-            
+
             if 'image' in children:
                 children.remove('image')
         else:

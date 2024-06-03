@@ -44,7 +44,7 @@ def split_subjects(subjects, split):
 
 def bin_array(num, m=None, reverse=False):
     if reverse:
-        return torch.matmul(num, torch.flip(torch.arange(num.shape[1], dtype=torch.float32), [0]).to(num.device))
+        return torch.matmul(num, (torch.flip(torch.arange(num.shape[1], dtype=torch.float32), [0]) + 1).to(num.device))
     else:
         return np.array(list(np.binary_repr(num).zfill(m))).astype(np.float32)
 
