@@ -446,7 +446,7 @@ class MmnistCondHVAE(CondHVAE):
         likelihood = DGaussNet(params)
 
 
-        super().__init__(encoder, decoder, likelihood, params,  self.load_ckpt,
+        super().__init__(encoder, decoder, likelihood, params,
                          self.cf_fine_tune, self.evaluate, self.name)
 
         if not self.cf_fine_tune:

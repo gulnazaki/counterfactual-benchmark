@@ -92,9 +92,6 @@ def produce_counterfactuals(factual_batch: torch.Tensor, scm: nn.Module, do_pare
                             force_change: bool = False, possible_values = None, device: str = 'cuda', bins = None):
     factual_batch = {k: v.to(device) for k, v in factual_batch.items()}
 
-    batch_size, _ , _ , _ = factual_batch["image"].shape
-    idxs = torch.randperm(len(intervention_source))[:batch_size] # select random indices from train set to perform interventions
-
     #update with the counterfactual parent
     if force_change:
         possible_values = possible_values[do_parent]
@@ -106,6 +103,9 @@ def produce_counterfactuals(factual_batch: torch.Tensor, scm: nn.Module, do_pare
             interventions = {do_parent: torch.cat([torch.tensor(rng.choice(possible_values[torch.where((different_value(possible_values, value, bins, do_parent)).any(dim=1))], axis=0)).unsqueeze(0)
                                                 for value in values]).to(device)}
     else:
+        batch_size, _ , _ , _ = factual_batch["image"].shape
+        idxs = torch.randperm(len(intervention_source))[:batch_size] # select random indices from train set to perform interventions
+
         interventions = {do_parent: torch.cat([intervention_source[id][do_parent] for id in idxs]).view(-1).unsqueeze(1).to(device)
                         if do_parent!="digit" else torch.cat([intervention_source[id][do_parent].unsqueeze(0).to(device) for id in idxs])}
 

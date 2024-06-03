@@ -459,7 +459,7 @@ class CelebaCondHVAE(CondHVAE):
 
 
         super().__init__(encoder, decoder, likelihood, params,
-                         self.cf_fine_tune, self.evaluate, self.name)
+                         cf_fine_tune=self.cf_fine_tune, evaluate=self.evaluate, name=self.name, load_ckpt=True)
 
         if not self.cf_fine_tune:
             self.apply(init_bias)

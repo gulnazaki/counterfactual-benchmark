@@ -1,0 +1,22 @@
+{
+    "morphomnist": {
+        "configs": ["./morphomnist_vae_config.json", "./morphomnist_hvae_config.json", "./morphomnist_gan_config.json"],
+        "variable": "thickness"
+    },
+    "celeba_simple": {
+        "configs": ["./celeba_vae_config.json", "./celeba_hvae_config.json", "./celeba_gan_config.json"],
+        "variable": "Eyeglasses"
+    },
+    "celeba_complex": {
+        "configs": ["./celeba_complex_vae_config.json", "./celeba_complex_hvae_config.json", "./celeba_complex_gan_config.json"],
+        "variable": "Young"
+    },
+    "celebahq_complex": {
+        "configs": ["./celebahq_complex_vae_config.json", "./celebahq_complex_hvae_config.json", "./celebahq_complex_gan_config.json"],
+        "variable": "Male"
+    },
+    "adni": {
+        "configs": ["./adni_vae_config.json", "./adni_hvae_config.json", "./adni_gan_config.json"],
+        "variable": "vent_vol"
+    }
+}
