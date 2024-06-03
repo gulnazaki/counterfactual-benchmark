@@ -18,16 +18,18 @@ class ADNIClassifier(pl.LightningModule):
         self.variable = attr
 
         if self.variable == "apoE":
-            self.metric = lambda x, y: F1Score(task="multiclass", num_classes=3).to(x.device)\
-                (bin_array(torch.round(x), reverse=True), bin_array(torch.round(y), reverse=True))
-            self.loss = nn.CrossEntropyLoss()
+            apoE_classes = 3
+            self.metric = lambda x, y: F1Score(task="multiclass", num_classes=apoE_classes).to(x.device)\
+                (x.argmax(-1), bin_array(y, reverse=True))
+            self.loss = lambda x, y: nn.CrossEntropyLoss(x, bin_array(y, reverse=True))
+            num_outputs = apoE_classes
         elif self.variable == "sex":
             self.metric = BinaryF1Score()
             self.loss = nn.BCEWithLogitsLoss()
         elif self.variable == "slice":
             self.metric = lambda x, y: F1Score(task="multiclass", num_classes=num_slices).to(x.device)\
-                (ordinal_array(torch.round(x), reverse=True), ordinal_array(torch.round(y), reverse=True))
-            self.loss = nn.CrossEntropyLoss()
+                (x.argmax(-1), ordinal_array(y, reverse=True))
+            self.loss = lambda x, y: nn.CrossEntropyLoss(x, ordinal_array(y, reverse=True))
         elif self.variable in ['age', 'brain_vol', 'vent_vol']:
             self.metric = nn.L1Loss()
             self.loss = nn.MSELoss()
