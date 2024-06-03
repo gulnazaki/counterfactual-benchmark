@@ -1,0 +1,45 @@
+{
+    "causal_graph": {
+        "apoE": [],
+        "age": [],
+        "sex": [],
+        "brain_vol": ["sex", "apoE", "age"],
+        "vent_vol": ["brain_vol", "age"],
+        "slice": [],
+        "image": []
+    },
+    "attribute_size": {
+        "apoE": 2,
+        "age": 1,
+        "sex": 1,
+        "brain_vol": 1,
+        "vent_vol": 1,
+        "slice": 10
+    },
+    "mechanism_models": {
+        "image": {
+            "model_type": "vae",
+            "model_class": "ADNICondVAE",
+            "module": "models.vaes",
+            "params": {
+                "n_chan" : [1, 16, 24, 32, 64, 128, 256],
+                "latent_dim" : 100,
+                "hidden_dim": 512,
+                "context_dim": 0,
+                "beta" : 3,
+                "lr" : 1e-3,
+                "gradient_clip_val": 350,
+                "batch_size_train" : 64,
+                "batch_size_val" : 64,
+                "patience" : 10,
+                "max_epochs" : 1000,
+                "train_val_split" : 0.8,
+                "weight_decay": 0.01,
+                "ema": "True",
+                "fixed_logvar": "False"
+            }
+        }
+    },
+    "dataset": "adni",
+    "checkpoint_dir": "./checkpoints/adni/trained_uncond_vae"
+}

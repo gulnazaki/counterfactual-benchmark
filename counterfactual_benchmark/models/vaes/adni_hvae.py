@@ -429,11 +429,12 @@ class DGaussNet(nn.Module):
 
 
 
-class CelebaCondHVAE(CondHVAE):
+class ADNICondHVAE(CondHVAE):
 
     def __init__(self, attr_size, params, name="image_hvae"):
         self.cf_fine_tune = json.loads(params["cf_fine_tune"].lower())
         self.evaluate = json.loads(params["evaluate_cf_model"].lower())
+        self.load_ckpt = json.loads(params["load_pretrained_ckpt"].lower())
         self.name = name
         encoder = Encoder(params)
         decoder = Decoder(params)
@@ -442,10 +443,8 @@ class CelebaCondHVAE(CondHVAE):
         if self.cf_fine_tune:
             self.name = name + "_finetuned"
 
-
-
-        super().__init__(encoder, decoder, likelihood, params,
-                         cf_fine_tune=self.cf_fine_tune, evaluate=self.evaluate, name=self.name, load_ckpt=True)
+        super().__init__(encoder, decoder, likelihood, params, self.load_ckpt,
+                         self.cf_fine_tune, self.evaluate, self.name)
 
         if not self.cf_fine_tune:
             self.apply(init_bias)

@@ -90,6 +90,10 @@ class CondVAE(pl.LightningModule):
         return {"optimizer": optimizer, "lr_scheduler": lr_scheduler}
 
     def training_step(self, train_batch, batch_idx):
+        # may happen if the last batch is of size 1 (dropout error)
+        if train_batch[0].shape[0] == 1 and self.trainer.is_last_batch:
+            return
+
         x, cond = train_batch
         h, mu_u, logvar_u = self.forward(x, cond)
         prior_mu, prior_var = self.decoder.prior(cond)

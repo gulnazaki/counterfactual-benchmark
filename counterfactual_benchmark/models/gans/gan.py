@@ -43,7 +43,7 @@ class CondGAN(pl.LightningModule):
 
     def gan_loss(self, y_hat, y):
         criterion = nn.BCEWithLogitsLoss()
-        loss = criterion(y_hat, y)
+        loss = criterion(y_hat.squeeze(), y.squeeze())
         return loss
 
     def l1_loss(self, z, ex):
@@ -285,11 +285,11 @@ class CondGAN(pl.LightningModule):
                 geners.append(gener)
                 reals.append(real)
                 for i in range(n_show):
-                    ax[0, i].imshow(geners[i][0], cmap='gray', vmin=-1, vmax=1)
+                    ax[0, i].imshow(geners[i][0], cmap='gray', vmin=0, vmax=1)
                     ax[0, i].axis('off')
-                    ax[1, i].imshow(reals[i][0], cmap='gray', vmin=-1, vmax=1)
+                    ax[1, i].imshow(reals[i][0], cmap='gray', vmin=0, vmax=1)
                     ax[1, i].axis('off')
-                    ax[2, i].imshow(recons[i][0], cmap='gray', vmin=-1, vmax=1)
+                    ax[2, i].imshow(recons[i][0], cmap='gray', vmin=0, vmax=1)
                     ax[2, i].axis('off')
 
             plt.savefig(f'{image_output_path}/epoch-{epoch}.png', format='png')

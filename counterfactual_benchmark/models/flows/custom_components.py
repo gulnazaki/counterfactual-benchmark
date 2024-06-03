@@ -12,13 +12,13 @@ class ConstAddScaleFlow(Flow):
         super().__init__()
         self.const = const
         self.scale = scale
-      
+
     def forward(self, z):
         return z/self.scale - self.const, torch.ones(len(z), device=z.device)/self.scale
-    
+
     def inverse(self, z):
         return (z + self.const)*self.scale, torch.ones(len(z), device=z.device)/self.scale
-    
+
 class SigmoidFlow(Flow):
     """
     Performs a sigmoid transformation on the input.
@@ -29,7 +29,7 @@ class SigmoidFlow(Flow):
     def forward(self, z):
         log_deriv = (z - 2*torch.log(1 + torch.exp(z))).squeeze()
         return torch.sigmoid(z), log_deriv
-    
+
     def inverse(self, z):
         inv = torch.log(z) - torch.log(1 - z)
         log_deriv = (z - 2*torch.log(1 + torch.exp(z))).squeeze()
@@ -39,7 +39,7 @@ class CondFlow(Flow):
     """
     Normalizing Flow model to approximate target distribution, with context layers.
     """
-    def __init__(self, q0, flows, p=None): 
+    def __init__(self, q0, flows, p=None):
         super().__init__()
         self.q0 = q0
         self.flows = nn.ModuleList(flows)

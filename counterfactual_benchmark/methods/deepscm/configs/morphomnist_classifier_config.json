@@ -1,5 +1,7 @@
-{   "thickness_num_out":1,
-    "intensity_num_out":1,
+{
+    "thickness_context_dim": 1,
+    "intensity_context_dim": 0,
+    "digit_context_dim": 0,
 
     "attribute_size": {
         "thickness": 1,
@@ -8,7 +10,6 @@
     },
 
     "dataset": "morphomnist",
-    "digit_num_out": 10,
     "ckpt_path" : "./checkpoints/trained_classifiers/",
     "in_shape" : [1, 32, 32] ,
     "patience" : 10,
