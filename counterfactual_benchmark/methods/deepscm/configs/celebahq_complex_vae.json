@@ -1,19 +1,24 @@
 {
     "causal_graph": {
-        "thickness": [],
-        "intensity": ["thickness"],
-        "digit": [],
-        "image": ["thickness", "intensity", "digit"]
+        "Young": [],
+        "Male": [],
+        "No_Beard": ["Young", "Male"],
+        "Bald" : ["Young", "Male"],
+        "image": ["Young", "Male", "No_Beard", "Bald"]
     },
+
     "attribute_size": {
-        "thickness": 1,
-        "intensity": 1,
-        "digit": 10
+        "Young": 1,
+        "Male": 1,
+        "No_Beard": 1,
+        "Bald" : 1
     },
+
     "mechanism_models": {
-        "thickness": {
+
+        "No_Beard": {
             "model_type": "flow",
-            "model_class": "ThicknessFlow",
+            "model_class": "NoBeardFlow",
             "module": "models.flows",
             "params": {
                 "layers": 3,
@@ -25,9 +30,10 @@
                 "train_val_split" : 0.8
             }
         },
-        "intensity": {
+
+        "Bald": {
             "model_type": "flow",
-            "model_class": "IntensityFlow",
+            "model_class": "BaldFlow",
             "module": "models.flows",
             "params": {
                 "layers": 3,
@@ -39,29 +45,32 @@
                 "train_val_split" : 0.8
             }
         },
+
         "image": {
             "model_type": "vae",
-            "model_class": "MmnistCondVAE",
+            "model_class": "CelebaHQCondVAE",
             "module": "models.vaes",
             "params": {
-                "n_chan" : [1, 32, 32, 32],
+                "n_chan": [3, 32, 64, 128, 256, 256, 512],
+                "stride": [[2, 2, 2, 2, 1, 2], [1, 1, 1, 1, 1, 1]],
+                "kernel_size" :[[3, 3, 3, 3, 3, 3], [3, 3, 3, 3, 3, 3]] ,
+                "padding": [[1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1]],
                 "latent_dim" : 16,
-                "hidden_dim": 128,
-                "beta" : 1,
+                "hidden_dim": 256,
+                "beta" : 3,
                 "lr" : 1e-3,
                 "gradient_clip_val": 350,
-                "batch_size_train" : 128,
-                "batch_size_val" : 128,
+                "batch_size_train" : 64,
+                "batch_size_val" : 64,
                 "patience" : 10,
                 "max_epochs" : 1000,
-                "train_val_split" : 0.8,
-                "weight_decay": 0.01,
+                "weight_decay": 0,
                 "ema": "True",
                 "fixed_logvar": "False"
             }
         }
     },
 
-    "dataset": "morphomnist",
-    "checkpoint_dir": "./checkpoints/trained_scm"
+    "dataset": "celebahq",
+    "checkpoint_dir": "./checkpoints_celebahq/trained_scm"
 }

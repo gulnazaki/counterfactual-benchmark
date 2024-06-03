@@ -3,6 +3,13 @@
     "intensity_context_dim": 0,
     "digit_context_dim": 0,
 
+    "anticausal_cond": {
+        "thickness": ["intensity"],
+        "intensity": [],
+        "digit": []
+    },
+    
+
     "attribute_size": {
         "thickness": 1,
         "intensity": 1,

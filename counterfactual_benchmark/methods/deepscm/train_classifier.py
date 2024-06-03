@@ -10,9 +10,11 @@ import joblib
 from datasets.morphomnist.dataset import MorphoMNISTLike
 from datasets.celeba.dataset import Celeba
 from datasets.adni.dataset import ADNI
+from datasets.celebahq.dataset import CelebaHQ
 from datasets.transforms import get_attribute_ids
 from models.classifiers.classifier import Classifier
 from models.classifiers.celeba_classifier import CelebaClassifier
+from models.classifiers.celeba_complex_classifier import CelebaComplexClassifier
 from models.classifiers.adni_classifier import ADNIClassifier
 from models.utils import generate_checkpoint_callback, generate_early_stopping_callback, generate_ema_callback
 from torchvision.transforms import RandomHorizontalFlip
@@ -21,19 +23,21 @@ from torchvision.transforms import RandomHorizontalFlip
 dataclass_mapping = {
     "morphomnist": MorphoMNISTLike,
     "celeba": Celeba,
+    "celebahq": CelebaHQ,
     "adni": ADNI
 }
 
 classifier_mapping = {
     "morphomnist": Classifier,
     "celeba": CelebaClassifier,
+    "celebahq": CelebaComplexClassifier,
     "adni": ADNIClassifier
 }
 
 
 def train_classifier(classifier, attr, train_set, val_set, config, default_root_dir, weights=None):
 
-    ckp_callback = generate_checkpoint_callback(attr + "_classifier", config["ckpt_path"], monitor="val_loss")
+    ckp_callback = generate_checkpoint_callback(attr + "_classifier", config["ckpt_path"], monitor="val_f1", mode="max")
     callbacks = [ckp_callback]
 
     if config["ema"] == "True":
@@ -41,7 +45,7 @@ def train_classifier(classifier, attr, train_set, val_set, config, default_root_
 
     trainer = Trainer(accelerator="auto", devices="auto", strategy="auto",
                       callbacks=[ckp_callback,
-                                 generate_early_stopping_callback(patience=config["patience"], monitor="val_loss")],
+                                 generate_early_stopping_callback(patience=config["patience"], monitor="val_f1", mode="max")],
                       default_root_dir=default_root_dir, max_epochs=config["max_epochs"])
 
     if weights != None:
@@ -98,14 +102,46 @@ if __name__ == "__main__":
                                     lr=config_cls["lr"], children=config_cls["anticausal_graph"][attribute], num_slices=config_cls["attribute_size"][attribute],
                                     attribute_ids=attribute_ids, arch=config_cls["arch"])
         else:
-            classifier = classifier_mapping[dataset](attr=attribute, num_outputs=config_cls["attribute_size"][attribute],
-                                    lr=config_cls["lr"], context_dim=config_cls[attribute +"_context_dim"])
+            if dataset in {"celeba", "celebahq"}:
+                if sum(attribute_size.values()) == 4:
+                    classifier = CelebaComplexClassifier(attr=attribute, context_dim=len(list(config_cls["anticausal_cond"][attribute])),
+                                                    num_outputs=config_cls[attribute +"_num_out"],
+                                                    lr=config_cls["lr"], version=config_cls["version"])
+                else:
+                    classifier = CelebaClassifier(attr=attribute, num_outputs=config_cls[attribute +"_num_out"],
+                                            lr=config_cls["lr"])
 
-        if attribute == "Smiling":
-            weights = torch.tensor(joblib.load("../../datasets/celeba/weights/weights_smiling.pkl")).double()
-        elif attribute == "Eyeglasses":
-            weights = torch.tensor(joblib.load("../../datasets/celeba/weights/weights_eyes.pkl")).double()
-        else:
-            weights = None
+                if attribute == "Smiling":
+                    weights = torch.tensor(joblib.load("../../datasets/celeba/weights/weights_smiling.pkl")).double()
+
+                elif attribute == "Eyeglasses":
+                    weights = torch.tensor(joblib.load("../../datasets/celeba/weights/weights_eyes.pkl")).double()
+
+                elif attribute in {"No_Beard", "Bald"}:
+                    if dataset == "celeba":
+                        samples = [train_set.data[i][0] for i in range(len(train_set))]
+                    else:
+                        samples = [train_set.data[i] for i in range(len(train_set))]
+
+                    labels = train_set.attrs[: , classifier.variables[attribute]].long()
+                    print((labels == 1).sum(), (labels==0).sum())
+                    class_count = torch.tensor([(labels == t).sum() for t in torch.unique(labels, sorted=True)])
+                    print(class_count)
+                    class_weights = 1. / class_count.float()
+
+                    weights = class_weights[labels]
+                    print(weights)
+
+                elif attribute == "Bald":
+                    pass
+
+                else:
+                    weights = None
+
+            else:#morphomnist
+                classifier = Classifier(attr=attribute, width=8, num_outputs=config_cls[attribute +"_num_out"],
+                                        context_dim=len(list(config_cls["anticausal_cond"][attribute])), lr=config_cls["lr"])
+                weights = None
+
 
         train_classifier(classifier, attribute, train_set, val_set, config_cls, default_root_dir=config_cls["ckpt_path"], weights=weights)

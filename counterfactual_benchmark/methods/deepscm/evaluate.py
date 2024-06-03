@@ -17,9 +17,11 @@ sys.path.append("../../")
 
 from models.classifiers.classifier import Classifier
 from models.classifiers.celeba_classifier import CelebaClassifier
+from models.classifiers.celeba_complex_classifier import CelebaComplexClassifier
 from models.classifiers.adni_classifier import ADNIClassifier
 from datasets.morphomnist.dataset import MorphoMNISTLike
 from datasets.celeba.dataset import Celeba
+from datasets.celebahq.dataset import CelebaHQ
 from datasets.adni.dataset import ADNI
 from datasets.transforms import ReturnDictTransform, get_attribute_ids
 
@@ -40,7 +42,8 @@ rng = np.random.default_rng()
 dataclass_mapping = {
     "morphomnist": (MorphoMNISTLike, unnormalize_morphomnist),
     "celeba": (Celeba, unnormalize_celeba),
-    "adni": (ADNI, unnormalize_adni)
+    "adni": (ADNI, unnormalize_adni),
+    "celebahq": (CelebaHQ, unnormalize_celeba)
 }
 
 def produce_qualitative_samples(dataset, scm, parents, intervention_source, unnormalize_fn, num=20, show_difference=False):
@@ -199,8 +202,8 @@ def evaluate_minimality(real_set: Dataset, test_set: Dataset, batch_size: int, s
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", '-c', type=str, help="Config file for experiment.", default="./configs/celeba_hvae_config.json")
-    parser.add_argument("--classifier-config", '-clf', type=str, help="Classifier config file.", default="./configs/celeba_classifier_config.json")
+    parser.add_argument("--config", '-c', type=str, help="Config file for experiment.", default="./configs/celeba_complex_vae.json")
+    parser.add_argument("--classifier-config", '-clf', type=str, help="Classifier config file.", default="./configs/celeba_complex_classifier.json")
     parser.add_argument("--metrics", '-m',
                         nargs="+", type=str,
                         help="Metrics to calculate. "
@@ -276,8 +279,13 @@ if __name__ == "__main__":
         if dataset == "morphomnist":
             predictors = {atr: Classifier(attr=atr, num_outputs=attribute_size[atr], context_dim=config_cls[atr +"_context_dim"])
                           for atr in attribute_size.keys()}
-        elif dataset == "celeba":
-            predictors = {atr: CelebaClassifier(attr=atr, num_outputs=attribute_size[atr], context_dim=config_cls[atr +"_context_dim"]) for atr in attribute_size.keys()}
+        elif dataset in {"celeba", "celebahq"}:
+            if sum(attribute_size.values()) == 4:
+                predictors = {atr: CelebaComplexClassifier(attr=atr, context_dim=len(list(config_cls["anticausal_cond"][atr])),
+                                                  num_outputs=config_cls[atr +"_num_out"],
+                                                  lr=config_cls["lr"], version=config_cls["version"]) for atr in attribute_size.keys()}
+            else:
+                predictors = {atr: CelebaClassifier(attr=atr, num_outputs=config_cls[atr +"_num_out"], lr=config_cls["lr"]) for atr in attribute_size.keys()}
         else:
             attribute_ids = get_attribute_ids(attribute_size)
             predictors = {atr: ADNIClassifier(attr=atr, num_outputs=attribute_size[atr], children=config_cls["anticausal_graph"][atr],
@@ -285,6 +293,7 @@ if __name__ == "__main__":
 
         # load checkpoints of the predictors
         for key , cls in predictors.items():
+            print(key)
             file_name = next((file for file in os.listdir(config_cls["ckpt_path"]) if file.startswith(key)), None)
             print(file_name)
             cls.load_state_dict(torch.load(config_cls["ckpt_path"] + file_name , map_location=torch.device('cuda'))["state_dict"])

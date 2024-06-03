@@ -16,6 +16,16 @@ label_mapping = {
 def map_label(name):
     return label_mapping[name] if name in label_mapping else name
 
+# make large label names smaller
+label_mapping = {
+    'brain_vol': 'b_v',
+    'vent_vol': 'v_v'
+}
+
+def map_label(name):
+    return label_mapping[name] if name in label_mapping else name
+
+
 def save_image(img, path):
     if img.shape[0] == 3:
         plt.imsave(path, img.transpose(1, 2, 0))
