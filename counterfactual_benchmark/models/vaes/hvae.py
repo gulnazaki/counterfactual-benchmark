@@ -8,6 +8,7 @@ import numpy as np
 import random
 import json
 from models.classifiers.celeba_classifier import CelebaClassifier
+from models.classifiers.celeba_complex_classifier import CelebaComplexClassifier
 
 import sys, os
 sys.path.append("../../")
@@ -31,7 +32,7 @@ def gaussian_kl(q_loc, q_logscale, p_loc, p_logscale):
 
 class CondHVAE(pl.LightningModule):
 
-    def __init__(self, encoder, decoder, likelihood, params, load_ckpt, cf_fine_tune, evaluate, name):
+    def __init__(self, encoder, decoder, likelihood, params, cf_fine_tune, evaluate, name, load_ckpt=False):
         super().__init__()
 
         self.name = name
@@ -49,32 +50,60 @@ class CondHVAE(pl.LightningModule):
         self.free_bits = params["kl_free_bits"]
         self.cf_fine_tune = cf_fine_tune
 
-        #if self.cf_fine_tune  or self.load_ckpt:
-        self.lmbda = nn.Parameter(0.0 * torch.ones(1))
-        self.elbo_constraint = 2.320
-        self.register_buffer("eps", self.elbo_constraint * torch.ones(1))
+        if self.cf_fine_tune or load_ckpt:
+            self.lmbda = nn.Parameter(0.0 * torch.ones(1))
+            self.elbo_constraint = 2.320
+            self.register_buffer("eps", self.elbo_constraint * torch.ones(1))
 
 
         if self.cf_fine_tune:
             if not self.evaluate:
-                self.load_hvae_checkpoint_for_finetuning()
+                self.load_hvae_checkpoint_for_finetuning()   #load pretrained checkpoint
 
             device = "cuda"
-            smiling_cls = CelebaClassifier(attr="Smiling").eval()
-            eye_cls = CelebaClassifier(attr="Eyeglasses").eval()
 
-            for model in [smiling_cls, eye_cls]:
-                for param in model.parameters():
-                    param.requires_grad = False
+            if self.params["context_dim"] == 2: #simple celeba graph
 
-            smiling_cls.load_state_dict(torch.load("../../methods/deepscm/checkpoints_celeba/trained_classifiers/Smiling_classifier-epoch=23.ckpt",
+                smiling_cls = CelebaClassifier(attr="Smiling").eval()
+                eye_cls = CelebaClassifier(attr="Eyeglasses").eval()
+
+                for model in [smiling_cls, eye_cls]:
+                    for param in model.parameters():
+                        param.requires_grad = False
+
+                smiling_cls.load_state_dict(torch.load("../../methods/deepscm/checkpoints_celeba/trained_classifiers/Smiling_classifier-epoch=23.ckpt",
                                      map_location=torch.device("cuda"))["state_dict"])
 
-            eye_cls.load_state_dict(torch.load("../../methods/deepscm/checkpoints_celeba/trained_classifiers/Eyeglasses_classifier-epoch=10.ckpt",
+                eye_cls.load_state_dict(torch.load("../../methods/deepscm/checkpoints_celeba/trained_classifiers/Eyeglasses_classifier-epoch=10.ckpt",
                                   map_location=torch.device("cuda"))["state_dict"])
 
-            self.smiling_cls = smiling_cls.to(device)
-            self.eye_cls = eye_cls.to(device)
+                self.smiling_cls = smiling_cls.to(device)
+                self.eye_cls = eye_cls.to(device)
+
+            else: #complex celeba graph: context = 4
+                # return
+                self.attributes = ["Young", "Male", "No_Beard", "Bald"]
+                self.anti_causal_cond = {
+                                            "Young": ["No_Beard", "Bald"],
+                                            "Male": ["No_Beard", "Bald"],
+                                            "No_Beard": [],
+                                            "Bald": []
+                                        }
+
+                version=self.params["classifiers_arch"]
+                self.classifiers = {atr: CelebaComplexClassifier(attr=atr, context_dim=len(list(self.anti_causal_cond[atr])),
+                                        version=self.params["classifiers_arch"]).eval() for atr in self.anti_causal_cond.keys()}
+
+
+                for key , cls in self.classifiers.items():
+                   # print(key)
+                    file_name = next((file for file in os.listdir(self.params["ckpt_cls_path"]) if file.startswith(key)), None)
+                    #print(file_name)
+                    cls.load_state_dict(torch.load(self.params["ckpt_cls_path"] + file_name , map_location=torch.device('cuda'))["state_dict"])
+                    for param in cls.parameters():
+                        param.requires_grad = False
+
+                    cls.to(device)
 
 
     def expand_parents(self, pa):
@@ -117,6 +146,7 @@ class CondHVAE(pl.LightningModule):
             return dict(elbo=nelbo, nll=nll_pp, kl=kl_pp)
 
         else:
+           # print("CHECK LOSSES FOR NAN!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", dict(elbo=None, nll=None, kl=None))
             return dict(elbo=None, nll=None, kl=None)
 
 
@@ -198,21 +228,49 @@ class CondHVAE(pl.LightningModule):
             u = z , e , f_pa, obs
             cf_pa = cond
 
-            attr = random.choice([0,1])
-            if torch.rand(1) < 0.8: #select a parent to intervene
-                cf_pa[:,attr] = 1-cond[:,attr] #flip smile
+            if self.params["context_dim"] == 2: #simple causal graph
+                attr = random.choice([0,1])
+
+                if torch.rand(1) < 0.8: #select a parent to intervene
+                    cf_pa[:,attr] = 1-cond[:,attr] #flip smile
 
 
 
-            cf_x = self.decode(u, cf_pa)
-            y_s_target = cf_pa[:, 0]
-            y_e_target = cf_pa[:, 1]
-            y_hat_s = self.smiling_cls(cf_x)
-            y_hat_e = self.eye_cls(cf_x)
-            smiling_cond_loss = nn.BCEWithLogitsLoss()(y_hat_s, y_s_target.type(torch.float32).view(-1, 1))
-            eye_cond_loss = nn.BCEWithLogitsLoss()(y_hat_e, y_e_target.type(torch.float32).view(-1, 1))
+                cf_x = self.decode(u, cf_pa)
+                y_s_target = cf_pa[:, 0]
+                y_e_target = cf_pa[:, 1]
+                y_hat_s = self.smiling_cls(cf_x)
+                y_hat_e = self.eye_cls(cf_x)
+                smiling_cond_loss = nn.BCEWithLogitsLoss()(y_hat_s, y_s_target.type(torch.float32).view(-1, 1))
+                eye_cond_loss = nn.BCEWithLogitsLoss()(y_hat_e, y_e_target.type(torch.float32).view(-1, 1))
 
-            conditional_loss = 0.5*smiling_cond_loss + 0.5*eye_cond_loss
+                conditional_loss = 0.5*smiling_cond_loss + 0.5*eye_cond_loss
+
+            else: #comple causal graph context_dim:4
+                attr = random.choice([0,1,2,3])
+
+                if torch.rand(1) < 0.8: #select a parent to intervene
+                    cf_pa[:,attr] = 1-cond[:,attr] #flip attr
+
+
+                cf_x = self.decode(u, cf_pa)
+                y_young_target, y_male_target , y_no_beard_target, y_bald_target = cf_pa[:, 0], cf_pa[:, 1], cf_pa[:, 2], cf_pa[:, 3]
+
+                condition = torch.cat((cf_pa[:,2].view(-1,1), cf_pa[:,3].view(-1,1)), dim = 1)
+
+                y_hat_young = self.classifiers["Young"](cf_x, y = condition)
+                y_hat_male = self.classifiers["Male"](cf_x, y = condition)
+                y_hat_no_beard = self.classifiers["No_Beard"](cf_x)
+                y_hat_bald = self.classifiers["Bald"](cf_x)
+
+                young_cond_loss = nn.BCEWithLogitsLoss()(y_hat_young, y_young_target.type(torch.float32).view(-1, 1))
+                male_cond_loss = nn.BCEWithLogitsLoss()(y_hat_male, y_male_target.type(torch.float32).view(-1, 1))
+                no_beard_cond_loss = nn.BCEWithLogitsLoss()(y_hat_no_beard, y_no_beard_target.type(torch.float32).view(-1, 1))
+                bald_cond_loss = nn.BCEWithLogitsLoss()(y_hat_bald, y_bald_target.type(torch.float32).view(-1, 1))
+
+                conditional_loss = 0.25 * (young_cond_loss + male_cond_loss + no_beard_cond_loss + bald_cond_loss)
+
+
 
             optimizer.zero_grad(set_to_none=True)
             lagrange_opt.zero_grad(set_to_none=True)
@@ -283,20 +341,49 @@ class CondHVAE(pl.LightningModule):
             z , e , f_pa, obs = self.encode(x , cond)
             u = z , e , f_pa, obs
             cf_pa = cond
-            attr = random.choice([0,1])
 
-            if torch.rand(1) < 0.8: #select parent to intervene
-                cf_pa[:,attr] = 1-cond[:,attr] #flip smile
+            if self.params["context_dim"] == 2: #simple causal graph
+                attr = random.choice([0,1])
 
-            cf_x = self.decode(u, cf_pa)
-            y_s_target = cf_pa[:, 0]
-            y_e_target = cf_pa[:, 1]
-            y_hat_s = self.smiling_cls(cf_x)
-            y_hat_e = self.eye_cls(cf_x)
-            smiling_cond_loss = nn.BCEWithLogitsLoss()(y_hat_s, y_s_target.type(torch.float32).view(-1, 1))
-            eye_cond_loss = nn.BCEWithLogitsLoss()(y_hat_e, y_e_target.type(torch.float32).view(-1, 1))
+                if torch.rand(1) < 0.8: #select a parent to intervene
+                    cf_pa[:,attr] = 1-cond[:,attr] #flip smile
 
-            conditional_loss = 0.5*smiling_cond_loss + 0.5*eye_cond_loss
+
+
+                cf_x = self.decode(u, cf_pa)
+                y_s_target = cf_pa[:, 0]
+                y_e_target = cf_pa[:, 1]
+                y_hat_s = self.smiling_cls(cf_x)
+                y_hat_e = self.eye_cls(cf_x)
+                smiling_cond_loss = nn.BCEWithLogitsLoss()(y_hat_s, y_s_target.type(torch.float32).view(-1, 1))
+                eye_cond_loss = nn.BCEWithLogitsLoss()(y_hat_e, y_e_target.type(torch.float32).view(-1, 1))
+
+                conditional_loss = 0.5*smiling_cond_loss + 0.5*eye_cond_loss
+
+            else: #comple causal graph context_dim:4
+                attr = random.choice([0,1,2,3])
+
+                if torch.rand(1) < 0.8: #select a parent to intervene
+                    cf_pa[:,attr] = 1-cond[:,attr] #flip attr
+
+
+                cf_x = self.decode(u, cf_pa)
+                y_young_target, y_male_target , y_no_beard_target, y_bald_target = cf_pa[:, 0], cf_pa[:, 1], cf_pa[:, 2], cf_pa[:, 3]
+
+                condition = torch.cat((cf_pa[:,2].view(-1,1), cf_pa[:,3].view(-1,1)), dim = 1)
+
+                y_hat_young = self.classifiers["Young"](cf_x, y = condition)
+                y_hat_male = self.classifiers["Male"](cf_x, y = condition)
+                y_hat_no_beard = self.classifiers["No_Beard"](cf_x)
+                y_hat_bald = self.classifiers["Bald"](cf_x)
+
+                young_cond_loss = nn.BCEWithLogitsLoss()(y_hat_young, y_young_target.type(torch.float32).view(-1, 1))
+                male_cond_loss = nn.BCEWithLogitsLoss()(y_hat_male, y_male_target.type(torch.float32).view(-1, 1))
+                no_beard_cond_loss = nn.BCEWithLogitsLoss()(y_hat_no_beard, y_no_beard_target.type(torch.float32).view(-1, 1))
+                bald_cond_loss = nn.BCEWithLogitsLoss()(y_hat_bald, y_bald_target.type(torch.float32).view(-1, 1))
+
+                conditional_loss = 0.25 * (young_cond_loss + male_cond_loss + no_beard_cond_loss + bald_cond_loss)
+
 
             if conditional_loss!=None and out["elbo"]!=None:
                 with torch.no_grad():
@@ -310,6 +397,7 @@ class CondHVAE(pl.LightningModule):
 
             else:
                val_loss = None
+               #self.log("val_loss", val_loss, on_step=True, on_epoch=True, prog_bar=True)
 
 
             return val_loss
@@ -324,7 +412,7 @@ class CondHVAE(pl.LightningModule):
     def configure_optimizers(self):
 
         if self.cf_fine_tune:
-            self.lr = 1e-4
+           # self.lr = 1e-5
             optimizer = AdamW([p for n, p in self.named_parameters() if n != "lmbda"], lr=self.lr,
                               weight_decay=self.weight_decay, betas=[0.9, 0.9])
 
@@ -360,13 +448,18 @@ class CondHVAE(pl.LightningModule):
 
         eps = (x - rec_loc) / rec_scale.clamp(min=1e-12)
 
-        return  z , eps, cond , x
+        return z, eps, cond, x
 
 
+    def decode(self, u, cond, latent_mediator=False):
+        z, e, pa, x = u
 
-    def decode(self, u, cond):
-        z , e , _, _ = u
-        t_u = 0.3  ##temp parameter
+        # if using latent mediator we abduct also a counterfactual z
+        if latent_mediator:
+            t = self.temperature if hasattr(self, 'temperature') else 0.1
+            z = self.abduct(x, pa, t=t, cf_parents=cond, alpha=0.65)
+
+        t_u = 0.1  ##temp parameter
 
         cf_pa =  self.expand_parents(cond)
 

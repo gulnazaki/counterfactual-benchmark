@@ -12,18 +12,19 @@ def freeze_model(model):
         p.requires_grad = False
     return model
 
-def generate_checkpoint_callback(model_name, dir_path, monitor="val_loss", save_last=False, top=1):
+def generate_checkpoint_callback(model_name, dir_path, monitor="val_loss", mode="min", save_last=False, top=1):
     checkpoint_callback = ModelCheckpoint(
     dirpath=dir_path,
     filename= model_name + '-{epoch:02d}',
     monitor=monitor,  # Disable monitoring for checkpoint saving,
+    mode = mode,
     save_top_k=top,
     save_last=save_last
     )
     return checkpoint_callback
 
-def generate_early_stopping_callback(patience=5, min_delta = 0.001, monitor="val_loss"):
-    early_stopping_callback = EarlyStopping(monitor=monitor, min_delta=min_delta, patience=patience, mode = 'min')
+def generate_early_stopping_callback(patience=5, min_delta = 0.001, monitor="val_loss", mode="min"):
+    early_stopping_callback = EarlyStopping(monitor=monitor, min_delta=min_delta, patience=patience, mode = mode)
     return early_stopping_callback
 
 def generate_ema_callback(decay=0.999):
@@ -58,6 +59,8 @@ def init_bias(m):
 
 def init_weights(layer, std=0.01):
     name = layer.__class__.__name__
+    if name == 'ConvBlock':
+        return
     if name.startswith('Conv'):
         torch.nn.init.normal_(layer.weight, mean=0, std=std)
         if layer.bias is not None:
@@ -68,7 +71,7 @@ def continuous_feature_map(c: torch.Tensor, size: tuple = (32, 32)):
 
 def rgbify(image, normalized=True):
     if image.shape[1] == 1:
-        if normalized:
+        if normalized and torch.min(image) < -0.5:
             # MorphoMNIST: [-1, 1] -> [0, 1]
             image = (image + 1) / 2
         image = image.repeat(1, 3, 1, 1)

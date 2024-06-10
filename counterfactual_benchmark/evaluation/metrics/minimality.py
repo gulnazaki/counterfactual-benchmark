@@ -27,7 +27,7 @@ def prob(div, S, S_leq=True):
     return num / len(S)
 
 def same(p1, p2, name, bins):
-    if name in ['thickness', 'intensity']:
+    if name in ['thickness', 'intensity', 'age', 'brain_vol', 'vent_vol']:
         return np.searchsorted(bins[name], p1) == np.searchsorted(bins[name], p2)
     else:
         return p1 == p2

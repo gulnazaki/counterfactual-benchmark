@@ -40,8 +40,8 @@
                 "patience" : 10,
                 "max_epochs" : 1000,
                 "ema": "True",
-                "cf_fine_tune": "False",
-                "evaluate_cf_model": "False",
+                "cf_fine_tune": "True",
+                "evaluate_cf_model": "True",
                 "checkpoint_path": ""
             }
         }

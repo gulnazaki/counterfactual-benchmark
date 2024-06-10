@@ -9,7 +9,7 @@ sys.path.append("../../")
 from datasets.celeba.dataset import Celeba
 
 class CelebaClassifier(pl.LightningModule):
-    def __init__(self, attr, in_shape = (3, 64, 64), num_outputs = 1, lr=1e-3):
+    def __init__(self, attr, in_shape = (3, 64, 64), num_outputs = 1, lr=1e-3, context_dim=0):
         super().__init__()
         self.variable = attr
 
@@ -19,7 +19,9 @@ class CelebaClassifier(pl.LightningModule):
 
         self.lr = lr
         self.variables = {"Smiling":0, "Eyeglasses":1}
-        self.attr = self.variables[attr] #select attribute
+        self.accociations = {"Smiling":None, "Eyeglasses":None}
+        self.conditions = self.accociations[attr]
+        #self.attr = self.variables[attr] #select attribute
         in_channels = in_shape[0]
 
         self.num_outputs = num_outputs

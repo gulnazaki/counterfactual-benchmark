@@ -10,13 +10,17 @@ def get_attribute_ids(attribute_size):
 
 class SelectParentAttributesTransform:
     def __init__(self, name, attribute_size, graph_structure):
+        self.name = name
         attribute_indices = get_attribute_ids(attribute_size)
 
-        self.attr_ids = attribute_indices[name]
+        self.attr_ids = attribute_indices[name] if self.name != 'image' else None
         self.pa_ids = sum([attribute_indices[attr] for attr in graph_structure[name]], [])
 
     def __call__(self, img, attrs):
-        return torch.Tensor([attrs[idx] for idx in self.attr_ids]), torch.Tensor([attrs[idx] for idx in self.pa_ids])
+        if self.name == 'image':
+            return img, torch.Tensor([attrs[idx] for idx in self.pa_ids])
+        else:
+            return torch.Tensor([attrs[idx] for idx in self.attr_ids]), torch.Tensor([attrs[idx] for idx in self.pa_ids])
 
 class ReturnDictTransform:
     def __init__(self, attribute_size):

@@ -11,7 +11,7 @@ def get_dataloaders(data_class, attribute_size, config, transform=None, **kwargs
 
     if data.has_valid_set:
         train_set = data
-        val_set = data_class(attribute_size=attribute_size, split='valid', **kwargs)
+        val_set = data_class(attribute_size=attribute_size, transform=transform, split='valid', **kwargs)
     else:
         train_set, val_set = torch.utils.data.random_split(data, [config["train_val_split"], 1 - config["train_val_split"]])
 
@@ -32,7 +32,9 @@ def train_flow(flow, config, data_class, graph_structure, attribute_size, checkp
 
 
 def train_vae(vae, config, data_class, graph_structure, attribute_size, checkpoint_dir, **kwargs):
-    train_data_loader, val_data_loader = get_dataloaders(data_class, attribute_size, config, **kwargs)
+    transform = SelectParentAttributesTransform("image", attribute_size, graph_structure)
+
+    train_data_loader, val_data_loader = get_dataloaders(data_class, attribute_size, config, transform, **kwargs)
 
     callbacks = [
         generate_checkpoint_callback(vae.name, checkpoint_dir),
@@ -49,8 +51,9 @@ def train_vae(vae, config, data_class, graph_structure, attribute_size, checkpoi
 
 
 def train_gan(gan, config, data_class, graph_structure, attribute_size, checkpoint_dir, **kwargs):
+    transform = SelectParentAttributesTransform("image", attribute_size, graph_structure)
 
-    train_data_loader, val_data_loader = get_dataloaders(data_class, attribute_size, config, **kwargs)
+    train_data_loader, val_data_loader = get_dataloaders(data_class, attribute_size, config, transform, **kwargs)
 
     monitor= "fid" if config['finetune'] == 0 else "lpips"
     callbacks = [
