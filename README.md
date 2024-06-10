@@ -61,6 +61,9 @@ A description of all possible arguments for the evaluation script can be obtaine
 "lr" : 1e-4,
 ...
 "cf_fine_tune": True,
+"classifiers_arch": "<insert classifier architecture type -> "resnet" or "standard",
+"ckpt_cls_path" : "<insert_classifiers_path>",
+
 "evaluate_cf_model":False
 "checkpoint_path": "<insert_checkpoint_path>",
 ```
