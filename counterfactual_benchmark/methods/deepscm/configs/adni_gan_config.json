@@ -54,11 +54,11 @@
                 "initial_filters": 32,
                 "d_updates_per_g_update": 1,
                 "gradient_clip_val": 0.5,
-                "finetune": 0,
+                "finetune": 1,
                 "pretrained_path": "",
                 "lr": 1e-4,
                 "batch_size_train": 64,
-                "batch_size_val": 128,
+                "batch_size_val": 32,
                 "patience": 40,
                 "max_epochs": 1000
             }

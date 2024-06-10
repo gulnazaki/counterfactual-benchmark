@@ -21,7 +21,7 @@ class ADNIClassifier(pl.LightningModule):
             apoE_classes = 3
             self.metric = lambda x, y: F1Score(task="multiclass", num_classes=apoE_classes).to(x.device)\
                 (x.argmax(-1), bin_array(y, reverse=True))
-            self.loss = lambda x, y: nn.CrossEntropyLoss(x, bin_array(y, reverse=True))
+            self.loss = lambda x, y: nn.CrossEntropyLoss()(x, bin_array(y, reverse=True).type(torch.long))
             num_outputs = apoE_classes
         elif self.variable == "sex":
             self.metric = BinaryF1Score()
@@ -29,7 +29,7 @@ class ADNIClassifier(pl.LightningModule):
         elif self.variable == "slice":
             self.metric = lambda x, y: F1Score(task="multiclass", num_classes=num_slices).to(x.device)\
                 (x.argmax(-1), ordinal_array(y, reverse=True))
-            self.loss = lambda x, y: nn.CrossEntropyLoss(x, ordinal_array(y, reverse=True))
+            self.loss = lambda x, y: nn.CrossEntropyLoss()(x, ordinal_array(y, reverse=True).type(torch.long))
         elif self.variable in ['age', 'brain_vol', 'vent_vol']:
             self.metric = nn.L1Loss()
             self.loss = nn.MSELoss()
@@ -40,7 +40,7 @@ class ADNIClassifier(pl.LightningModule):
         if 'image' in children:
             self.image_as_input = True
             if arch == "resnet":
-                net = models.resnet101(weights=models.ResNet101_Weights.DEFAULT)
+                net = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
                 net.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
                 pretrained_weights = net.conv1.weight.clone()
                 net.conv1.weight.data = pretrained_weights.mean(dim=1, keepdim=True)
@@ -73,7 +73,7 @@ class ADNIClassifier(pl.LightningModule):
 
     def forward(self, x, y=None):
 
-        if isinstance(self.network, MLP):
+        if isinstance(self.network, MLP) or isinstance(self.network, CNN):
             return self.network.forward(x, y)
 
         else:
@@ -132,5 +132,5 @@ class ADNIClassifier(pl.LightningModule):
 
 
     def configure_optimizers(self):
-        optimizer = AdamW(self.parameters(), lr=self.lr, weight_decay=0.1)
+        optimizer = AdamW(self.parameters(), lr=self.lr)
         return optimizer

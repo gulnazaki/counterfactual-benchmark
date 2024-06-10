@@ -81,7 +81,7 @@
                 "cf_fine_tune": "True",
                 "classifiers_arch": "standard",
                 "ckpt_cls_path" : "./checkpoints_celebahq/trained_classifiers/standard_cls/",
-                "evaluate_cf_model": "False",
+                "evaluate_cf_model": "True",
                 "elbo_constraint": 1.75,
                 "checkpoint_file": "./checkpoints_celebahq/trained_scm/hvae_pretrained/image_hvae-epoch=54.ckpt"
             }

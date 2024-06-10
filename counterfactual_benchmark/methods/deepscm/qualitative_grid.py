@@ -17,9 +17,12 @@ sys.path.append("../../")
 
 from datasets.morphomnist.dataset import MorphoMNISTLike
 from datasets.celeba.dataset import Celeba
+from datasets.celebahq.dataset import CelebaHQ
+from datasets.adni.dataset import ADNI
 from datasets.transforms import ReturnDictTransform
 from datasets.morphomnist.dataset import unnormalize as unnormalize_morphomnist
 from datasets.celeba.dataset import unnormalize as unnormalize_celeba
+from datasets.adni.dataset import unnormalize as unnormalize_adni
 from methods.deepscm.evaluate import produce_counterfactuals
 from evaluation.metrics.utils import to_value
 
@@ -29,7 +32,9 @@ rng = np.random.default_rng()
 
 dataclass_mapping = {
     "morphomnist": (MorphoMNISTLike, unnormalize_morphomnist),
-    "celeba": (Celeba, unnormalize_celeba)
+    "celeba": (Celeba, unnormalize_celeba),
+    "adni": (ADNI, unnormalize_adni),
+    "celebahq": (CelebaHQ, unnormalize_celeba)
 }
 
 
@@ -55,8 +60,6 @@ if __name__ == "__main__":
     grid = {}
 
     for dataset_name in datasets:
-        if dataset_name not in ["morphomnist", "celeba_simple"]:
-            continue
         dataset = grid_config[dataset_name]
         var = dataset["variable"]
         grid[dataset_name] = {"factuals": []}
@@ -132,7 +135,7 @@ if __name__ == "__main__":
                 axs[i][j].set_title(image_type.upper() if image_type in models else image_type)
             if j == 0:
                 # axs[i][j].set(ylabel=dataset.replace('_', ' ').title() + '\n' + f'do({variable}) = {to_value(grid[dataset][image_type][0][variable], variable)})')
-                axs[i][j].set(ylabel=f'do({variable})\n= {to_value(grid[dataset][image_type][0][variable], variable)}')
+                axs[i][j].set(ylabel=f'do({variable})\n{to_value(grid[dataset][models[0]][0][variable], variable, unnormalize_fn)}')
 
             axs[i][j].set_xticks([])
             axs[i][j].set_yticks([])

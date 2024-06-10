@@ -47,11 +47,11 @@ def get_embedding_model(embedding, pretrained_vgg, classifier_config=None):
             "sex": 1,
             "brain_vol": 1,
             "vent_vol": 1,
-            "slice": 10
+            "slice": 20
             }
             model = ADNICondVAE(params, attribute_size, unconditional=True).eval().to('cuda')
             # add path of an unconditional VAE trained on ADNI
-            model.load_state_dict(torch.load('../../methods/deepscm/checkpoints/adni/trained_uncond_vae/image_vae-epoch=17.ckpt', map_location=torch.device('cuda'))["state_dict"])
+            model.load_state_dict(torch.load('../../methods/deepscm/checkpoints/adni/trained_uncond_vae/image_vae-epoch=07.ckpt', map_location=torch.device('cuda'))["state_dict"])
         return model
     elif embedding == "lpips":
         return LPIPS(net_type='vgg', normalize=True).to('cuda')

@@ -23,7 +23,7 @@ model_to_script = {
 dataclass_mapping = {
     "morphomnist": MorphoMNISTLike,
     "celeba": Celeba,
-    "adni": ADNI
+    "adni": ADNI,
     "celebahq": CelebaHQ
 }
 

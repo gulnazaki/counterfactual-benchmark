@@ -14,7 +14,7 @@
         "sex": 1,
         "brain_vol": 1,
         "vent_vol": 1,
-        "slice": 10
+        "slice": 20
     },
     "mechanism_models": {
         "brain_vol": {
@@ -58,7 +58,7 @@
                 "z_dim": 16,
                 "cond_prior": "True",
                 "q_correction": "False",
-                "context_dim": 12,
+                "context_dim": 22,
                 "bias_max_res": 64,
                 "is_drop_cond": "True",
                 "x_like": "diag_dgauss",
@@ -69,8 +69,8 @@
                 "beta" : 5,
                 "lr" : 1e-3,
                 "gradient_clip_val": 350,
-                "batch_size_train" : 16,
-                "batch_size_val" : 32,
+                "batch_size_train" : 32,
+                "batch_size_val" : 64,
                 "patience" : 20,
                 "max_epochs" : 1000,
                 "ema": "True",

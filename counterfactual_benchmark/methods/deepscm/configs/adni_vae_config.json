@@ -14,7 +14,7 @@
         "sex": 1,
         "brain_vol": 1,
         "vent_vol": 1,
-        "slice": 10
+        "slice": 20
     },
     "mechanism_models": {
         "brain_vol": {
@@ -51,7 +51,7 @@
                 "n_chan" : [1, 16, 24, 32, 64, 128, 256],
                 "latent_dim" : 32,
                 "hidden_dim": 512,
-                "context_dim": 12,
+                "context_dim": 22,
                 "beta" : 3,
                 "lr" : 1e-3,
                 "gradient_clip_val": 350,

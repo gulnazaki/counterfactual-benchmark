@@ -36,16 +36,18 @@ classifier_mapping = {
 
 
 def train_classifier(classifier, attr, train_set, val_set, config, default_root_dir, weights=None):
+    mode = 'min' if attr in ["age", "brain_vol", "vent_vol", "thivkness", "intensity"] else 'max'
 
-    ckp_callback = generate_checkpoint_callback(attr + "_classifier", config["ckpt_path"], monitor="val_f1", mode="max")
-    callbacks = [ckp_callback]
+    callbacks = [
+        generate_checkpoint_callback(attr + "_classifier", config["ckpt_path"], monitor="val_metric", mode=mode),
+        generate_early_stopping_callback(patience=config["patience"], monitor="val_metric", mode=mode, min_delta=1e-5)
+    ]
 
     if config["ema"] == "True":
         callbacks.append(generate_ema_callback(decay=0.999))
 
     trainer = Trainer(accelerator="auto", devices="auto", strategy="auto",
-                      callbacks=[ckp_callback,
-                                 generate_early_stopping_callback(patience=config["patience"], monitor="val_f1", mode="max")],
+                      callbacks=callbacks,
                       default_root_dir=default_root_dir, max_epochs=config["max_epochs"])
 
     if weights != None:
@@ -101,6 +103,7 @@ if __name__ == "__main__":
             classifier = classifier_mapping[dataset](attr=attribute, num_outputs=config_cls["attribute_size"][attribute],
                                     lr=config_cls["lr"], children=config_cls["anticausal_graph"][attribute], num_slices=config_cls["attribute_size"][attribute],
                                     attribute_ids=attribute_ids, arch=config_cls["arch"])
+            weights = None
         else:
             if dataset in {"celeba", "celebahq"}:
                 if sum(attribute_size.values()) == 4:

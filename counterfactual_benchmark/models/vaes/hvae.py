@@ -81,6 +81,7 @@ class CondHVAE(pl.LightningModule):
                 self.eye_cls = eye_cls.to(device)
 
             else: #complex celeba graph: context = 4
+                # return
                 self.attributes = ["Young", "Male", "No_Beard", "Bald"]
                 self.anti_causal_cond = {
                                             "Young": ["No_Beard", "Bald"],

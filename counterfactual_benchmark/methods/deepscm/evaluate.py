@@ -221,7 +221,7 @@ def parse_arguments():
 
 if __name__ == "__main__":
     args = parse_arguments()
-   # torch.manual_seed(42)
+    # torch.manual_seed(42)
 
     assert os.path.isfile(args.classifier_config), f"{args.classifier_config} is not a file"
     with open(args.classifier_config, 'r') as f:
@@ -288,8 +288,8 @@ if __name__ == "__main__":
                 predictors = {atr: CelebaClassifier(attr=atr, num_outputs=config_cls[atr +"_num_out"], lr=config_cls["lr"]) for atr in attribute_size.keys()}
         else:
             attribute_ids = get_attribute_ids(attribute_size)
-            predictors = {atr: ADNIClassifier(attr=atr, num_outputs=attribute_size[atr], children=config_cls["anticausal_graph"][atr],
-                                              num_slices=attribute_size['slice'], attribute_ids=attribute_ids, arch=config_cls['arch']) for atr in attribute_size.keys()}
+            predictors = {atr: ADNIClassifier(attr=atr, num_outputs=config_cls["attribute_size"][atr], children=config_cls["anticausal_graph"][atr],
+                                              num_slices=config_cls["attribute_size"]['slice'], attribute_ids=attribute_ids, arch=config_cls['arch']) for atr in attribute_size.keys()}
 
         # load checkpoints of the predictors
         for key , cls in predictors.items():

@@ -24,7 +24,7 @@
     "in_shape" : [1, 192, 192],
     "patience" : 20,
     "batch_size_train" : 32,
-    "batch_size_val" : 128,
+    "batch_size_val" : 32,
     "lr" : 1e-4,
     "max_epochs" : 1000,
     "ema": "True"

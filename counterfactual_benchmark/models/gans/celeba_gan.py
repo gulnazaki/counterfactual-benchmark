@@ -46,17 +46,20 @@ class Encoder(nn.Module):
 
     def forward(self, x: torch.Tensor, cond):
 
-       
+
         attr1 = cond[:, 0]
         attr2 = cond[:, 1]
         attr1 = continuous_feature_map(attr1, size=(x.shape[2], x.shape[3]))
         attr2 = continuous_feature_map(attr2, size=(x.shape[2], x.shape[3]))
-        attr3 = cond[:, 2]
-        attr4 = cond[:, 3]
-        attr3 = continuous_feature_map(attr3, size=(x.shape[2], x.shape[3]))
-        attr4 = continuous_feature_map(attr4, size=(x.shape[2], x.shape[3]))
-        features = torch.concat((x, attr1, attr2, attr3, attr4), dim=1)
-        
+        if cond.shape[1] <= 2:
+            features = torch.concat((x, attr1, attr2), dim=1)
+        else:
+            attr3 = cond[:, 2]
+            attr4 = cond[:, 3]
+            attr3 = continuous_feature_map(attr3, size=(x.shape[2], x.shape[3]))
+            attr4 = continuous_feature_map(attr4, size=(x.shape[2], x.shape[3]))
+            features = torch.concat((x, attr1, attr2,attr3, attr4), dim=1)
+
         features = self.layers(features)
 
         return features
@@ -91,21 +94,20 @@ class Decoder(nn.Module):
         self.layers.append(sig)
 
     def forward(self, u, cond):
-       
+
         attr1 = cond[:, 0]
         attr2 = cond[:, 1]
         attr1 = continuous_feature_map(attr1, size=(1, 1))
         attr2 = continuous_feature_map(attr2, size=(1, 1))
+        if cond.shape[1] <= 2:
+            features = torch.concat((u, attr1, attr2), dim=1)
+        else:
+            attr3 = cond[:, 2]
+            attr4 = cond[:, 3]
+            attr3 = continuous_feature_map(attr3, size=(u.shape[2], u.shape[3]))
+            attr4 = continuous_feature_map(attr4, size=(u.shape[2], u.shape[3]))
+            features = torch.concat((u, attr1, attr2,attr3, attr4), dim=1)
 
-        attr3 = cond[:, 2]
-        attr4 = cond[:, 3]
-        attr3 = continuous_feature_map(attr3, size=(1, 1))
-        attr4 = continuous_feature_map(attr4, size=(1, 1))
-
-        features = torch.concat((u, attr1, attr2, attr3, attr4), dim=1)
-        
-      
-      
         features = self.layers(features)
 
         return features
@@ -166,13 +168,15 @@ class Discriminator(nn.Module):
         attr2 = cond[:, 1]
         attr1 = continuous_feature_map(attr1, size=(x.shape[2], x.shape[3]))
         attr2 = continuous_feature_map(attr2, size=(x.shape[2], x.shape[3]))
-        attr3 = cond[:, 2]
-        attr4 = cond[:, 3]
-        attr3 = continuous_feature_map(attr3, size=(x.shape[2], x.shape[3]))
-        attr4 = continuous_feature_map(attr4, size=(x.shape[2], x.shape[3]))
-        
-        
-        features = torch.concat((x, attr1, attr2,attr3, attr4), dim=1)
+        if cond.shape[1] <= 2:
+            features = torch.concat((x, attr1, attr2), dim=1)
+        else:
+            attr3 = cond[:, 2]
+            attr4 = cond[:, 3]
+            attr3 = continuous_feature_map(attr3, size=(x.shape[2], x.shape[3]))
+            attr4 = continuous_feature_map(attr4, size=(x.shape[2], x.shape[3]))
+            features = torch.concat((x, attr1, attr2,attr3, attr4), dim=1)
+
 
         dx = self.dx(features)
         dz = self.dz(u)
