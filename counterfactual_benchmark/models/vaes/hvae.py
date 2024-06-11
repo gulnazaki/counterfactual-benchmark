@@ -412,7 +412,7 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
                 no_beard_cond_loss = nn.BCEWithLogitsLoss()(y_hat_no_beard, y_no_beard_target.type(torch.float32).view(-1, 1))
                 bald_cond_loss = nn.BCEWithLogitsLoss()(y_hat_bald, y_bald_target.type(torch.float32).view(-1, 1))
 
-                conditional_loss = 0.25 * (young_cond_loss + male_cond_loss + no_beard_cond_loss + bald_cond_loss)
+                conditional_loss = 0.5 * (male_cond_loss + no_beard_cond_loss) #0.25 * (young_cond_loss + male_cond_loss + no_beard_cond_loss + bald_cond_loss)
 
 
             if conditional_loss!=None and out["elbo"]!=None:
@@ -423,11 +423,12 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
                 val_loss = conditional_loss - (self.lmbda - damp) * (self.eps - out["elbo"])
 
 
-                self.log("val_loss", val_loss, on_step=False, on_epoch=True, prog_bar=True)
+               # self.log("val_loss", val_loss, on_step=False, on_epoch=True, prog_bar=True)
 
             else:
-               val_loss = None
-               #self.log("val_loss", val_loss, on_step=True, on_epoch=True, prog_bar=True)
+               val_loss = torch.tensor(1.0).cuda()
+            
+            self.log("val_loss", val_loss, on_step=True, on_epoch=True, prog_bar=True)
 
 
             return val_loss
@@ -489,7 +490,7 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
             t = self.temperature if hasattr(self, 'temperature') else 0.1
             z = self.abduct(x, pa, t=t, cf_parents=cond, alpha=0.65)
 
-        t_u = 0.1  ##temp parameter
+        t_u = 1  ##temp parameter
 
         cf_pa =  self.expand_parents(cond)
 

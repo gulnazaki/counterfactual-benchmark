@@ -41,6 +41,7 @@ class SCM(nn.Module):
                 else:
                     us[var] = self.models[var].encode(xs[var], torch.tensor([]).view(xs[var].shape[0], 0))
             else:
+               # print(xs[var], torch.cat([xs[pa] for pa in self.graph_structure[var]], dim=1))
                 us[var] = self.models[var].encode(xs[var], torch.cat([xs[pa] for pa in self.graph_structure[var]], dim=1))
         return us
 

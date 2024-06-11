@@ -101,6 +101,7 @@ class CelebaCondVAE(CondVAE):
         latent_dim = params["latent_dim"]
         hidden_dim = params["hidden_dim"]
         n_chan = params["n_chan"]
+        
         beta = params["beta"]
         lr = params["lr"]
         weight_decay = params["weight_decay"]

@@ -185,6 +185,7 @@ class DecoderBlock(nn.Module):
         self, z: Tensor, pa: Optional[Tensor] = None, t: Optional[float] = None
     ) -> Tuple[Tensor, Tensor, Tensor]:
         if self.cond_prior:
+        #    print(z.shape, pa.shape)
             z = torch.cat([z, pa], dim=1)
         z = self.prior(z)
         p_loc = z[:, : self.z_dim, ...]

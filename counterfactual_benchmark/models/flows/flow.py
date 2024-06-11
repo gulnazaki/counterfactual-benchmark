@@ -18,6 +18,8 @@ class GCondFlow(pl.LightningModule, StructuralEquation):
         return self.flow(x, x_pa)
 
     def encode(self, x, x_pa):
+       # print(x, x_pa)
+      #  print(self.flow)
         return self.flow.inverse(x, x_pa)
 
     def decode(self, u, x_pa):

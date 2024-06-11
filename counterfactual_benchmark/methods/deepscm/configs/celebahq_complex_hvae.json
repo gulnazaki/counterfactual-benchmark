@@ -70,7 +70,7 @@
                 "input_res": 256,
                 "wd":0.01,
                 "beta" : 3,
-                "lr" : 1e-7,
+                "lr" : 1e-6,
                 "gradient_clip_val": 350,
                 "batch_size_train" :4,
                 "batch_size_val" : 4,
@@ -81,7 +81,7 @@
                 "cf_fine_tune": "True",
                 "classifiers_arch": "standard",
                 "ckpt_cls_path" : "./checkpoints_celebahq/trained_classifiers/standard_cls/",
-                "evaluate_cf_model": "False",
+                "evaluate_cf_model": "True",
                 "elbo_constraint": 1.75,
                 "checkpoint_file": "./checkpoints_celebahq/trained_scm/hvae_pretrained/image_hvae-epoch=54.ckpt"
             }
@@ -89,5 +89,5 @@
     },
 
     "dataset": "celebahq",
-    "checkpoint_dir": "./checkpoints_celebahq/trained_scm/"
+    "checkpoint_dir": "./checkpoints_celebahq/trained_scm/hvae_finetuned"
 }

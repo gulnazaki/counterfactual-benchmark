@@ -43,7 +43,7 @@ dataclass_mapping = {
 }
 
 def produce_qualitative_samples(dataset, scm, parents, intervention_source, unnormalize_fn, num=20):
-    data_loader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=True, num_workers=7)
+    data_loader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=False, num_workers=7)
 
     produce_every = len(dataset) // num
     fig_idx = 0
@@ -198,7 +198,7 @@ def evaluate_minimality(real_set: Dataset, test_set: Dataset, batch_size: int, s
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", '-c', type=str, help="Config file for experiment.", default="./configs/celeba_complex_vae.json")
+    parser.add_argument("--config", '-c', type=str, help="Config file for experiment.", default="./configs/celeba_complex_hvae.json")
     parser.add_argument("--classifier-config", '-clf', type=str, help="Classifier config file.", default="./configs/celeba_complex_classifier.json")
     parser.add_argument("--metrics", '-m',
                         nargs="+", type=str,
@@ -217,7 +217,7 @@ def parse_arguments():
 
 if __name__ == "__main__":
     args = parse_arguments()
-   # torch.manual_seed(42)
+    torch.manual_seed(42)
 
     assert os.path.isfile(args.classifier_config), f"{args.classifier_config} is not a file"
     with open(args.classifier_config, 'r') as f:

@@ -135,12 +135,11 @@ class GumbelConditionalFlow(Flow):
 
 
     def condition(self, context):
-        logits = self.context_nn(context)
+        logits = self.context_nn(context.float())
        # print(logits)
         return ArgMaxGumbelFlow(logits=logits)
 
 
-from torch.distributions.utils import _sum_rightmost
 
 class GumbelCondFlow(Flow):
 
