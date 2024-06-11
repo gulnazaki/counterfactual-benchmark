@@ -65,16 +65,21 @@ class CondHVAE(pl.LightningModule):
 
                 smiling_cls = CelebaClassifier(attr="Smiling").eval()
                 eye_cls = CelebaClassifier(attr="Eyeglasses").eval()
+                classifiers = {"Smiling":smiling_cls, "Eyeglasses": eye_cls}
+               # file_name = next((file for file in os.listdir(self.params["ckpt_cls_path"]) if file.startswith(Smiling)), None)
+
+               # smiling_cls.load_state_dict(torch.load(self.params["ckpt_cls_path"] + file_name , map_location=torch.device('cuda'))["state_dict"])
+               # eye_cls.load_state_dict(torch.load(self.params["ckpt_cls_path"] + file_name , map_location=torch.device('cuda'))["state_dict"])
+                for key , c in classifiers.items():
+                    file_name = next((file for file in os.listdir(self.params["ckpt_cls_path"]) if file.startswith(key)), None)
+                    print(file_name)
+                    c.load_state_dict(torch.load(self.params["ckpt_cls_path"] + file_name , map_location=torch.device('cuda'))["state_dict"])
+
+
 
                 for model in [smiling_cls, eye_cls]:
                     for param in model.parameters():
                         param.requires_grad = False
-
-                smiling_cls.load_state_dict(torch.load("../../methods/deepscm/checkpoints_celeba/trained_classifiers/Smiling_classifier-epoch=23.ckpt",
-                                     map_location=torch.device("cuda"))["state_dict"])
-
-                eye_cls.load_state_dict(torch.load("../../methods/deepscm/checkpoints_celeba/trained_classifiers/Eyeglasses_classifier-epoch=10.ckpt",
-                                  map_location=torch.device("cuda"))["state_dict"])
 
                 self.smiling_cls = smiling_cls.to(device)
                 self.eye_cls = eye_cls.to(device)
@@ -89,7 +94,7 @@ class CondHVAE(pl.LightningModule):
                                             "Bald": []
                                         }
 
-                version=self.params["classifiers_arch"]
+                
                 self.classifiers = {atr: CelebaComplexClassifier(attr=atr, context_dim=len(list(self.anti_causal_cond[atr])),
                                         version=self.params["classifiers_arch"]).eval() for atr in self.anti_causal_cond.keys()}
 
@@ -97,7 +102,7 @@ class CondHVAE(pl.LightningModule):
                 for key , cls in self.classifiers.items():
                    # print(key)
                     file_name = next((file for file in os.listdir(self.params["ckpt_cls_path"]) if file.startswith(key)), None)
-                    #print(file_name)
+                    print(file_name)
                     cls.load_state_dict(torch.load(self.params["ckpt_cls_path"] + file_name , map_location=torch.device('cuda'))["state_dict"])
                     for param in cls.parameters():
                         param.requires_grad = False
