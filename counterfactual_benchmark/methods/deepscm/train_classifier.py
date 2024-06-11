@@ -36,7 +36,7 @@ classifier_mapping = {
 
 
 def train_classifier(classifier, attr, train_set, val_set, config, default_root_dir, weights=None):
-    mode = 'min' if attr in ["age", "brain_vol", "vent_vol", "thivkness", "intensity"] else 'max'
+    mode = 'min' if attr in ["age", "brain_vol", "vent_vol", "thickness", "intensity"] else 'max'
 
     callbacks = [
         generate_checkpoint_callback(attr + "_classifier", config["ckpt_path"], monitor="val_metric", mode=mode),
@@ -65,7 +65,7 @@ def train_classifier(classifier, attr, train_set, val_set, config, default_root_
 def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("--classifier-config", '-clf', type=str, help="Classifier config file."
-                        , default="./configs/adni_classifier_config.json")
+                        , default="./configs/adni/adni_classifier_config.json")
 
     return parser.parse_args()
 
