@@ -1,0 +1,81 @@
+{
+    "causal_graph": {
+        "thickness": [],
+        "intensity": ["thickness"],
+        "digit": [],
+        "image": ["thickness", "intensity", "digit"]
+    },
+    "attribute_size": {
+        "thickness": 1,
+        "intensity": 1,
+        "digit": 10
+    },
+    "mechanism_models": {
+        "thickness": {
+            "model_type": "flow",
+            "model_class": "ThicknessFlow",
+            "module": "models.flows",
+            "params": {
+                "layers": 3,
+                "lr": 1e-3,
+                "batch_size_train": 64,
+                "batch_size_val": 10000,
+                "patience": 2,
+                "max_epochs": 1000,
+                "train_val_split": 0.8
+            }
+        },
+        "intensity": {
+            "model_type": "flow",
+            "model_class": "IntensityFlow",
+            "module": "models.flows",
+            "params": {
+                "layers": 3,
+                "lr": 1e-3,
+                "batch_size_train": 64,
+                "batch_size_val": 10000,
+                "patience": 2,
+                "max_epochs": 1000,
+                "train_val_split": 0.8
+            }
+        },
+        "digit": {
+            "model_type": "flow",
+            "model_class": "DigitFlow",
+            "module": "models.flows",
+            "params": {
+                "layers": 3,
+                "lr": 1e-3,
+                "batch_size_train": 64,
+                "batch_size_val": 10000,
+                "patience": 2,
+                "max_epochs": 1000,
+                "train_val_split": 0.8
+            }
+        },
+        "image": {
+            "model_type": "gan",
+            "model_class": "MmnistCondGAN",
+            "module": "models.gans",
+            "params": {
+                "n_chan_enc": [2, 64, 128, 256, 512],
+                "n_chan_gen": [256, 512, 256, 128, 64],
+                "latent_dim": 512,
+                "num_continuous": 2,
+                "d_updates_per_g_update": 1,
+                "gradient_clip_val": 0.5,
+                "finetune": 1,
+                "pretrained_path": "",
+                "lr": 1e-4,
+                "batch_size_train": 128,
+                "batch_size_val": 128,
+                "patience": 10,
+                "max_epochs": 1000,
+                "train_val_split": 0.8
+            }
+        }
+    },
+
+    "dataset": "morphomnist",
+    "checkpoint_dir": "./checkpoints/trained_scm/"
+}

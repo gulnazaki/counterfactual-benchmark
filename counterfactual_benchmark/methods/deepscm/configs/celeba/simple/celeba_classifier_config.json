@@ -1,0 +1,19 @@
+{
+    "Smiling_context_dim":0,
+    "Eyeglasses_context_dim":0,
+
+    "attribute_size": {
+        "Smiling": 1,
+        "Eyeglasses": 1
+    },
+
+    "dataset": "celeba",
+    "ckpt_path" : "./checkpoints_celeba/trained_classifiers/",
+    "in_shape" : [3, 64, 64] ,
+    "patience" : 10,
+    "batch_size_train" : 128,
+    "batch_size_val" : 128,
+    "lr" : 1e-3,
+    "max_epochs" : 1000,
+    "ema": "True"
+}
