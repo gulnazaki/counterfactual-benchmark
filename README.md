@@ -22,6 +22,11 @@ counterfactual_benchmark
 │       ├── checkpoints_celeba
 │       │   └── trained_classifiers             # CelebA predictors' checkpoints
 │       ├── configs                             # Configuration files to reproduce experiments
+│       │    └── adni
+│       │    └── celeba
+│       │     │   └── simple
+│       │     │   └── complex
+│       │    └── morphomnist                            
 │       ├── evaluate.py                         # Evaluation script to test the trained models
 │       ├── model.py                            # The SCM class that integrates the models for all mechanisms is defined here
 │       ├── train_classifier.py                 # Script to train the anti-causal predictors
