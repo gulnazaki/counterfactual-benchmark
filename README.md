@@ -1,4 +1,6 @@
 # Benchmarking Counterfactual Image Generation
+![image](https://github.com/gulnazaki/counterfactual-benchmark/assets/57211914/966b0d1f-3a3d-47c2-a77e-d32cf01d2868)
+
 Code to reproduce our paper "Benchmarking Counterfactual Image Generation".
 
 [Pre-print](https://arxiv.org/abs/2403.20287)
