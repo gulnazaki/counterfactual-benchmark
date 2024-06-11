@@ -108,6 +108,8 @@ Download attributes, etc. from:
 - https://drive.usercontent.google.com/download?id=0B7EVK8r0v71pY0NSMzRuSXJEVkk&authuser=0
 
 Move everything to `counterfactual_benchmark/datasets/celeba/data/`
+## Causal graphs
+![image](https://github.com/gulnazaki/counterfactual-benchmark/assets/57211914/8e8b5970-9474-4e06-b005-1a251341030b)
 
 ## How good is your counterfactual image?
 ![image](https://github.com/gulnazaki/counterfactual-benchmark/assets/57211914/ed125278-9c79-467d-9852-4693b319d91a)
