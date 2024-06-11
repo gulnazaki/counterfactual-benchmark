@@ -87,5 +87,5 @@
     },
 
     "dataset": "celeba",
-    "checkpoint_dir": "/storage/nefeli.gkouti/checkpoints/celeba_complex/"
+    "checkpoint_dir": "./checkpoints_celeba/complex/trained_scm"
 }

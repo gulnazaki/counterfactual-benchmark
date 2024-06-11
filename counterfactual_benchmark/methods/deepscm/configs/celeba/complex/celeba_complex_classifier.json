@@ -20,7 +20,7 @@
     
     "dataset": "celeba",
     "version": "resnet",
-    "ckpt_path" : "./checkpoints_celeba/trained_classifiers/resnet",
+    "ckpt_path" : "./checkpoints_celeba/complex/trained_classifiers/resnet",
     "in_shape" : [3, 64, 64] ,
     "patience" : 5,
     "batch_size_train" : 128,

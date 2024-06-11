@@ -48,5 +48,5 @@
     },
 
     "dataset": "celeba",
-    "checkpoint_dir": "./checkpoints_celeba/trained_scm"
+    "checkpoint_dir": "./checkpoints_celeba/simple/trained_scm"
 }
