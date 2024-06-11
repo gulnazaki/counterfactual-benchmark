@@ -4,7 +4,6 @@ from torch.optim import Adam
 import pytorch_lightning as pl
 import torch
 import numpy as np
-from models.structural_equation import StructuralEquation
 import sys
 import os
 from torchmetrics.image.fid import FrechetInceptionDistance as FID
@@ -14,10 +13,10 @@ from models.utils import init_weights, rgbify
 sys.path.append("../../")
 
 
-class CondGAN(StructuralEquation, pl.LightningModule):
+class CondGAN(pl.LightningModule):
     def __init__(self, encoder, decoder, discriminator, latent_dim, d_updates_per_g_update, gradient_clip_val, finetune, lr=1e-4, name="image_gan"):
-        super(CondGAN, self).__init__(latent_dim=latent_dim)
-
+        super().__init__()
+        self.latent_dim = latent_dim
         self.name = name
         self.encoder = encoder
         self.decoder = decoder
@@ -44,7 +43,7 @@ class CondGAN(StructuralEquation, pl.LightningModule):
 
     def gan_loss(self, y_hat, y):
         criterion = nn.BCEWithLogitsLoss()
-        loss = criterion(y_hat, y)
+        loss = criterion(y_hat.squeeze(), y.squeeze())
         return loss
 
     def l1_loss(self, z, ex):
@@ -286,11 +285,11 @@ class CondGAN(StructuralEquation, pl.LightningModule):
                 geners.append(gener)
                 reals.append(real)
                 for i in range(n_show):
-                    ax[0, i].imshow(geners[i][0], cmap='gray', vmin=-1, vmax=1)
+                    ax[0, i].imshow(geners[i][0], cmap='gray', vmin=0, vmax=1)
                     ax[0, i].axis('off')
-                    ax[1, i].imshow(reals[i][0], cmap='gray', vmin=-1, vmax=1)
+                    ax[1, i].imshow(reals[i][0], cmap='gray', vmin=0, vmax=1)
                     ax[1, i].axis('off')
-                    ax[2, i].imshow(recons[i][0], cmap='gray', vmin=-1, vmax=1)
+                    ax[2, i].imshow(recons[i][0], cmap='gray', vmin=0, vmax=1)
                     ax[2, i].axis('off')
 
             plt.savefig(f'{image_output_path}/epoch-{epoch}.png', format='png')

@@ -64,12 +64,12 @@
                 "num_continuous": 2,
                 "d_updates_per_g_update": 1,
                 "gradient_clip_val": 0.5,
-                "finetune": 0,
+                "finetune": 1,
                 "pretrained_path": "",
                 "lr": 1e-4,
                 "batch_size_train": 128,
-                "batch_size_val": 512,
-                "patience": 200,
+                "batch_size_val": 128,
+                "patience": 10,
                 "max_epochs": 1000,
                 "train_val_split": 0.8
             }
@@ -77,5 +77,5 @@
     },
 
     "dataset": "morphomnist",
-    "checkpoint_dir": "./checkpoints/trained_scm_gan/"
+    "checkpoint_dir": "./checkpoints/trained_scm/"
 }

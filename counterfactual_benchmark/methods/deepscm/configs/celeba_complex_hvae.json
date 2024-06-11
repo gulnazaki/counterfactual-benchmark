@@ -59,7 +59,7 @@
                 "z_dim": 16,
                 "cond_prior": "True",
                 "q_correction": "False",
-                "context_dim": 2,
+                "context_dim": 4,
                 "bias_max_res": 64,
                 "is_drop_cond": "True",
                 "x_like": "diag_dgauss",
@@ -87,5 +87,5 @@
     },
 
     "dataset": "celeba",
-    "checkpoint_dir": "./checkpoints_celeba/trained_scm"
+    "checkpoint_dir": "/storage/nefeli.gkouti/checkpoints/celeba_complex/"
 }

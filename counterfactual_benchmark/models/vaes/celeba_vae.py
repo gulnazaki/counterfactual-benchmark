@@ -34,10 +34,6 @@ class Encoder(nn.Module):
 
     def forward(self, x, cond):
         batch, _, _, _ = x.shape
-        # print(x.shape)
-        # for l in self.conv:
-        #     x = l(x)
-        #     print(x.shape)
         x = self.conv(x).reshape(batch, -1)
         x = self.fc(x)
         hidden = self.embed(torch.cat((x, cond), dim=-1)) if self.cond_dim > 0 else self.embed(x)
@@ -83,10 +79,6 @@ class Decoder(nn.Module):
         x = torch.cat([u, cond], dim=1) if self.cond_dim > 0 else u
         x = self.fc(x)
         x = x.view(-1, self.n_chan[0], 4, 4)
-        # print(x.shape)
-        # for l in self.conv:
-        #     x = l(x)
-        #     print(x.shape)
         x = self.conv(x)
         return x
 

@@ -12,7 +12,6 @@ from models.classifiers.celeba_complex_classifier import CelebaComplexClassifier
 
 import sys, os
 sys.path.append("../../")
-from models.structural_equation import StructuralEquation
 from models.utils import linear_warmup
 
 @torch.jit.script
@@ -31,10 +30,9 @@ def gaussian_kl(q_loc, q_logscale, p_loc, p_logscale):
     )
 
 
-class CondHVAE(StructuralEquation, pl.LightningModule):
+class CondHVAE(pl.LightningModule):
 
-    def __init__(self, encoder, decoder, likelihood, params, cf_fine_tune, evaluate, name):
-
+    def __init__(self, encoder, decoder, likelihood, params, cf_fine_tune, evaluate, name, load_ckpt=False):
         super().__init__()
 
         self.name = name
@@ -52,10 +50,10 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
         self.free_bits = params["kl_free_bits"]
         self.cf_fine_tune = cf_fine_tune
 
-
-        self.lmbda = nn.Parameter(0.0 * torch.ones(1))
-        self.elbo_constraint = params["elbo_constraint"]
-        self.register_buffer("eps", self.elbo_constraint * torch.ones(1))
+        if self.cf_fine_tune or load_ckpt:
+            self.lmbda = nn.Parameter(0.0 * torch.ones(1))
+            self.elbo_constraint = 2.320
+            self.register_buffer("eps", self.elbo_constraint * torch.ones(1))
 
 
         if self.cf_fine_tune:
@@ -83,6 +81,7 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
                 self.eye_cls = eye_cls.to(device)
 
             else: #complex celeba graph: context = 4
+                # return
                 self.attributes = ["Young", "Male", "No_Beard", "Bald"]
                 self.anti_causal_cond = {
                                             "Young": ["No_Beard", "Bald"],
@@ -107,41 +106,12 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
                     cls.to(device)
 
 
-               # cls_young = CelebaComplexClassifier(attr="Young", context_dim=2, version=version).eval()
-              #  cls_male = CelebaComplexClassifier(attr="Male", context_dim=2, version=version).eval()
-               # cls_no_beard = CelebaComplexClassifier(attr="No_Beard", version=version).eval()
-               # cls_bald = CelebaComplexClassifier(attr="Bald", version=version).eval()
-
-              #  for key, model in [cls_young, cls_male, cls_no_beard, cls_bald]:
-              #      for param in model.parameters():
-              #          param.requires_grad = False
-
-                #cls_young.load_state_dict(torch.load("../../methods/deepscm/checkpoints_celeba/trained_classifiers/Young_classifier-epoch=51.ckpt",
-               #                      map_location=torch.device("cuda"))["state_dict"])
-
-                #cls_male.load_state_dict(torch.load("../../methods/deepscm/checkpoints_celeba/trained_classifiers/Male_classifier-epoch=52.ckpt",
-                #                  map_location=torch.device("cuda"))["state_dict"])
-
-
-                #cls_no_beard.load_state_dict(torch.load("../../methods/deepscm/checkpoints_celeba/trained_classifiers/No_Beard_classifier-epoch=51.ckpt",
-                 #                    map_location=torch.device("cuda"))["state_dict"])
-
-                #cls_bald.load_state_dict(torch.load("../../methods/deepscm/checkpoints_celeba/trained_classifiers/Bald_classifier-epoch=28.ckpt",
-                #                  map_location=torch.device("cuda"))["state_dict"])
-
-                #self.cls_young = cls_young.to(device)
-               # self.cls_male = cls_male.to(device)
-               # self.cls_no_beard = cls_no_beard.to(device)
-               # self.cls_bald = cls_bald.to(device)
-
-
-
     def expand_parents(self, pa):
         return pa[..., None, None].repeat(1, 1, *(self.params["input_res"],) * 2) #expand the parents
 
 
     def load_hvae_checkpoint_for_finetuning(self):
-        file_name = self.params["checkpoint_file"]
+        file_name = self.params["checkpoint_path"]
         print(file_name)
         device = "cuda"
         self.load_state_dict(torch.load(file_name, map_location=torch.device(device))["state_dict"])
@@ -318,7 +288,7 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
                 self.lmbda.data.clamp_(min=0)
 
 
-                self.log("total_loss", total_loss, on_step=True, on_epoch=True, prog_bar=True)
+                self.log("total_loss", total_loss, on_step=False, on_epoch=True, prog_bar=True)
 
             else:
                total_loss = None
@@ -344,7 +314,7 @@ class CondHVAE(StructuralEquation, pl.LightningModule):
                 optimizer.step()
 
                 for key , value in nelbo_loss.items():
-                    self.log(key, value, on_step=True, on_epoch=True, prog_bar=True)
+                    self.log(key, value, on_step=False, on_epoch=True, prog_bar=True)
 
                 if self.trainer.is_last_batch == 0:
                     scheduler.step()

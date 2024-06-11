@@ -32,7 +32,9 @@ def train_flow(flow, config, data_class, graph_structure, attribute_size, checkp
 
 
 def train_vae(vae, config, data_class, graph_structure, attribute_size, checkpoint_dir, **kwargs):
-    train_data_loader, val_data_loader = get_dataloaders(data_class, attribute_size, config, **kwargs)
+    transform = SelectParentAttributesTransform("image", attribute_size, graph_structure)
+
+    train_data_loader, val_data_loader = get_dataloaders(data_class, attribute_size, config, transform, **kwargs)
 
     callbacks = [
         generate_checkpoint_callback(vae.name, checkpoint_dir),
@@ -49,24 +51,14 @@ def train_vae(vae, config, data_class, graph_structure, attribute_size, checkpoi
 
 
 def train_gan(gan, config, data_class, graph_structure, attribute_size, checkpoint_dir, **kwargs):
+    transform = SelectParentAttributesTransform("image", attribute_size, graph_structure)
 
-    train_data_loader, val_data_loader = get_dataloaders(data_class, attribute_size, config, **kwargs)
+    train_data_loader, val_data_loader = get_dataloaders(data_class, attribute_size, config, transform, **kwargs)
 
-    # split into train and validation
-    #train_set, val_set = torch.utils.data.random_split(data, [config["train_val_split"], 1 - config["train_val_split"]])
-    #train_data_loader = torch.utils.data.DataLoader(train_set, batch_size=config["batch_size_train"], shuffle=True, num_workers=7)
-    #val_data_loader = torch.utils.data.DataLoader(val_set, batch_size=config["batch_size_val"], shuffle=False, num_workers=7)
-
-
-    if config['finetune'] == 0:
-        min_delta = 0.01
-        monitor="fid"
-    else:
-        min_delta = 0.001
-        monitor="lpips"
+    monitor= "fid" if config['finetune'] == 0 else "lpips"
     callbacks = [
         generate_checkpoint_callback(gan.name, checkpoint_dir, monitor=monitor),
-        generate_early_stopping_callback(patience=config["patience"], min_delta=min_delta, monitor=monitor)
+        generate_early_stopping_callback(patience=config["patience"], monitor=monitor)
     ]
 
 

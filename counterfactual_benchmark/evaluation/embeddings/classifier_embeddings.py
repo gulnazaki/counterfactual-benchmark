@@ -8,15 +8,14 @@ from models.classifiers.classifier import Classifier
 class ClassifierEmbeddings():
     def __init__(self, config_file) -> None:
         assert os.path.isfile(config_file), f"{config_file} is not a file"
-        # assert config_file.startswith('morphomnist_'), "Only MorphoMNIST classifiers supported"
 
         with open(config_file, 'r') as f:
             config = load(f)
         attributes = [k.removesuffix('_num_out') for k in config.keys() if k.endswith('_num_out')]
 
         self.predictors = {
-            atr: Classifier(attr=atr, width=8, num_outputs=config[atr + "_num_out"], context_dim=1) if atr == "thickness"
-                else Classifier(attr=atr, width=8, num_outputs=config[atr + "_num_out"]) for atr in attributes
+            atr: Classifier(attr=atr, num_outputs=config["attribute_size"][atr], context_dim=config[atr +"_context_dim"])
+                for atr in attributes
         }
 
         # load checkpoints of the predictors

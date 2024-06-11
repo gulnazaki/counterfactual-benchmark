@@ -27,16 +27,16 @@ def unnormalize(value, name):
 
 
 def load_data(root_dir="/storage/n.spyrou/CelebAMask-HQ", split= "train"):
-       
-    attributes = pd.read_csv(os.path.join(root_dir, "CelebAMask-HQ-attribute-anno.txt"), 
+
+    attributes = pd.read_csv(os.path.join(root_dir, "CelebAMask-HQ-attribute-anno.txt"),
                                       delimiter=" ", skiprows=1)
     attributes[attributes==-1] = 0
-    mapping = pd.read_csv(os.path.join(root_dir, "CelebA-HQ-to-CelebA-mapping.txt"), 
+    mapping = pd.read_csv(os.path.join(root_dir, "CelebA-HQ-to-CelebA-mapping.txt"),
                                       delimiter=" ", skipinitialspace=True)
-        
-    splits = pd.read_csv(os.path.join(root_dir, "list_eval_partition.txt"), 
+
+    splits = pd.read_csv(os.path.join(root_dir, "list_eval_partition.txt"),
                                       delimiter=" ", header=None)
-        
+
     idxs , orig_idxs = mapping["idx"].to_list(), mapping["orig_idx"].to_list()
     mapping_dict = {key: value for key, value in zip(idxs, orig_idxs)}
 
@@ -46,7 +46,7 @@ def load_data(root_dir="/storage/n.spyrou/CelebAMask-HQ", split= "train"):
     transform = Compose([Resize((256, 256)), ToTensor(), ConvertImageDtype(dtype=torch.float32)])
     split_map = {'train': 0, 'valid': 1, 'test': 2}
 
-    all_images_names = sorted(os.listdir(os.path.join(root_dir, "CelebA-HQ-img")), 
+    all_images_names = sorted(os.listdir(os.path.join(root_dir, "CelebA-HQ-img")),
                                        key=lambda x : int(x.split(".")[0]))
     data = []
     selected_indices = []
@@ -55,17 +55,17 @@ def load_data(root_dir="/storage/n.spyrou/CelebAMask-HQ", split= "train"):
                 img = Image.open(os.path.join(root_dir, "CelebA-HQ-img/" + file)).convert("RGB")
                 data.append(transform(img))
                 selected_indices.append(int(file.split(".")[0]))
-                
-    
-    attributes = attributes.iloc[list(selected_indices)] 
+
+
+    attributes = attributes.iloc[list(selected_indices)]
 
     return data, attributes
-        
+
 
 
 
 class CelebaHQ(Dataset):
-    def __init__(self, attribute_size, split='train', normalize_=True, 
+    def __init__(self, attribute_size, split='train', normalize_=True,
                  transform=None, transform_cls=None, data_dir='/storage/n.spyrou/CelebAMask-HQ'):
         super().__init__()
         self.has_valid_set = True
@@ -74,13 +74,13 @@ class CelebaHQ(Dataset):
         self.data, self.attributes = load_data(data_dir, split)
 
         #attribute_ids = [self.attributes.columns.get_loc(attr) for attr in attribute_size.keys()]
-        self.metrics = {attr: torch.as_tensor(list(self.attributes[attr])) for attr in attribute_size.keys()}
+        self.metrics = {attr: torch.as_tensor(list(self.attributes[attr]), dtype=torch.float32) for attr in attribute_size.keys()}
 
        # self.metrics = {attr: torch.as_tensor(self.data.attr[:, attr_id], dtype=torch.float32) for attr, attr_id in zip(attribute_size.keys(), attribute_ids)}
 
         self.attrs = torch.cat([self.metrics[attr].unsqueeze(1)
                                 for attr in attribute_size.keys()], dim=1)
-        
+
         self.possible_values = {attr: torch.unique(values, dim=0) for attr, values in self.metrics.items()}
         self.bins = None
 
@@ -90,7 +90,7 @@ class CelebaHQ(Dataset):
     def __getitem__(self, idx):
         if self.transform:
             return self.transform(self.data[idx], self.attrs[idx])
-        
+
         if self.transform_cls:
             return self.transform_cls(self.data[idx]), self.attrs[idx]
 
@@ -101,7 +101,7 @@ class CelebaHQ(Dataset):
 
 
 
-if __name__ == "__main__":   
+if __name__ == "__main__":
     #data, attributes = load_data(split="test")
    # print(len(data))
 
@@ -111,7 +111,7 @@ if __name__ == "__main__":
         "No_Beard": 1,
         "Bald" : 1
      }
-   
+
     dataset = CelebaHQ(attribute_size=attribute_size, split="test")
 
 
@@ -125,5 +125,5 @@ if __name__ == "__main__":
 
 
     #print(attrs)
-   
+
 

@@ -10,14 +10,13 @@ sys.path.append("../../")
 from datasets.morphomnist.dataset import MorphoMNISTLike
 
 class Classifier(pl.LightningModule):
-    def __init__(self, attr, in_shape = (1, 32, 32), width=16, num_outputs = 1, context_dim = 0 , lr=1e-3):
+    def __init__(self, attr, in_shape = (1, 32, 32), width=8, num_outputs = 1, context_dim = 0 , lr=1e-3):
         super().__init__()
         self.variable = attr
 
         self.accuracy = Accuracy("multiclass", num_classes=10) #for the  digit
 
         self.lr = lr
-        # TODO add digit classifier
         self.variables = {"thickness":0, "intensity":1, "digit": 2}
         self.attr = self.variables[attr] #select attribute
         in_channels = in_shape[0]
@@ -90,7 +89,7 @@ class Classifier(pl.LightningModule):
                 loss = nn.CrossEntropyLoss()(y_hat, y.argmax(-1).type(torch.long))
 
 
-       
+
         self.log("train_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
 
         #loss = nn.CrossEntropyLoss()(y_hat, y.type(torch.long))

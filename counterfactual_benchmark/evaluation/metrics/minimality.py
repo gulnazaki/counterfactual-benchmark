@@ -1,6 +1,8 @@
 import numpy as np
 from tqdm import tqdm
 
+W1, W2 = 0.8, 0.2
+
 def gaussian_kl(q_loc, q_logscale, p_loc, p_logscale):
     return (
         -0.5
@@ -25,7 +27,7 @@ def prob(div, S, S_leq=True):
     return num / len(S)
 
 def same(p1, p2, name, bins):
-    if name in ['thickness', 'intensity']:
+    if name in ['thickness', 'intensity', 'age', 'brain_vol', 'vent_vol']:
         return np.searchsorted(bins[name], p1) == np.searchsorted(bins[name], p2)
     else:
         return p1 == p2
@@ -64,6 +66,6 @@ def minimality(real, generated, interventions, bins, embedding):
 
         prob1s.append(prob1)
         prob2s.append(prob2)
-        minimality_scores.append(np.log(np.exp(prob1) + np.exp(prob2)))
+        minimality_scores.append(np.log(W1 * np.exp(prob1) + W2 * np.exp(prob2)))
 
     return minimality_scores, prob1s, prob2s

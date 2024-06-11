@@ -16,11 +16,7 @@ from models.utils import init_bias
 from models.vaes import CondHVAE
 from json import load
 
-import sys
-#sys.path.append("../../")
 from datasets.morphomnist.dataset import MorphoMNISTLike
-
-#from hps import Hparams
 
 EPS = -9  # minimum logscale
 
@@ -439,65 +435,17 @@ class DGaussNet(nn.Module):
 class MmnistCondHVAE(CondHVAE):
 
     def __init__(self, attr_size, params, name="image_hvae"):
-
-        params["context_dim"] = sum(attr_size.values())
-        self.cf_fine_tune = json.loads(params["cf_fine_tune"].lower())  
+        self.cf_fine_tune = json.loads(params["cf_fine_tune"].lower())
         self.evaluate = json.loads(params["evaluate_cf_model"].lower())
         self.load_ckpt = json.loads(params["load_pretrained_ckpt"].lower())
         self.name = name
         encoder = Encoder(params)
         decoder = Decoder(params)
         likelihood = DGaussNet(params)
-      
 
-        super().__init__(encoder, decoder, likelihood, params,  self.load_ckpt,
+
+        super().__init__(encoder, decoder, likelihood, params,
                          self.cf_fine_tune, self.evaluate, self.name)
-        
+
         if not self.cf_fine_tune:
             self.apply(init_bias)
-
-
-
-if __name__ == "__main__":
-
-    attribute_size = {
-        "thickness": 1,
-        "intensity": 1,
-        "digit": 10
-    }
-
-
-    config_file = "../../methods/deepscm/configs/morphomnist_hvae_config.json"
-    with open(config_file, 'r') as f:
-        config = load(f)
-
-    params = config["mechanism_models"]["image"]["params"]
-
-    train_set = MorphoMNISTLike(attribute_size=attribute_size, train=True)
-
-    tr_data_loader = torch.utils.data.DataLoader(train_set, batch_size=1, shuffle=False, num_workers=7)
-    iterator = iter(tr_data_loader)
-    batch = next(iterator)
-    x , attrs = batch
-
-
-    attrs =attrs[..., None, None].repeat(1, 1, *(32,) * 2)
-
-    #x = torch.randn(1, 1, 32, 32)
-    #x = torch.clamp(x , -1, 1)
-    #attrs = torch.randn(1, 12)[..., None, None].repeat(1, 1, *(32,) * 2)
-
-
-    model = MmnistCondHVAE(attribute_size, params, name="hvae")
-    print(model.name)
-
-   # conv = model.decoder.blocks[0].prior.conv
-   # inp = torch.zeros(1, 256, 1, 1)
-    #out1 = conv(inp)
-
-    out = model(x, attrs)
-    print(out)
-    #print(conv)
-    #out = model(x, attrs)
-    #print(out)
-

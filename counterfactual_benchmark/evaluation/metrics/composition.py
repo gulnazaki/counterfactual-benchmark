@@ -2,6 +2,7 @@ import numpy as np
 
 def composition(factual_batch, unnormalize_fn, method, cycles=[1, 10], device='cuda', embedding=None, embedding_fn=None):
     factual_batch = {k: v.to(device) for k, v in factual_batch.items()}
+    # TODO change this so classifier embeddings for other datasets are supported
     cond = factual_batch["intensity"] if "intensity" in factual_batch else None
     images = [factual_batch["image"]]
 

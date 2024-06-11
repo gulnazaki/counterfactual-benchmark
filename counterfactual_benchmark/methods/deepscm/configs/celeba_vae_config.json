@@ -26,7 +26,7 @@
                 "max_epochs" : 1000,
                 "weight_decay": 0,
                 "ema": "True",
-                "fixed_logvar": -5.0
+                "fixed_logvar": "False"
             }
         }
     },

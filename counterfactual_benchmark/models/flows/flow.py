@@ -3,11 +3,7 @@
 from torch.optim import Adam
 import pytorch_lightning as pl
 
-import sys
-sys.path.append("../../")
-from models.structural_equation import StructuralEquation
-
-class GCondFlow(pl.LightningModule, StructuralEquation):
+class GCondFlow(pl.LightningModule):
     def __init__(self, name, lr=1e-6, n_layers=3):
         super().__init__()
         self.name = name
