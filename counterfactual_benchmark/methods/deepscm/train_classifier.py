@@ -121,11 +121,6 @@ if __name__ == "__main__":
                     weights = torch.tensor(joblib.load("../../datasets/celeba/weights/weights_eyes.pkl")).double()
 
                 elif attribute in {"No_Beard", "Bald"}:
-                    if dataset == "celeba":
-                        samples = [train_set.data[i][0] for i in range(len(train_set))]
-                    else:
-                        samples = [train_set.data[i] for i in range(len(train_set))]
-
                     labels = train_set.attrs[: , classifier.variables[attribute]].long()
                     print((labels == 1).sum(), (labels==0).sum())
                     class_count = torch.tensor([(labels == t).sum() for t in torch.unique(labels, sorted=True)])
@@ -134,9 +129,6 @@ if __name__ == "__main__":
 
                     weights = class_weights[labels]
                     print(weights)
-
-                elif attribute == "Bald":
-                    pass
 
                 else:
                     weights = None
