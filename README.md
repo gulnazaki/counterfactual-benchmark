@@ -73,7 +73,7 @@ A description of all possible arguments for the evaluation script can be obtaine
 
 **To fine-tune HVAE with the counterfactual loss described in the paper, the config should change to:**
 ```
-"lr" : 1e-4,
+"lr" : 1e-4 or 1e-5
 ...
 "cf_fine_tune": True,
 "classifiers_arch": "resnet" or "standard",
