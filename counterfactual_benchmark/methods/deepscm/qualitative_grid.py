@@ -17,7 +17,6 @@ sys.path.append("../../")
 
 from datasets.morphomnist.dataset import MorphoMNISTLike
 from datasets.celeba.dataset import Celeba
-from datasets.celebahq.dataset import CelebaHQ
 from datasets.adni.dataset import ADNI
 from datasets.transforms import ReturnDictTransform
 from datasets.morphomnist.dataset import unnormalize as unnormalize_morphomnist
@@ -33,8 +32,7 @@ rng = np.random.default_rng()
 dataclass_mapping = {
     "morphomnist": (MorphoMNISTLike, unnormalize_morphomnist),
     "celeba": (Celeba, unnormalize_celeba),
-    "adni": (ADNI, unnormalize_adni),
-    "celebahq": (CelebaHQ, unnormalize_celeba)
+    "adni": (ADNI, unnormalize_adni)
 }
 
 

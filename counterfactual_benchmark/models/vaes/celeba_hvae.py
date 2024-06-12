@@ -14,9 +14,6 @@ from torch.functional import F
 from models.utils import init_bias
 from models.vaes import CondHVAE
 
-from datasets.celeba.dataset import Celeba
-from datasets.celebahq.dataset import CelebaHQ
-
 EPS = -9  # minimum logscale
 
 
@@ -456,64 +453,3 @@ class CelebaCondHVAE(CondHVAE):
 
 
 from json import load
-
-if __name__ == "__main__":
-
-    attribute_size =  {
-        "Young": 1,
-        "Male": 1,
-        "No_Beard": 1,
-        "Bald" : 1
-    }
-
-
-    config_file = "../../methods/deepscm/configs/celebahq_complex_hvae.json"
-
-    with open(config_file, 'r') as f:
-        config = load(f)
-
-    params = config["mechanism_models"]["image"]["params"]
-
-    train_set = CelebaHQ(attribute_size=attribute_size, split="test")
-
-    tr_data_loader = torch.utils.data.DataLoader(train_set, batch_size=64, shuffle=False, num_workers=7)
-   # iterator = iter(tr_data_loader)
-  #  batch = next(iterator)
-   # x , attrs = batch
-
-
-  #  attrs =attrs[..., None, None].repeat(1, 1, *(64,) * 2)
-
-    #x = torch.randn(1, 1, 32, 32)
-    #x = torch.clamp(x , -1, 1)
-    #attrs = torch.randn(1, 12)[..., None, None].repeat(1, 1, *(32,) * 2)
-
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = CelebaCondHVAE(attribute_size, params)
-   # model.load_state_dict(torch.load("/home/n.spyrou/counterfactual-benchmark/counterfactual_benchmark/methods/deepscm/checkpoints_celeba/trained_scm/image_hvae-epoch=20.ckpt" ,
-   #                                 )["state_dict"])
-   # print(model.name)
-    model = model.to(device)
-    model.eval()
-   # conv = model.decoder.blocks[0].prior.conv
-   # inp = torch.zeros(1, 256, 1, 1)
-    #out1 = conv(inp)
-    from tqdm import tqdm
-    import numpy as np
-
-    elbos = []
-    with torch.no_grad():
-        for batch in tqdm(tr_data_loader):
-            x , attrs = batch[0].to(device) , batch[1]
-            attrs =attrs[..., None, None].repeat(1, 1, *(256,) * 2)
-            attrs = attrs.to(device)
-            out = model(x, attrs, 5)
-            #print(out["elbo"])
-            if out["elbo"]!=None:
-                elbos.append(out["elbo"].cpu())
-            #print(out)
-     #   break
-        print(np.mean(np.array(elbos)))
-    #print(conv)
-    #out = model(x, attrs)
-    #print(out)

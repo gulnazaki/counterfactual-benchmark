@@ -10,7 +10,6 @@ import joblib
 from datasets.morphomnist.dataset import MorphoMNISTLike
 from datasets.celeba.dataset import Celeba
 from datasets.adni.dataset import ADNI
-from datasets.celebahq.dataset import CelebaHQ
 from datasets.transforms import get_attribute_ids
 from models.classifiers.classifier import Classifier
 from models.classifiers.celeba_classifier import CelebaClassifier
@@ -23,14 +22,12 @@ from torchvision.transforms import RandomHorizontalFlip
 dataclass_mapping = {
     "morphomnist": MorphoMNISTLike,
     "celeba": Celeba,
-    "celebahq": CelebaHQ,
     "adni": ADNI
 }
 
 classifier_mapping = {
     "morphomnist": Classifier,
     "celeba": CelebaClassifier,
-    "celebahq": CelebaComplexClassifier,
     "adni": ADNIClassifier
 }
 
@@ -105,7 +102,7 @@ if __name__ == "__main__":
                                     attribute_ids=attribute_ids, arch=config_cls["arch"])
             weights = None
         else:
-            if dataset in {"celeba", "celebahq"}:
+            if dataset == "celeba":
                 if sum(attribute_size.values()) == 4:
                     classifier = CelebaComplexClassifier(attr=attribute, context_dim=len(list(config_cls["anticausal_cond"][attribute])),
                                                     num_outputs=config_cls[attribute +"_num_out"],

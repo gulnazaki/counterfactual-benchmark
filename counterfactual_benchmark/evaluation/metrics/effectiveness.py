@@ -6,7 +6,7 @@ def effectiveness(counterfactual_batch, unnormalize_fn, predictors, dataset):
     targets = {key: value for key , value in counterfactual_batch.items() if key!="image"} #select the counterfactual  parents
 
    # print(targets.keys())
-    if dataset in {"celeba", "celebahq"}:
+    if dataset == "celeba":
         predictions = {}
         for key, clfs in predictors.items():
             if clfs.conditions[key] is not None:

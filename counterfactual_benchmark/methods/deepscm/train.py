@@ -10,7 +10,6 @@ sys.path.append("../../")
 from datasets.morphomnist.dataset import MorphoMNISTLike
 from datasets.celeba.dataset import Celeba
 from datasets.adni.dataset import ADNI
-from datasets.celebahq.dataset import CelebaHQ
 
 
 # train_vae is used both for VAEs and HVAEs
@@ -23,8 +22,7 @@ model_to_script = {
 dataclass_mapping = {
     "morphomnist": MorphoMNISTLike,
     "celeba": Celeba,
-    "adni": ADNI,
-    "celebahq": CelebaHQ
+    "adni": ADNI
 }
 
 def parse_arguments():

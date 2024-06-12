@@ -21,7 +21,6 @@ from models.classifiers.celeba_complex_classifier import CelebaComplexClassifier
 from models.classifiers.adni_classifier import ADNIClassifier
 from datasets.morphomnist.dataset import MorphoMNISTLike
 from datasets.celeba.dataset import Celeba
-from datasets.celebahq.dataset import CelebaHQ
 from datasets.adni.dataset import ADNI
 from datasets.transforms import ReturnDictTransform, get_attribute_ids
 
@@ -42,8 +41,7 @@ rng = np.random.default_rng()
 dataclass_mapping = {
     "morphomnist": (MorphoMNISTLike, unnormalize_morphomnist),
     "celeba": (Celeba, unnormalize_celeba),
-    "adni": (ADNI, unnormalize_adni),
-    "celebahq": (CelebaHQ, unnormalize_celeba)
+    "adni": (ADNI, unnormalize_adni)
 }
 
 def produce_qualitative_samples(dataset, scm, parents, intervention_source, unnormalize_fn, num=20, show_difference=False):
@@ -279,7 +277,7 @@ if __name__ == "__main__":
         if dataset == "morphomnist":
             predictors = {atr: Classifier(attr=atr, num_outputs=attribute_size[atr], context_dim=config_cls[atr +"_context_dim"])
                           for atr in attribute_size.keys()}
-        elif dataset in {"celeba", "celebahq"}:
+        elif dataset == "celeba":
             if sum(attribute_size.values()) == 4:
                 predictors = {atr: CelebaComplexClassifier(attr=atr, context_dim=len(list(config_cls["anticausal_cond"][atr])),
                                                   num_outputs=config_cls[atr +"_num_out"],

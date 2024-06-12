@@ -36,7 +36,6 @@ def get_embedding_model(embedding, pretrained_vgg, classifier_config=None):
                 "Eyeglasses": 1
             }
             model = CelebaCondVAE(params, attribute_size, unconditional=True).eval().to('cuda')
-            model.load_state_dict(torch.load("../../methods/deepscm/checkpoints/celebahq/uncond_image_vae-epoch=142.ckpt", map_location=torch.device('cuda'))["state_dict"])
             # add path of an unconditional VAE trained on CelebA
             model.load_state_dict(torch.load('../../methods/deepscm/checkpoints_celeba/trained_scm/uncond_image_vae-epoch=44.ckpt', map_location=torch.device('cuda'))["state_dict"])
         else:
