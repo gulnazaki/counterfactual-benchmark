@@ -33,7 +33,7 @@
                 "input_res": 64,
                 "wd":0.01,
                 "beta" : 5,
-                "lr" : 1e-3,
+                "lr" : 1e-4,
                 "gradient_clip_val": 350,
                 "batch_size_train" : 32,
                 "batch_size_val" : 32,
@@ -43,7 +43,7 @@
                 "cf_fine_tune": "True",
                 "classifiers_arch": "standard",
                 "ckpt_cls_path" : "./checkpoints_celeba/trained_classifiers/",
-                "evaluate_cf_model": "False",
+                "evaluate_cf_model": "True",
                 "elbo_constraint": 2.26,
                 "checkpoint_path": "./checkpoints_celeba/trained_scm/image_hvae-epoch=34.ckpt"
             }
