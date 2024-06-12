@@ -158,8 +158,8 @@ def load_extra_attributes(csv_path, attributes, attribute_dict, subject_dates_di
 class ADNI(Dataset):
     def __init__(self, attribute_size, split='train', normalize_=True,
                  transform=None, transform_cls=None, num_of_slices=30, keep_only_screening=False,
-                 data_dir='/home/ubuntu/ADNI/preprocessed_data',
-                 csv_path='/home/ubuntu/ADNI/ADNIMERGE_22Apr2024.csv'):
+                 data_dir='./preprocessing/preprocessed_data',
+                 csv_dir='./preprocessing/'):
         super().__init__()
         self.has_valid_set = True
         self.transform = transform
@@ -174,6 +174,8 @@ class ADNI(Dataset):
                                                                split=split,
                                                                keep_only_screening=keep_only_screening)
 
+        csv_path = Path(csv_dir).glob('ADNIMERGE*.csv')[0]
+        assert csv_path.is_file(), "Provide ADNIMERGE csv path"
         self.attributes, indices_to_remove = load_extra_attributes(csv_path, attributes=attribute_size.keys(),
                                                                    attribute_dict=attribute_dict, subject_dates_dict=subject_dates_dict,
                                                                    keep_only_screening=keep_only_screening)

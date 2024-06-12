@@ -104,7 +104,7 @@ A description of all possible arguments for the evaluation script can be obtaine
 ```
 
 
-## Get CelebA dataset
+## Get CelebA Dataset
 Images have to be downloaded from Google Drive and extracted:
 
 See: https://drive.usercontent.google.com/download?id=0B7EVK8r0v71pZjFTYXZWM3FlRnM
@@ -124,6 +124,19 @@ Download attributes, etc. from:
 - https://drive.usercontent.google.com/download?id=0B7EVK8r0v71pY0NSMzRuSXJEVkk&authuser=0
 
 Move everything to `counterfactual_benchmark/datasets/celeba/data/`
+
+
+## Get ADNI Dataset
+To request access to [Alzheimer’s Disease Neuroimaging Initiative (ADNI)](https://adni.loni.usc.edu/) you should apply [here](https://ida.loni.usc.edu/collaboration/access/appLicense.jsp).
+
+After getting access (typically takes 1-2 days) you have to login in this [platform](https://ida.loni.usc.edu/login.jsp?project=ADNI).
+Download the following:
+- Download > Study Data > Study Info > Data & Database > ADNIMERGE - Key ADNI tables merged into one table [ADNI1,GO,2,3]
+- Download > Image Collections > Other Shared Collections > ADNI1:Complete 1Yr 1.5T (**all items and the csv**)
+
+Move the downloaded csv files and the zip in `counterfactual_benchmark/datasets/adni/preprocessing/`. Then unzip and rename to `raw_data`.
+
+Finally, follow the instructions in `counterfactual_benchmark/datasets/adni/preprocessing/README.md` to perform the preprocessing of ADNI
 
 ## How good is your counterfactual image?
 ![image](https://github.com/gulnazaki/counterfactual-benchmark/assets/57211914/ed125278-9c79-467d-9852-4693b319d91a)
