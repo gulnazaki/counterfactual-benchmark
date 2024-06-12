@@ -62,31 +62,39 @@ class CondHVAE(pl.LightningModule):
             device = "cuda"
 
             if self.params["context_dim"] == 2: #simple celeba graph
+                
+                self.anti_causal_cond = {
+                                            "Smiling": [],
+                                            "Eyeglasses": []
+                                        }
+                self.classifiers = {atr: CelebaClassifier(attr=atr, context_dim=len(list(self.anti_causal_cond[atr]))).eval()
+                                        for atr in self.anti_causal_cond.keys()}
 
-                smiling_cls = CelebaClassifier(attr="Smiling").eval()
-                eye_cls = CelebaClassifier(attr="Eyeglasses").eval()
-                classifiers = {"Smiling":smiling_cls, "Eyeglasses": eye_cls}
+
+
+               # smiling_cls = CelebaClassifier(attr="Smiling").eval()
+               # eye_cls = CelebaClassifier(attr="Eyeglasses").eval()
+               # classifiers = {"Smiling":smiling_cls, "Eyeglasses": eye_cls}
                # file_name = next((file for file in os.listdir(self.params["ckpt_cls_path"]) if file.startswith(Smiling)), None)
 
                # smiling_cls.load_state_dict(torch.load(self.params["ckpt_cls_path"] + file_name , map_location=torch.device('cuda'))["state_dict"])
                # eye_cls.load_state_dict(torch.load(self.params["ckpt_cls_path"] + file_name , map_location=torch.device('cuda'))["state_dict"])
-                for key , c in classifiers.items():
-                    file_name = next((file for file in os.listdir(self.params["ckpt_cls_path"]) if file.startswith(key)), None)
-                    print(file_name)
-                    c.load_state_dict(torch.load(self.params["ckpt_cls_path"] + file_name , map_location=torch.device('cuda'))["state_dict"])
+               # for key , c in classifiers.items():
+               #     file_name = next((file for file in os.listdir(self.params["ckpt_cls_path"]) if file.startswith(key)), None)
+               #     print(file_name)
+               #     c.load_state_dict(torch.load(self.params["ckpt_cls_path"] + file_name , map_location=torch.device('cuda'))["state_dict"])
 
 
 
-                for model in [smiling_cls, eye_cls]:
-                    for param in model.parameters():
-                        param.requires_grad = False
+              #  for model in [smiling_cls, eye_cls]:
+              #      for param in model.parameters():
+              #          param.requires_grad = False
 
-                self.smiling_cls = smiling_cls.to(device)
-                self.eye_cls = eye_cls.to(device)
+              #  self.smiling_cls = smiling_cls.to(device)
+              #  self.eye_cls = eye_cls.to(device)
 
             else: #complex celeba graph: context = 4
-                # return
-                self.attributes = ["Young", "Male", "No_Beard", "Bald"]
+               # self.attributes = ["Young", "Male", "No_Beard", "Bald"]
                 self.anti_causal_cond = {
                                             "Young": ["No_Beard", "Bald"],
                                             "Male": ["No_Beard", "Bald"],
@@ -99,15 +107,15 @@ class CondHVAE(pl.LightningModule):
                                         version=self.params["classifiers_arch"]).eval() for atr in self.anti_causal_cond.keys()}
 
 
-                for key , cls in self.classifiers.items():
+            for key , cls in self.classifiers.items():
                    # print(key)
-                    file_name = next((file for file in os.listdir(self.params["ckpt_cls_path"]) if file.startswith(key)), None)
-                    print(file_name)
-                    cls.load_state_dict(torch.load(self.params["ckpt_cls_path"] + file_name , map_location=torch.device('cuda'))["state_dict"])
-                    for param in cls.parameters():
-                        param.requires_grad = False
+                file_name = next((file for file in os.listdir(self.params["ckpt_cls_path"]) if file.startswith(key)), None)
+                print(file_name)
+                cls.load_state_dict(torch.load(self.params["ckpt_cls_path"] + file_name , map_location=torch.device('cuda'))["state_dict"])
+                for param in cls.parameters():
+                    param.requires_grad = False
 
-                    cls.to(device)
+                cls.to(device)
 
 
     def expand_parents(self, pa):
@@ -243,8 +251,8 @@ class CondHVAE(pl.LightningModule):
                 cf_x = self.decode(u, cf_pa)
                 y_s_target = cf_pa[:, 0]
                 y_e_target = cf_pa[:, 1]
-                y_hat_s = self.smiling_cls(cf_x)
-                y_hat_e = self.eye_cls(cf_x)
+                y_hat_s = self.classifiers["Smiling"](cf_x)
+                y_hat_e = self.classifiers["Eyeglasses"](cf_x)
                 smiling_cond_loss = nn.BCEWithLogitsLoss()(y_hat_s, y_s_target.type(torch.float32).view(-1, 1))
                 eye_cond_loss = nn.BCEWithLogitsLoss()(y_hat_e, y_e_target.type(torch.float32).view(-1, 1))
 
@@ -357,8 +365,8 @@ class CondHVAE(pl.LightningModule):
                 cf_x = self.decode(u, cf_pa)
                 y_s_target = cf_pa[:, 0]
                 y_e_target = cf_pa[:, 1]
-                y_hat_s = self.smiling_cls(cf_x)
-                y_hat_e = self.eye_cls(cf_x)
+                y_hat_s = self.classifiers["Smiling"](cf_x)
+                y_hat_e = self.classifiers["Eyeglasses"](cf_x)
                 smiling_cond_loss = nn.BCEWithLogitsLoss()(y_hat_s, y_s_target.type(torch.float32).view(-1, 1))
                 eye_cond_loss = nn.BCEWithLogitsLoss()(y_hat_e, y_e_target.type(torch.float32).view(-1, 1))
 
@@ -386,7 +394,7 @@ class CondHVAE(pl.LightningModule):
                 no_beard_cond_loss = nn.BCEWithLogitsLoss()(y_hat_no_beard, y_no_beard_target.type(torch.float32).view(-1, 1))
                 bald_cond_loss = nn.BCEWithLogitsLoss()(y_hat_bald, y_bald_target.type(torch.float32).view(-1, 1))
 
-                conditional_loss = 0.5 * (male_cond_loss + no_beard_cond_loss) #0.25 * (young_cond_loss + male_cond_loss + no_beard_cond_loss + bald_cond_loss)
+                conditional_loss = 0.25 * (young_cond_loss + male_cond_loss + no_beard_cond_loss + bald_cond_loss)
 
 
             if conditional_loss!=None and out["elbo"]!=None:
