@@ -121,3 +121,17 @@ Move everything to `counterfactual_benchmark/datasets/celeba/data/`
 
 ## How good is your counterfactual image?
 ![image](https://github.com/gulnazaki/counterfactual-benchmark/assets/57211914/ed125278-9c79-467d-9852-4693b319d91a)
+
+
+## Citation
+```
+If you find this work helpful in your research, cite:
+@misc{melistas2024benchmarking,
+      title={Benchmarking Counterfactual Image Generation}, 
+      author={Thomas Melistas and Nikos Spyrou and Nefeli Gkouti and Pedro Sanchez and Athanasios Vlontzos and Yannis Panagakis and Giorgos Papanastasiou and Sotirios A. Tsaftaris},
+      year={2024},
+      eprint={2403.20287},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV}
+}
+```
