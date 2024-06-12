@@ -1,6 +1,6 @@
 {
-    "Smiling_context_dim":0,
-    "Eyeglasses_context_dim":0,
+    "Smiling_num_out":1,
+    "Eyeglasses_num_out":1,
 
     "attribute_size": {
         "Smiling": 1,
