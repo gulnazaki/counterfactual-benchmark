@@ -63,5 +63,5 @@
     },
 
     "dataset": "morphomnist",
-    "checkpoint_dir": "./checkpoints/trained_scm"
+    "checkpoint_dir": "./checkpoints_morphomnist/trained_scm"
 }
