@@ -174,7 +174,7 @@ class ADNI(Dataset):
                                                                split=split,
                                                                keep_only_screening=keep_only_screening)
 
-        csv_path = Path(csv_dir).glob('ADNIMERGE*.csv')[0]
+        csv_path = list(Path(csv_dir).glob('ADNIMERGE*.csv'))[0]
         assert csv_path.is_file(), "Provide ADNIMERGE csv path"
         self.attributes, indices_to_remove = load_extra_attributes(csv_path, attributes=attribute_size.keys(),
                                                                    attribute_dict=attribute_dict, subject_dates_dict=subject_dates_dict,
