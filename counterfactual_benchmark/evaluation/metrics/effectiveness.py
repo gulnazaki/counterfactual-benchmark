@@ -9,7 +9,7 @@ def effectiveness(counterfactual_batch, unnormalize_fn, predictors, dataset):
     if dataset == "celeba":
         predictions = {}
         for key, clfs in predictors.items():
-            if clfs.conditions[key] is not None:
+            if clfs.conditions is not None and clfs.conditions[key] is not None:
                 cond = torch.cat([counterfactual_batch[att] for att in clfs.conditions[key]], dim=1)
                 predictions[key] = clfs(counterfactual_batch["image"], cond)
 
