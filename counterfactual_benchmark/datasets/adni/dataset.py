@@ -5,6 +5,7 @@ from PIL import Image
 import numpy as np
 import pandas as pd
 from torchvision import transforms
+import os
 
 MIN_MAX = {
     'image': [0.0, 255.0],
