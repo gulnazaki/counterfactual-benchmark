@@ -5,6 +5,7 @@ from PIL import Image
 import numpy as np
 import pandas as pd
 from torchvision import transforms
+import os
 
 MIN_MAX = {
     'image': [0.0, 255.0],
@@ -158,8 +159,7 @@ def load_extra_attributes(csv_path, attributes, attribute_dict, subject_dates_di
 class ADNI(Dataset):
     def __init__(self, attribute_size, split='train', normalize_=True,
                  transform=None, transform_cls=None, num_of_slices=30, keep_only_screening=False,
-                 data_dir='./preprocessing/preprocessed_data',
-                 csv_dir='./preprocessing/'):
+                 dataset_dir=os.path.join(os.path.dirname(os.path.realpath(__file__)),'preprocessing')):
         super().__init__()
         self.has_valid_set = True
         self.transform = transform
@@ -170,11 +170,12 @@ class ADNI(Dataset):
         num_of_slices = attribute_size['slice']
 
         assert num_of_slices <= 30, "The 30 middle slices have been saved"
+        data_dir = os.path.join(dataset_dir, 'preprocessed_data')
         images, attribute_dict, subject_dates_dict = load_data(data_dir, num_of_slices=num_of_slices,
                                                                split=split,
                                                                keep_only_screening=keep_only_screening)
 
-        csv_path = list(Path(csv_dir).glob('ADNIMERGE*.csv'))[0]
+        csv_path = list(Path(dataset_dir).glob('ADNIMERGE*.csv'))[0]
         assert csv_path.is_file(), "Provide ADNIMERGE csv path"
         self.attributes, indices_to_remove = load_extra_attributes(csv_path, attributes=attribute_size.keys(),
                                                                    attribute_dict=attribute_dict, subject_dates_dict=subject_dates_dict,
