@@ -12,7 +12,7 @@ python2 fsl_ubuntu/fslinstaller.py
 
 ## Preprocessing
 ```
-python3 image_preselection --csv ADNI1_Complete_1Yr_1.5T_<INSERT_DOWNLOAD_DATE>_.csv
+python3 image_preselection.py --csv ADNI1_Complete_1Yr_1.5T_<INSERT_DOWNLOAD_DATE>_.csv
 python3 move_selected_images.py
 python3 main.py
 ```
