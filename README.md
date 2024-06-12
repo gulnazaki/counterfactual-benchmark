@@ -10,6 +10,7 @@ Code to reproduce our paper "Benchmarking Counterfactual Image Generation".
 ```
 counterfactual_benchmark
 ├── datasets                                    # Code related to loading and transformations of datasets; We include MorphoMNIST, but CelebA has to be downloaded as described below.
+│   ├── adni 
 │   ├── celeba
 │   └── morphomnist
 │       └── data
