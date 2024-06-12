@@ -1,0 +1,18 @@
+{
+    "morphomnist": {
+        "configs": ["./morphomnist/vae.json", "./morphomnist/hvae.json", "./morphomnist/gan.json"],
+        "variable": "thickness"
+    },
+    "celeba_simple": {
+        "configs": ["./celeba/simple/vae.json", "./celeba/simple/hvae.json", "./celeba/simple/gan.json"],
+        "variable": "Eyeglasses"
+    },
+    "celeba_complex": {
+        "configs": ["./celeba/complex/vae.json", "./celeba/complex/hvae.json", "./celeba/complex/gan.json"],
+        "variable": "Young"
+    },
+    "adni": {
+        "configs": ["./adni/vae.json", "./adni/hvae.json", "./adni/gan.json"],
+        "variable": "vent_vol"
+    }
+}
