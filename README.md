@@ -10,7 +10,10 @@ Code to reproduce our paper "Benchmarking Counterfactual Image Generation".
 ```
 counterfactual_benchmark
 ├── datasets                                    # Code related to loading and transformations of datasets; We include MorphoMNIST, but CelebA has to be downloaded as described below.
-│   ├── adni
+│   ├── adni
+│   │   └── preprocessing
+│   │       ├── ...
+│   │       └── README.md
 │   ├── celeba
 │   └── morphomnist
 │       └── data
@@ -19,18 +22,26 @@ counterfactual_benchmark
 │   └── metrics                                 # Implementation of metrics
 ├── methods
 │   └── deepscm                                 # Training and evaluation code for all methods under Deep-SCM paradigm
-│       ├── checkpoints
-│       │   └── trained_classifiers             # MorphoMNIST predictors' checkpoints
-│       ├── checkpoints_celeba
-│       │   └── trained_classifiers             # CelebA predictors' checkpoints
+│       ├── checkpoints                         # Checkpoints (we only include predictors due to github size limitations)
+│       │   ├── adni
+│       │   │   └── trained_classifiers
+│       │   ├── celeba
+│       │   │   ├── complex
+│       │   │   │   └── trained_classifiers
+│       │   │   └── simple
+│       │   │       └── trained_classifiers
+│       │   └── morphomnist
+│       │       └── trained_classifiers
 │       ├── configs                             # Configuration files to reproduce experiments
-│       │    └── adni
-│       │    └── celeba
-│       │     │   └── simple
-│       │     │   └── complex
-│       │    └── morphomnist
+│       │   ├── adni
+│       │   ├── celeba
+│       │   │   ├── complex
+│       │   │   └── simple
+│       │   ├── morphomnist
+│       │   └── qualitative_grid.json
 │       ├── evaluate.py                         # Evaluation script to test the trained models
 │       ├── model.py                            # The SCM class that integrates the models for all mechanisms is defined here
+│       ├── qualitative_grid.py                 # Script to produce a grid of qualitative results for all datasets and models
 │       ├── train_classifier.py                 # Script to train the anti-causal predictors
 │       ├── training_scripts.py
 │       └── train.py                            # Script to train all models of the SCM
