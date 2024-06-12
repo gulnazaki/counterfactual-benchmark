@@ -28,7 +28,7 @@ def get_embedding_model(embedding, pretrained_vgg, classifier_config=None):
             }
             model = MmnistCondVAE(params, attribute_size, unconditional=True).eval().to('cuda')
             # add path of an unconditional VAE trained on MorphoMNIST
-            model.load_state_dict(torch.load('../../methods/deepscm/checkpoints/trained_scm/uncond_image_vae-epoch=269.ckpt', map_location=torch.device('cuda'))["state_dict"])
+            model.load_state_dict(torch.load('../../methods/deepscm/checkpoints/morphomnist/trained_uncond_vae/uncond_image_vae-epoch=269.ckpt', map_location=torch.device('cuda'))["state_dict"])
         elif 'celeba' in classifier_config:
             params = {'latent_dim': 100, 'hidden_dim': 256, 'n_chan': [3, 32, 64, 128, 256, 256], 'beta': 5, 'lr': 0.0005, 'weight_decay': 0, 'fixed_logvar': "False"}
             attribute_size = {
@@ -37,7 +37,7 @@ def get_embedding_model(embedding, pretrained_vgg, classifier_config=None):
             }
             model = CelebaCondVAE(params, attribute_size, unconditional=True).eval().to('cuda')
             # add path of an unconditional VAE trained on CelebA
-            model.load_state_dict(torch.load('../../methods/deepscm/checkpoints_celeba/trained_scm/uncond_image_vae-epoch=44.ckpt', map_location=torch.device('cuda'))["state_dict"])
+            model.load_state_dict(torch.load('../../methods/deepscm/checkpoints/celeba/simple/trained_uncond_vae/image_vae-epoch=44.ckpt', map_location=torch.device('cuda'))["state_dict"])
         else:
             params = {'context_dim': 0, 'latent_dim': 100, 'hidden_dim': 512, 'n_chan': [1, 16, 24, 32, 64, 128, 256], 'beta': 3, 'lr': 1e-3, 'weight_decay': 0.01, 'fixed_logvar': "False"}
             attribute_size = {

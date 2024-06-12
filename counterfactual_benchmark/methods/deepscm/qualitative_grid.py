@@ -38,7 +38,7 @@ dataclass_mapping = {
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", '-c', type=str, help="Config file for experiment.", default="./configs/qualitative_grid_config.json")
+    parser.add_argument("--config", '-c', type=str, help="Config file for experiment.", default="./configs/qualitative_grid.json")
     return parser.parse_args()
 
 

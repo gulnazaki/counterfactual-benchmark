@@ -62,7 +62,7 @@ def train_classifier(classifier, attr, train_set, val_set, config, default_root_
 def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("--classifier-config", '-clf', type=str, help="Classifier config file."
-                        , default="./configs/adni/adni_classifier_config.json")
+                        , default="./configs/adni/classifier.json")
 
     return parser.parse_args()
 

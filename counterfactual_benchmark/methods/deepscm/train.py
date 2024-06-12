@@ -27,7 +27,7 @@ dataclass_mapping = {
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", '-c', type=str, help="./configs/celeba/complex/celeba_complex_hvae.json")
+    parser.add_argument("--config", '-c', type=str, help="Config file for experiment.", default="./configs/adni/hvae.json")
     return parser.parse_args()
 
 if __name__ == "__main__":

@@ -1,0 +1,36 @@
+{
+    "causal_graph": {
+        "Smiling": [],
+        "Eyeglasses": [],
+        "image": []
+    },
+    "attribute_size": {
+        "Smiling": 1,
+        "Eyeglasses": 1
+    },
+    "mechanism_models": {
+        "image": {
+            "model_type": "vae",
+            "model_class": "CelebaCondVAE",
+            "module": "models.vaes",
+            "params": {
+                "n_chan" : [3, 32, 64, 128, 256, 256],
+                "latent_dim" : 100,
+                "hidden_dim": 256,
+                "beta" : 5,
+                "lr" : 0.0005,
+                "gradient_clip_val": 350,
+                "batch_size_train" : 256,
+                "batch_size_val" : 256,
+                "patience" : 10,
+                "max_epochs" : 1000,
+                "weight_decay": 0,
+                "ema": "True",
+                "fixed_logvar": "False"
+            }
+        }
+    },
+
+    "dataset": "celeba",
+    "checkpoint_dir": "./checkpoints/celeba/simple/trained_uncond_vae"
+}

@@ -1,13 +1,19 @@
 {
     "causal_graph": {
-        "Smiling": [],
-        "Eyeglasses": [],
-        "image": ["Smiling", "Eyeglasses"]
+        "Young": [],
+        "Male": [],
+        "No_Beard": ["Young", "Male"],
+        "Bald" : ["Young", "Male"],
+        "image": []
     },
+
     "attribute_size": {
-        "Smiling": 1,
-        "Eyeglasses": 1
+        "Young": 1,
+        "Male": 1,
+        "No_Beard": 1,
+        "Bald" : 1
     },
+
     "mechanism_models": {
         "image": {
             "model_type": "vae",
@@ -15,14 +21,14 @@
             "module": "models.vaes",
             "params": {
                 "n_chan" : [3, 32, 64, 128, 256, 256],
-                "latent_dim" : 16,
+                "latent_dim" : 100,
                 "hidden_dim": 256,
                 "beta" : 5,
-                "lr" : 0.0005,
+                "lr" : 1e-3,
                 "gradient_clip_val": 350,
-                "batch_size_train" : 256,
+                "batch_size_train" : 128,
                 "batch_size_val" : 256,
-                "patience" : 10,
+                "patience" : 50,
                 "max_epochs" : 1000,
                 "weight_decay": 0,
                 "ema": "True",
@@ -32,5 +38,5 @@
     },
 
     "dataset": "celeba",
-    "checkpoint_dir": "./checkpoints_celeba/simple/trained_scm"
+    "checkpoint_dir": "./checkpoints/celeba/complex/trained_uncond_vae"
 }

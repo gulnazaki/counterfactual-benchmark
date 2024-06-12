@@ -8,7 +8,7 @@
         "intensity": [],
         "digit": []
     },
-    
+
 
     "attribute_size": {
         "thickness": 1,
@@ -17,7 +17,7 @@
     },
 
     "dataset": "morphomnist",
-    "ckpt_path" : "./checkpoints_morphomnist/trained_classifiers/",
+    "ckpt_path" : "./checkpoints/morphomnist/trained_classifiers/",
     "in_shape" : [1, 32, 32] ,
     "patience" : 10,
     "batch_size_train" : 256,

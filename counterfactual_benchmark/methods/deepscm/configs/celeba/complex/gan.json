@@ -15,7 +15,6 @@
     },
 
     "mechanism_models": {
-
         "No_Beard": {
             "model_type": "flow",
             "model_class": "NoBeardFlow",
@@ -45,29 +44,30 @@
                 "train_val_split" : 0.8
             }
         },
-
         "image": {
-            "model_type": "vae",
-            "model_class": "CelebaCondVAE",
-            "module": "models.vaes",
+            "model_type": "gan",
+            "model_class": "CelebaCondGAN",
+            "module": "models.gans",
             "params": {
-                "n_chan" : [3, 32, 64, 128, 256, 256],
-                "latent_dim" : 16,
-                "hidden_dim": 256,
-                "beta" : 5,
-                "lr" : 1e-3,
-                "gradient_clip_val": 350,
-                "batch_size_train" : 128,
-                "batch_size_val" : 256,
-                "patience" : 50,
-                "max_epochs" : 1000,
-                "weight_decay": 0,
-                "ema": "True",
-                "fixed_logvar": "False"
+                "n_chan": [1, 32, 32, 32],
+                "n_chan_enc": [3, 64, 128, 256, 256, 512, 512],
+                "n_chan_gen": [512 ,512, 256, 256, 128, 64, 3],
+                "latent_dim": 512,
+                "num_continuous": 4,
+                "d_updates_per_g_update": 1,
+                "gradient_clip_val": 0.5,
+                "finetune": 1,
+                "pretrained_path": "",
+                "lr": 5e-6,
+                "batch_size_train": 512,
+                "batch_size_val": 512,
+                "patience": 40,
+                "max_epochs": 1000
             }
         }
+
     },
 
     "dataset": "celeba",
-    "checkpoint_dir": "./checkpoints_celeba/complex/trained_scm"
+    "checkpoint_dir": "./checkpoints/celeba/complex/trained_scm"
 }

@@ -1,5 +1,5 @@
 # Benchmarking Counterfactual Image Generation
-![image](https://github.com/gulnazaki/counterfactual-benchmark/assets/57211914/966b0d1f-3a3d-47c2-a77e-d32cf01d2868) 
+![image](https://github.com/gulnazaki/counterfactual-benchmark/assets/57211914/966b0d1f-3a3d-47c2-a77e-d32cf01d2868)
 ![image](https://github.com/gulnazaki/counterfactual-benchmark/assets/57211914/8e8b5970-9474-4e06-b005-1a251341030b)
 
 Code to reproduce our paper "Benchmarking Counterfactual Image Generation".
@@ -10,7 +10,7 @@ Code to reproduce our paper "Benchmarking Counterfactual Image Generation".
 ```
 counterfactual_benchmark
 ├── datasets                                    # Code related to loading and transformations of datasets; We include MorphoMNIST, but CelebA has to be downloaded as described below.
-│   ├── adni 
+│   ├── adni
 │   ├── celeba
 │   └── morphomnist
 │       └── data
@@ -28,7 +28,7 @@ counterfactual_benchmark
 │       │    └── celeba
 │       │     │   └── simple
 │       │     │   └── complex
-│       │    └── morphomnist                            
+│       │    └── morphomnist
 │       ├── evaluate.py                         # Evaluation script to test the trained models
 │       ├── model.py                            # The SCM class that integrates the models for all mechanisms is defined here
 │       ├── train_classifier.py                 # Script to train the anti-causal predictors
@@ -50,17 +50,23 @@ pip install -r requirements.txt
 
 ## How to Run
 Inside `counterfactual_benchmark/methods/deepscm` the following can be used to train and evaluate any supported model for a given dataset.
-We give an example for training a VAE on MorphoMNIST and a HVAE on Celeba conditioned on the complex graph. All experiments can be reproduced and extended with the configuration files inside `methods/deepscm/configs/`
+We give an example for training and evaluating: (i) a VAE on MorphoMNIST (ii) a GAN on CelebA using the complex graph, (iii) a HVAE on ADNI. All experiments can be reproduced and extended with the configuration files inside `methods/deepscm/configs/`
 ```
-python train.py -c configs/morphomnist/morphomnist_vae_config.json
-python train_classifier.py -clf configs/morphomnist/morphomnist_classifier_config.json # this is optional as we provide classifier checkpoints
-python evaluate.py -c configs/morphomnist/morphomnist_vae_config.json -clf configs/morphomnist/morphomnist_classifier_config.json
+python train.py -c configs/morphomnist/vae.json
+python train_classifier.py -clf configs/morphomnist/classifier.json # this is optional as we provide classifier checkpoints
+python evaluate.py -c configs/morphomnist/vae.json -clf configs/morphomnist/classifier.json
 ```
 
 ```
-python train.py -c configs/celeba/complex/celeba_complex_hvae.json
-python train_classifier.py -clf configs/celeba/complex/celeba_complex_classifier.json
-python evaluate.py -c configs/celeba/complex/celeba_complex_hvae.json -clf configs/celeba/complex/celeba_complex_classifier.json
+python train.py -c configs/celeba/complex/gan.json
+python train_classifier.py -clf configs/celeba/complex/classifier.json
+python evaluate.py -c configs/celeba/complex/gan.json -clf configs/celeba/complex/classifier.json
+```
+
+```
+python train.py -c configs/celeba/adni/hvae.json
+python train_classifier.py -clf configs/adni/classifier.json
+python evaluate.py -c configs/adni/hvae.json -clf configs/adni/classifier.json
 ```
 
 A description of all possible arguments for the evaluation script can be obtained with `python evaluate.py -h`
@@ -127,7 +133,7 @@ Move everything to `counterfactual_benchmark/datasets/celeba/data/`
 ```
 If you find this work helpful in your research, cite:
 @misc{melistas2024benchmarking,
-      title={Benchmarking Counterfactual Image Generation}, 
+      title={Benchmarking Counterfactual Image Generation},
       author={Thomas Melistas and Nikos Spyrou and Nefeli Gkouti and Pedro Sanchez and Athanasios Vlontzos and Yannis Panagakis and Giorgos Papanastasiou and Sotirios A. Tsaftaris},
       year={2024},
       eprint={2403.20287},

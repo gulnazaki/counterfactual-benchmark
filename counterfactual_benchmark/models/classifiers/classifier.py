@@ -132,36 +132,3 @@ class Classifier(pl.LightningModule):
     def configure_optimizers(self):
         optimizer = Adam(self.parameters(), lr=self.lr)
         return optimizer
-
-
-#just test code for the classifiers
-if __name__ == "__main__":
-
-    attribute_size = {
-        "thickness": 1,
-        "intensity": 1,
-        "digit": 10
-    }
-
-    train_set = MorphoMNISTLike(attribute_size=attribute_size, train=True)
-
-    tr_data_loader = torch.utils.data.DataLoader(train_set, batch_size=256, shuffle=False, num_workers=7)
-    iterator = iter(tr_data_loader)
-    batch = next(iterator)
-    x , attrs = batch
-    print(x.shape)
-    print(attrs.shape, attrs[:,0].shape)
-    cls_intensity = Classifier(attr="intensity", width=8).eval()
-    cls_thickness = Classifier(attr="thickness", width=8, context_dim=1).eval()
-    cls_digit = Classifier(attr="digit", width=8, num_outputs=10).eval()
-
-    print(attrs[:,1].shape)
-    out1= cls_intensity(x)
-    out2 = cls_thickness(x, y = attrs[:,1].view(-1, 1))
-    out3 = cls_digit(x)
-    print(out1.shape)
-    print(out2.shape)
-    print(out3.shape)
-    y = attrs[:, 2:]
-    loss = F.cross_entropy(out3, y.argmax(-1).type(torch.long))
-    print(loss)

@@ -9,18 +9,18 @@
         "No_Beard": [],
         "Bald": []
     },
-    
-    
+
+
     "attribute_size": {
         "Young": 1,
         "Male": 1,
         "No_Beard": 1,
         "Bald" : 1
     },
-    
+
     "dataset": "celeba",
     "version": "standard",
-    "ckpt_path" : "./checkpoints_celeba/trained_classifiers/",
+    "ckpt_path" : "./checkpoints/celeba/complex/trained_classifiers/",
     "in_shape" : [3, 64, 64] ,
     "patience" : 5,
     "batch_size_train" : 128,

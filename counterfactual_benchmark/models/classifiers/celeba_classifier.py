@@ -92,31 +92,3 @@ class CelebaClassifier(pl.LightningModule):
     def configure_optimizers(self):
         optimizer = AdamW(self.parameters(), lr=self.lr, weight_decay=0.01, betas=[0.9, 0.999])
         return optimizer
-
-
-#just test code for the classifiers
-if __name__ == "__main__":
-
-    attribute_size = {
-        "Smiling": 1,
-        "Eyeglasses": 1
-    }
-
-    train_set = Celeba(attribute_size, split="train")
-
-    tr_data_loader = torch.utils.data.DataLoader(train_set, batch_size=2, shuffle=False)
-    iterator = iter(tr_data_loader)
-    batch = next(iterator)
-    x , attrs = batch
-    print(attrs, attrs.argmax(-1))
-    print(x.shape)
-    print(attrs[: , 0].shape, attrs[:, 0].view(-1, 1).shape)
-
-    cls_smiling = CelebaClassifier(attr="Smiling", width=64).eval()
-    cls_eyeglasses = CelebaClassifier(attr="Eyeglasses", width=64).eval()
-    out1= cls_smiling(x)
-    out2 = cls_eyeglasses(x)
-
-    print("this is out1" , out1.shape)
-    print("this is out2:", out2.shape)
-    print(attrs[:,0].view(-1,1).shape)
