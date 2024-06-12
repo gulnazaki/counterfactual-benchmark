@@ -79,7 +79,8 @@ A description of all possible arguments for the evaluation script can be obtaine
 "classifiers_arch": "resnet" or "standard",
 "ckpt_cls_path" : "<insert_classifiers_path>",
 
-"evaluate_cf_model":False
+"evaluate_cf_model":False,
+"elbo_constraint": "<set the elbo of the pretrained model>",
 "checkpoint_path": "<insert_checkpoint_path>",
 ```
 
