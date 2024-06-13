@@ -71,7 +71,7 @@ python evaluate.py -c configs/celeba/complex/gan.json -clf configs/celeba/comple
 ```
 
 ```
-python train.py -c configs/celeba/adni/hvae.json
+python train.py -c configs/adni/hvae.json
 python train_classifier.py -clf configs/adni/classifier.json
 python evaluate.py -c configs/adni/hvae.json -clf configs/adni/classifier.json
 ```
