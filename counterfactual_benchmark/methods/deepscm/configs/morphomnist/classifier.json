@@ -1,9 +1,5 @@
 {
-    "thickness_context_dim": 1,
-    "intensity_context_dim": 0,
-    "digit_context_dim": 0,
-
-    "anticausal_cond": {
+    "anticausal_graph": {
         "thickness": ["intensity"],
         "intensity": [],
         "digit": []

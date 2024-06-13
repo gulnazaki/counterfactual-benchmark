@@ -11,10 +11,10 @@ class ClassifierEmbeddings():
 
         with open(config_file, 'r') as f:
             config = load(f)
-        attributes = [k.removesuffix('_num_out') for k in config.keys() if k.endswith('_num_out')]
+        attributes = config["attribute_size"].keys()
 
         self.predictors = {
-            atr: Classifier(attr=atr, num_outputs=config["attribute_size"][atr], context_dim=config[atr +"_context_dim"])
+            atr: Classifier(attr=atr, num_outputs=config["attribute_size"][atr], context_dim=len(list(config["anticausal_graph"][atr])))
                 for atr in attributes
         }
 

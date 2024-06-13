@@ -1,15 +1,10 @@
-{   "Young_num_out": 1,
-    "Male_num_out": 1,
-    "No_Beard_num_out": 1,
-    "Bald_num_out": 1,
-
-    "anticausal_cond": {
+{
+    "anticausal_graph": {
         "Young": ["No_Beard", "Bald"],
         "Male": ["No_Beard", "Young"],
         "No_Beard": [],
         "Bald": []
     },
-
 
     "attribute_size": {
         "Young": 1,
