@@ -275,11 +275,11 @@ if __name__ == "__main__":
 
     if "effectiveness" in args.metrics:
         if dataset == "morphomnist":
-            predictors = {atr: Classifier(attr=atr, num_outputs=attribute_size[atr], context_dim=config_cls[atr +"_context_dim"])
+            predictors = {atr: Classifier(attr=atr, num_outputs=attribute_size[atr], context_dim=len(list(config_cls["anticausal_graph"][atr])))
                           for atr in attribute_size.keys()}
         elif dataset == "celeba":
             if sum(attribute_size.values()) == 4:
-                predictors = {atr: CelebaComplexClassifier(attr=atr, context_dim=len(list(config_cls["anticausal_cond"][atr])),
+                predictors = {atr: CelebaComplexClassifier(attr=atr, context_dim=len(list(config_cls["anticausal_graph"][atr])),
                                                   num_outputs=config_cls[atr +"_num_out"],
                                                   lr=config_cls["lr"], version=config_cls["version"]) for atr in attribute_size.keys()}
             else:

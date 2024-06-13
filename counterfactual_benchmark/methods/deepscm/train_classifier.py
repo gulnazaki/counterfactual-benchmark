@@ -104,11 +104,11 @@ if __name__ == "__main__":
         else:
             if dataset == "celeba":
                 if sum(attribute_size.values()) == 4:
-                    classifier = CelebaComplexClassifier(attr=attribute, context_dim=len(list(config_cls["anticausal_cond"][attribute])),
-                                                    num_outputs=config_cls[attribute +"_num_out"],
+                    classifier = CelebaComplexClassifier(attr=attribute, context_dim=len(list(config_cls["anticausal_graph"][attribute])),
+                                                    num_outputs=config_cls["attribute_size"][attribute],
                                                     lr=config_cls["lr"], version=config_cls["version"])
                 else:
-                    classifier = CelebaClassifier(attr=attribute, num_outputs=config_cls[attribute +"_num_out"],
+                    classifier = CelebaClassifier(attr=attribute, num_outputs=config_cls["attribute_size"][attribute],
                                             lr=config_cls["lr"])
 
                 if attribute == "Smiling":
@@ -130,9 +130,10 @@ if __name__ == "__main__":
                 else:
                     weights = None
 
-            else:#morphomnist
-                classifier = Classifier(attr=attribute, width=8, num_outputs=config_cls[attribute +"_num_out"],
-                                        context_dim=len(list(config_cls["anticausal_cond"][attribute])), lr=config_cls["lr"])
+            else:
+                #morphomnist
+                classifier = Classifier(attr=attribute, width=8, num_outputs=config_cls["attribute_size"][attribute],
+                                        context_dim=len(list(config_cls["anticausal_graph"][attribute])), lr=config_cls["lr"])
                 weights = None
 
 
