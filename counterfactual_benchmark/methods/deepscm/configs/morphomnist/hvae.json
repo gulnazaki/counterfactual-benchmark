@@ -73,7 +73,10 @@
                 "ema": "True",
                 "load_pretrained_ckpt": "False",
                 "cf_fine_tune": "False",
-                "evaluate_cf_model": "False"
+                "classifiers_arch": "standard",
+                "ckpt_cls_path" : "",
+                "evaluate_cf_model": "False",
+                "elbo_constraint": 0
             }
         }
     },

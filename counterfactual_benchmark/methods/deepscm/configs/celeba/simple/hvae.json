@@ -42,10 +42,10 @@
                 "ema": "True",
                 "cf_fine_tune": "True",
                 "classifiers_arch": "standard",
-                "ckpt_cls_path" : "./checkpoints_celeba/trained_classifiers/",
+                "ckpt_cls_path" : "./checkpoints/celeba/simple/trained_classifiers/",
                 "evaluate_cf_model": "True",
                 "elbo_constraint": 2.26,
-                "checkpoint_path": "./checkpoints_celeba/trained_scm/image_hvae-epoch=34.ckpt"
+                "checkpoint_path": ""
             }
         }
     },
