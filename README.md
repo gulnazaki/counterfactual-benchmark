@@ -1,4 +1,10 @@
 # Benchmarking Counterfactual Image Generation
+![image](https://github.com/gulnazaki/counterfactual-benchmark/assets/57211914/966b0d1f-3a3d-47c2-a77e-d32cf01d2868)
+![image](https://github.com/gulnazaki/counterfactual-benchmark/assets/57211914/8e8b5970-9474-4e06-b005-1a251341030b)
+
+Code to reproduce our paper "Benchmarking Counterfactual Image Generation".
+
+[Pre-print](https://arxiv.org/abs/2403.20287)
 
 Code to reproduce our paper "Benchmarking Counterfactual Image Generation".
 
@@ -144,3 +150,20 @@ Download the following:
 Move the downloaded csv files and the zip in `counterfactual_benchmark/datasets/adni/preprocessing/`. Then unzip and rename to `raw_data`.
 
 Finally, follow the instructions in `counterfactual_benchmark/datasets/adni/preprocessing/README.md` to perform the preprocessing of ADNI
+
+## How good is your counterfactual image?
+![image](https://github.com/gulnazaki/counterfactual-benchmark/assets/57211914/ed125278-9c79-467d-9852-4693b319d91a)
+
+
+## Citation
+```
+If you find this work helpful in your research, cite:
+@misc{melistas2024benchmarking,
+      title={Benchmarking Counterfactual Image Generation},
+      author={Thomas Melistas and Nikos Spyrou and Nefeli Gkouti and Pedro Sanchez and Athanasios Vlontzos and Yannis Panagakis and Giorgos Papanastasiou and Sotirios A. Tsaftaris},
+      year={2024},
+      eprint={2403.20287},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV}
+}
+```
