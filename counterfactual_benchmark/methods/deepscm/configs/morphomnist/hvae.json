@@ -73,7 +73,8 @@
                 "ema": "True",
                 "load_pretrained_ckpt": "False",
                 "cf_fine_tune": "False",
-                "evaluate_cf_model": "False"
+                "evaluate_cf_model": "False",
+                "elbo_constraint": 0
             }
         }
     },

@@ -77,7 +77,8 @@
                 "load_pretrained_ckpt": "False",
                 "cf_fine_tune": "False",
                 "evaluate_cf_model": "False",
-                "checkpoint_path": ""
+                "checkpoint_path": "",
+                "elbo_constraint": 0
             }
         }
     },
