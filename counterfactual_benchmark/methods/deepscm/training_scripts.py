@@ -50,6 +50,25 @@ def train_vae(vae, config, data_class, graph_structure, attribute_size, checkpoi
     trainer.fit(vae, train_data_loader, val_data_loader)
 
 
+def train_diffusion(diffusion, config, data_class, graph_structure, attribute_size, checkpoint_dir, **kwargs):
+    transform = SelectParentAttributesTransform("image", attribute_size, graph_structure)
+
+    train_data_loader, val_data_loader = get_dataloaders(data_class, attribute_size, config, transform, **kwargs)
+
+    callbacks = [
+        generate_checkpoint_callback(diffusion.name, checkpoint_dir),
+        generate_early_stopping_callback(patience=config["patience"])
+    ]
+    if config["ema"] == "True":
+        callbacks.append(generate_ema_callback(decay=0.999))
+
+    trainer = Trainer(accelerator="auto", devices="auto", strategy="auto",
+                      callbacks=callbacks,
+                      default_root_dir=checkpoint_dir, max_epochs=config["max_epochs"])
+
+    trainer.fit(diffusion, train_data_loader, val_data_loader)
+
+
 def train_gan(gan, config, data_class, graph_structure, attribute_size, checkpoint_dir, **kwargs):
     transform = SelectParentAttributesTransform("image", attribute_size, graph_structure)
 

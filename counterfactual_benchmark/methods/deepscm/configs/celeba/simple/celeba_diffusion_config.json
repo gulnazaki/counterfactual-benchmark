@@ -1,0 +1,36 @@
+{
+    "causal_graph": {
+        "Smiling": [],
+        "Eyeglasses": [],
+        "image": ["Smiling", "Eyeglasses"]
+    },
+    "attribute_size": {
+        "Smiling": 1,
+        "Eyeglasses": 1
+    },
+    "mechanism_models": {
+        "image": {
+            "model_type": "diffusion",
+            "model_class": "CelebaConditionalDiffusion",
+            "module": "models.diffusions",
+            "params": {
+                "sample_size": [3, 64, 64],
+                "block_out_channels": [128, 256, 512, 512], 
+                "cross_attention_dim": 512, 
+                "layers_per_block": 2,
+                "attention_head_dim": 8,
+                "lr" : 0.0004,
+                "gradient_clip_val": 350,
+                "batch_size_train" : 16,
+                "batch_size_val" : 16,
+                "patience" : 10,
+                "max_epochs" : 1000,
+                "weight_decay": 0,
+                "ema": "True"
+            }
+        }
+    },
+
+    "dataset": "celeba",
+    "checkpoint_dir": "./checkpoints_celeba/simple/trained_scm"
+}
