@@ -24,7 +24,7 @@ class ClassConditionEncoder(nn.Module):
     
 
 class Diffusion(pl.LightningModule):
-    def __init__(self, sample_size=(3,64,64), input_channels = 3, output_channels=3, 
+    def __init__(self, sample_size=(64,64), input_channels = 3, output_channels=3, 
                  block_out_channels = (128, 256, 512, 512), cross_attention_dim = 512, layers_per_block=2, 
                  attention_head_dim=8, cond_dim = 2, lr=1e-4, name="image_diffusion"):
         super().__init__()
