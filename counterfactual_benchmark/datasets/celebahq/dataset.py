@@ -26,7 +26,7 @@ def unnormalize(value, name):
     return value.to(torch.uint8)
 
 
-def load_data(root_dir="/storage/n.spyrou/CelebAMask-HQ", split= "train"):
+def load_data(root_dir="/home/ubuntu/CelebAMask-HQ", split= "train"):
 
     attributes = pd.read_csv(os.path.join(root_dir, "CelebAMask-HQ-attribute-anno.txt"),
                                       delimiter=" ", skiprows=1)
