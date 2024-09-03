@@ -6,8 +6,6 @@ Code to reproduce our paper "Benchmarking Counterfactual Image Generation".
 
 [Pre-print](https://arxiv.org/abs/2403.20287)
 
-Code to reproduce our paper "Benchmarking Counterfactual Image Generation".
-
 ## Repository Organization
 ```
 counterfactual_benchmark
