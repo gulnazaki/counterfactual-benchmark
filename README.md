@@ -52,6 +52,11 @@ counterfactual_benchmark
     └── vaes                                    # Both VAE and HVAE models are contained here
 ```
 
+## Credits
+We have based our repo on the structure provided by <https://github.com/rudolfwilliam/DeepBC>, from which we have also copied a large part of the Normalising Flow and VAE code. We have used the code provided by <https://github.com/biomedia-mira/causal-gen> for the HVAEs, VAEs and the predictors. The GAN models were adapted based on <https://github.com/wtaylor17/CDGMExplainers> and <https://github.com/vicmancr/CardiacAging> (for ADNI). For the processing of MorphoMNIST we have used code from <https://github.com/dccastro/Morpho-MNIST>, while for ADNI from <https://github.com/SANCHES-Pedro/adni_preprocessing>.
+
+We want to thank all authors for their contributions and for providing their open-source code!
+
 ## Setup
 ```
 virtualenv -p python3.10 venv
