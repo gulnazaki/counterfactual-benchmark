@@ -119,6 +119,10 @@ body {
   overflow: hidden;
   padding: 20px;
   font-size: 0;
+  display: flex; /* Use flexbox */
+  flex-direction: column; /* Stack items vertically */
+  justify-content: center; /* Center vertically */
+  align-items: center; /* Center horizontally */
 }
 
 .results-carousel video {
