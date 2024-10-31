@@ -4,23 +4,23 @@
   <meta charset="utf-8">
   <!-- Meta tags for social media banners, these should be filled in appropriatly as they are your "business card" -->
   <!-- Replace the content tag with appropriate information -->
-  <meta name="description" content="DESCRIPTION META TAG">
-  <meta property="og:title" content="SOCIAL MEDIA TITLE TAG"/>
-  <meta property="og:description" content="SOCIAL MEDIA DESCRIPTION TAG TAG"/>
-  <meta property="og:url" content="URL OF THE WEBSITE"/>
+  <meta name="description" content="We compare counterfactual image generation methods on a variety of datasets and metrics">
+  <meta property="og:title" content="Benchmarking Counterfactual Image Generation"/>
+  <meta property="og:description" content="We compare counterfactual image generation methods on a variety of datasets and metrics"/>
+  <meta property="og:url" content="https://gulnazaki.github.io/counterfactual-benchmark/"/>
   <!-- Path to banner image, should be in the path listed below. Optimal dimenssions are 1200X630-->
   <meta property="og:image" content="static/image/your_banner_image.png" />
   <meta property="og:image:width" content="1200"/>
   <meta property="og:image:height" content="630"/>
 
 
-  <meta name="twitter:title" content="TWITTER BANNER TITLE META TAG">
-  <meta name="twitter:description" content="TWITTER BANNER DESCRIPTION META TAG">
+  <meta name="twitter:title" content="Benchmarking Counterfactual Image Generation">
+  <meta name="twitter:description" content="We compare counterfactual image generation methods on a variety of datasets and metrics">
   <!-- Path to banner image, should be in the path listed below. Optimal dimenssions are 1200X600-->
   <meta name="twitter:image" content="static/images/your_twitter_banner_image.png">
   <meta name="twitter:card" content="summary_large_image">
   <!-- Keywords for your paper to be indexed by-->
-  <meta name="keywords" content="KEYWORDS SHOULD BE PLACED HERE">
+  <meta name="keywords" content="benchmark, benchmarking, causal, counterfactual, HVAE, VAE, GAN, composition, effectiveness, realism, minimality, counterfactual image generation">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
 
@@ -56,35 +56,40 @@
             <div class="is-size-5 publication-authors">
               <!-- Paper authors -->
               <span class="author-block">
-                <a href="FIRST AUTHOR PERSONAL LINK" target="_blank">Thomas Melistas</a><sup>*</sup>,
+                <a href="https://vios.science/team/thomas" target="_blank">Thomas Melistas</a><sup>*1, 2, 3</sup>,
               </span>
               <span class="author-block">
-                <a href="SECOND AUTHOR PERSONAL LINK" target="_blank">Nikos Spyrou</a><sup>*</sup>,
+                <a href="https://vios.science/team/nikosspyrou" target="_blank">Nikos Spyrou</a><sup>*1, 2, 3</sup>,
               </span>
               <span class="author-block">
-                <a href="THIRD AUTHOR PERSONAL LINK" target="_blank">Nefeli Gkouti</a><sup>*</sup>,
+                <a href="https://vios.science/team/nefeli" target="_blank">Nefeli Gkouti</a><sup>*1, 2, 3</sup>,
               </span>
               <span class="author-block">
-                <a href="FOURTH AUTHOR PERSONAL LINK" target="_blank">Pedro Sanchez</a>,
+                <a href="https://vios.science/team/sanchez" target="_blank">Pedro Sanchez</a><sup>3</sup>,
               </span>
               <span class="author-block">
-                <a href="FIFTH AUTHOR PERSONAL LINK" target="_blank"> Athanasios
-                  Vlontzos</a>,
+                <a href="https://thanosvlo.github.io/" target="_blank"> Athanasios
+                  Vlontzos</a><sup>4, 6</sup>,
               </span>
               <span class="author-block">
-                <a href="SIXTH AUTHOR PERSONAL LINK" target="_blank"> Yannis Panagakis</a>,
+                <a href="https://scholar.google.co.uk/citations?user=z1bkjU8AAAAJ" target="_blank"> Yannis Panagakis</a><sup>1, 2</sup>,
               </span>
               <span class="author-block">
-                <a href="SEVENTH AUTHOR PERSONAL LINK" target="_blank">Giorgos Papanastasiou</a>,
+                <a href="https://scholar.google.com/citations?user=VPsjPNUAAAAJ" target="_blank">Giorgos Papanastasiou<sup>2, 5</sup></a>,
               </span>
               <span class="author-block">
-                <a href="EIGHTH AUTHOR PERSONAL LINK" target="_blank">Sotirios A. Tsaftaris</a>
+                <a href="https://vios.science/team/tsaftaris" target="_blank">Sotirios A. Tsaftaris<sup>2, 3</sup></a>
               </span>
 
                   </div>
 
                   <div class="is-size-5 publication-authors">
-                    <span class="author-block">Univeristy of Athens / Archimedes Unit / Athena RC<br>Neurips 2024 Track on Datasets and Benchmarks</span>
+                    <span class="author-block"><sup>1</sup>National & Kapodistrian University of Athens, Greece,
+                      <sup>2</sup>Archimedes/Athena RC, Greece<br>
+                      <sup>3</sup>The University of Edinburgh, UK,
+                      <sup>4</sup>Imperial College London, UK<br>
+                      <sup>5</sup>The University of Essex, UK,
+                      <sup>6</sup>Spotify<br>
                     <span class="eql-cntrb"><small><br><sup>*</sup>Indicates Equal Contribution</small></span>
                   </div>
 
@@ -151,7 +156,7 @@
         type="video/mp4">
       </video>
       <h2 class="subtitle has-text-centered">
-        Aliquam vitae elit ullamcorper tellus egestas pellentesque. Ut lacus tellus, maximus vel lectus at, placerat pretium mi. Maecenas dignissim tincidunt vestibulum. Sed consequat hendrerit nisl ut maximus. 
+        Aliquam vitae elit ullamcorper tellus egestas pellentesque. Ut lacus tellus, maximus vel lectus at, placerat pretium mi. Maecenas dignissim tincidunt vestibulum. Sed consequat hendrerit nisl ut maximus.
       </h2>
     </div>
   </div>
@@ -185,31 +190,47 @@ End teaser video -->
 </section>
 <!-- End paper abstract -->
 
+<figure class="figure">
+  <img src="static/images/motivation.png" class="blend-img-background smaller-image" alt="Figure 1: (a) A plausible causal graph for human faces; (b) Factual images (no intervention); (c) Causal counterfactual images using the graph of (a) to perform the interventions do(F emale) (upper panel) and do(Y oung) (lower panel); (d) Non-causal image editing.">
+  <figcaption>Figure 1: (a) A plausible causal graph for human faces; (b) Factual images (no intervention); (c) Causal counterfactual images using the graph of (a) to perform the interventions do(F emale) (upper panel) and do(Y oung) (lower panel); (d) Non-causal image editing.</figcaption>
+</figure>
+
+<br>
+<br>
+
+<figure class="figure">
+  <img src="static/images/abduction_action_prediction.png" class="blend-img-background center-image" alt="Figure 2: Producing a counterfactual MorphoMNIST digit: Abduction: We infer the exogenous noise separately, using Normalising Flows f −1 for the attributes and the encoder of the image mechanism (e.g. VAE, HVAE or GAN), conditioned on factual parents. Action: We intervene (do(t ∗ )) only on thickness. Prediction: We employ the Normalizing Flow f conditioned on the counterfactual thickness t ∗ to obtain i ∗ after the intervention. Note that this is not needed for t ∗ on which we intervene and for d ∗ that has no parents in the DAG. Finally, the decoder generates the counterfactual image, given the exogenous noise U img and all counterfactual attributes."
+  <figcaption>Figure 2: Producing a counterfactual MorphoMNIST digit: Abduction: We infer the exogenous noise separately, using Normalising Flows f −1 for the attributes and the encoder of the image mechanism (e.g. VAE, HVAE or GAN), conditioned on factual parents. Action: We intervene (do(t ∗ )) only on thickness. Prediction: We employ the Normalizing Flow f conditioned on the counterfactual thickness t ∗ to obtain i ∗ after the intervention. Note that this is not needed for t ∗ on which we intervene and for d ∗ that has no parents in the DAG. Finally, the decoder generates the counterfactual image, given the exogenous noise U img and all counterfactual attributes.</figcaption>
+</figure>
+
+<br>
+<br>
+
+<figure class="figure">
+  <img src="static/images/causal_graphs.png" class="blend-img-background smaller-image" alt="Figure 3: Causal graphs for all examined datasets.">
+  <figcaption>Figure 3: Causal graphs for all examined datasets.</figcaption>
+</figure>
+
+<br>
+<br>
 
 <!-- Image carousel -->
 <section class="hero is-small">
   <div class="hero-body">
     <div class="container">
       <div id="results-carousel" class="carousel results-carousel">
-       <div class="item">
-         Your image here 
-        <img src="static/images/causal_non_causal.png" alt="MY ALT TEXT"/>
-        <h2 class="subtitle has-text-centered">
-          First image description.
-        </h2>
-      </div>
       <div class="item">
-         Your image here 
+         Your image here
         <img src="static/images/composition.png" alt="MY ALT TEXT"/>
         <h2 class="subtitle has-text-centered">
-          Second image description.
+          Composition
         </h2>
       </div>
       <div class="item">
-         Your image here 
+         Your image here
         <img src="static/images/effectiveness.png" alt="MY ALT TEXT"/>
         <h2 class="subtitle has-text-centered">
-         Third image description.
+         Effectiveness
        </h2>
      </div>
   </div>
@@ -221,14 +242,14 @@ End teaser video -->
 
 
 
-<!-- Youtube video 
+<!-- Youtube video
 <section class="hero is-small is-light">
   <div class="hero-body">
     <div class="container">
       <h2 class="title is-3">Video Presentation</h2>
       <div class="columns is-centered has-text-centered">
         <div class="column is-four-fifths">
-          
+
           <div class="publication-video">
             <iframe src="https://www.youtube.com/embed/JkaxUblCGz0" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
           </div>
@@ -276,7 +297,7 @@ End video carousel -->
 
 
 
-<!-- Paper poster 
+<!-- Paper poster
 <section class="hero is-small is-light">
   <div class="hero-body">
     <div class="container">
@@ -284,7 +305,7 @@ End video carousel -->
 
       <iframe  src="static/pdfs/sample.pdf" width="100%" height="550">
           </iframe>
-        
+
       </div>
     </div>
   </section>
@@ -328,7 +349,7 @@ End paper poster -->
 </footer>
 
 <!-- Statcounter tracking code -->
-  
+
 <!-- You can add a tracker to track page visits by creating an account at statcounter.com -->
 
     <!-- End of Statcounter Code -->

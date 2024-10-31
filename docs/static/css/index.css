@@ -133,9 +133,41 @@ body {
   background: #000000;
 }
 
-.eql-cntrb { 
+.eql-cntrb {
   font-size: smaller;
 }
 
+.image-container {
+  display: flex;
+  justify-content: center;
+  gap: 1rem; /* Space between images */
+  flex-wrap: wrap;
+}
 
+.figure {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  width: 50%; /* Adjust this percentage as needed */
+  height: auto; /* Keeps the aspect ratio */
+}
 
+.center-image {
+  width: 100%; /* Make the image fill its container */
+  height: auto; /* Maintain aspect ratio */
+}
+
+figcaption {
+  font-size: 0.9rem; /* Caption font size */
+  color: #555; /* Caption color */
+  margin-top: 0.5rem; /* Space above caption */
+  text-align: center;
+}
+
+.smaller-image{
+  display: block;
+  width: 70%; /* Make the image fill its container */
+  margin-left: auto;
+  margin-right: auto;
+  height: auto; /* Keeps the aspect ratio */
+}
