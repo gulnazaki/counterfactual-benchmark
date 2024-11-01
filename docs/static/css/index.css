@@ -125,6 +125,13 @@ body {
   align-items: center; /* Center horizontally */
 }
 
+.results-carousel img {
+  width: 50%; /* Set to a percentage of the carousel container */
+  height: auto;
+  margin: 0 auto;
+  display: block;
+}
+
 .results-carousel video {
   margin: 0;
 }
@@ -170,4 +177,13 @@ figcaption {
   margin-left: auto;
   margin-right: auto;
   height: auto; /* Keeps the aspect ratio */
+}
+
+ol li a {
+  color: #1a73e8; /* Custom blue color for links */
+  text-decoration: none;
+}
+ol li a:hover {
+  color: #0d47a1; /* Darker shade on hover */
+  text-decoration: underline;
 }
