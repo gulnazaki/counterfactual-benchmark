@@ -197,15 +197,12 @@ End teaser video -->
       <div class="column is-full">
         <div class="content">
           <div class="level-set has-text-justified">
-            <h2 class="title is-4 has-text-centered"">Exploring What-Ifs: The Future of Counterfactual Image Generation</h2>
+            <h2 class="title is-3 has-text-centered"">What is Counterfactual Image Generation?</h2>
             <p>
-                Counterfactual image generation is an exciting frontier in generative AI that creates plausible alternative versions of images to explore "what if" scenarios. nlike traditional image editing, which often alters images without considering the underlying causal relationships, counterfactual image generation maintains these essential connections to produce realistic and coherent results.
+                Counterfactual image generation is an exciting frontier in generative AI that creates plausible alternative versions of images to explore <em>"what if"</em> scenarios. Unlike traditional image editing, which often alters images without considering the underlying causal relationships, it explicitly models these essential connections to produce realistic and coherent results.
             </p>
             <p>
                 Counterfactuals allow us to visualize potential consequences of changing specific attributes, such as age or gender, within an image. For instance, modifying a person's age might lead to an unrealistic outcome if not informed by causal relationships. By addressing these nuances, counterfactual image generation aims to ensure that the edited images reflect plausible realities rather than misleading artifacts.
-            </p>
-            <p>
-                This benchmark is crucial as evaluating counterfactual images presents unique challenges, lacking observable ground truths and requiring a balance between realism and causal adherence. Although various methods have been proposed for this task, fairly comparing them is challenging because they utilize different datasets, evaluation metrics, and experimental setups. Our research introduces a comprehensive framework using Structural Causal Models (SCM) to guide generative models through these complexities.
             </p>
             <img src="static/images/motivation.png" class="blend-img-background smaller-image" alt="Figure 1: (a) A plausible causal graph for human faces; (b) Factual images (no intervention); (c) Causal counterfactual images using the graph of (a) to perform the interventions do(Female) (upper panel) and do(Young) (lower panel); (d) Non-causal image editing.">
             <figcaption>Figure 1: (a) A plausible causal graph for human faces; (b) Factual images (no intervention); (c) Causal counterfactual images using the graph of (a) to perform the interventions <em>do(Female)</em> (upper panel) and <em>do(Young)</em> (lower panel); (d) Non-causal image editing.</figcaption>
@@ -217,28 +214,67 @@ End teaser video -->
 </div>
 </section>
 
-<section class="section hero is-small is-light">
+
+<section class="section hero is-light">
   <div class="container is-max-desktop">
     <div class="columns is-centered">
       <div class="column is-full">
-        <div class="content">
+        <!-- <div class="content"> -->
           <div class="level-set has-text-justified">
-            <h2 class="title is-4 has-text-centered"">Key Contributions</h2>
-            <ol>
-              <li>We introduce a comprehensive framework to evaluate image generation models within the Deep-SCM paradigm across various datasets, including synthetic, natural, and medical images.</li>
-              <li>We expand existing models to handle previously untested datasets and causal graphs, specifically testing HVAE and GAN for human faces and creating a GAN for counterfactual brain MRIs.</li>
-              <li>We benchmark these models extensively using multiple metrics for assessing causal SCM-based counterfactual image generation.</li>
-              <li>We offer a user-friendly Python package to facilitate the evaluation of new causal mechanisms and datasets.</li>
-            </ol>
-            <br>
-            <p>
-              This work aspires to be the go-to resource for researchers and developers, paving the way for future advancements in counterfactual image generation.
-            </p>
-        </div>
-        </div>
-      </div>
-    </div>
-  </div>
+
+<h1 style="margin-bottom: 2px;">Generate Counterfactuals</h1>
+<h1 class="title is-4" style="margin-top: 2px;">using the models we benchmark</h1>
+
+
+<!-- Dataset Selector -->
+<section>
+  <label for="datasetSelector">Choose a dataset:</label>
+  <select id="datasetSelector">
+    <option value="MorphoMNIST" selected>MorphoMNIST</option>
+    <option value="CelebA_simple">CelebA (simple)</option>
+    <option value="CelebA_complex">CelebA (complex)</option>
+    <option value="ADNI">ADNI</option>
+  </select>
+</section>
+
+<!-- Action Selector -->
+<section id="actionSection">
+  <label for="actionSelector">Intervene on:</label>
+  <select id="actionSelector"></select>
+</section>
+
+<!-- Images Display -->
+
+<section id="imagesSection" class="images-container">
+  <figure class="image-item">
+    <img id="factualImage" src="" alt="Factual Image" />
+    <figcaption>Factual</figcaption>
+  </figure>
+  <figure class="image-item">
+    <img id="vaeImage" src="" alt="VAE Image" />
+    <figcaption>VAE</figcaption>
+  </figure>
+  <figure class="image-item">
+    <img id="hvaeImage" src="" alt="HVAE Image" />
+    <figcaption>HVAE</figcaption>
+  </figure>
+  <figure class="image-item">
+    <img id="ganImage" src="" alt="GAN Image" />
+    <figcaption>GAN</figcaption>
+  </figure>
+</section>
+
+<!-- Try Another Sample Button -->
+<section id="sampleButtonSection" style="text-align: center; margin-top: 20px;">
+  <button id="tryAnotherSampleButton" class="button is-primary">Try Another Sample</button>
+</section>
+
+<script src="static/js/demo.js"></script>
+
+</div>
+</div>
+</div>
+</div>
 </div>
 </section>
 
@@ -248,22 +284,61 @@ End teaser video -->
       <div class="column is-full">
         <div class="content">
           <div class="level-set has-text-justified">
-            <h2 class="title is-4 has-text-centered">How are counterfactuals obtained?</h2>
-            <p>Counterfactuals are derived using Structural Causal Models (SCMs). An SCM consists of mechanisms that outline how variables relate to one another and noise distributions that account for unobservable factors. By employing a directed acyclic graph (DAG), we can recursively calculate relationships among variables, which are referred to as endogenous, while noise variables are treated as exogenous. This structured approach allows us to predict the effects of interventions on specific variables through a defined process.
+
+            <!-- <p>
+              Evaluating counterfactual images presents unique challenges, lacking observable ground truths and requiring a balance between realism and causal adherence. Although various methods have been proposed for this task, fairly comparing them is challenging because they utilize different datasets, evaluation metrics, and experimental setups.
+          </p> -->
+            <h2 class="title is-4 has-text-centered">Key Contributions</h2>
+            <ol>
+              <li>We introduce a comprehensive framework to evaluate image generation models within the Deep-SCM paradigm across various datasets, including synthetic, natural, and medical images.</li>
+              <li>We expand existing models to handle previously untested datasets and causal graphs, specifically testing HVAE and GAN on a non-trivial causal graph for human faces and devising a GAN architecture that generates counterfactual brain MRIs given multiple variables.</li>
+              <li>We extensively benchmark these models adopting multiple metrics for assessing causal SCM-based counterfactual image generation.</li>
+              <li>We offer a user-friendly Python package to accommodate and evaluate forthcoming causal mechanisms, datasets and causal graphs.</li>
+            </ol>
+            <br>
+            <p>
+              This work aspires to be the go-to resource for researchers and developers, paving the way for future advancements in counterfactual image generation.
             </p>
 
-            <p>To obtain counterfactuals, we utilize the Abduction-Action-Prediction paradigm. This involves three key steps: Abduction, where we infer the noise compatible with an observation; Action, where we alter the structural equations to reflect our intervention; and Prediction, where we compute the resulting outcomes based on the modified model. Following previous work, we incorporate Conditional Normalizing Flows for the mechanisms of the image attributes, while for the image mechanisms we condider (i) Conditional Variational Autoencoders (VAEs), (ii) Conditional Hierarchical VAEs (HVAEs) and (iii) Conditional Generative Adversarial Networks (GANs).
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<section class="section hero is-light">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered">
+      <div class="column is-full">
+        <div class="content">
+          <div class="level-set has-text-justified">
+            <h2 class="title is-4 has-text-centered">How are counterfactuals obtained?</h2>
+            <!-- <p>Counterfactuals are derived using Structural Causal Models (SCMs).
+              An SCM consists of mechanisms that outline how variables relate to one another and noise distributions that account for unobservable factors.
+              By employing a directed acyclic graph (DAG), we can recursively calculate relationships among variables,
+              which are referred to as endogenous, while noise variables are treated as exogenous.
+              This structured approach allows us to predict the effects of interventions on specific variables through a defined process.
+            </p> -->
+
+            <p>To obtain counterfactuals, we utilize the <strong><em>Abduction-Action-Prediction</em></strong> paradigm.
+              This involves three key steps: <strong><em>Abduction</em></strong>, where we infer the noise compatible with an observation;
+                <strong><em>Action</em></strong>, where we alter the structural equations to reflect our intervention; and <strong><em>Prediction</em></strong>, where we compute the resulting outcomes
+              based on the modified model. Following previous work, we incorporate <strong>Conditional Normalizing Flows</strong> for the mechanisms of the image attributes,
+              while for the image mechanisms we condider (i) <strong>Conditional Variational Autoencoders (VAEs)</strong>, (ii) <strong>Conditional Hierarchical VAEs (HVAEs)</strong>
+              and (iii) <strong>Conditional Generative Adversarial Networks (GANs)</strong>.
             </p>
 
             <br>
             <img src="static/images/abduction_action_prediction.png" class="blend-img-background center-image" alt="Figure 2: Producing a counterfactual MorphoMNIST digit: Abduction: We infer the exogenous noise separately, using Normalising Flows f −1 for the attributes and the encoder of the image mechanism (e.g. VAE, HVAE or GAN), conditioned on factual parents. Action: We intervene (do(t ∗ )) only on thickness. Prediction: We employ the Normalizing Flow f conditioned on the counterfactual thickness t ∗ to obtain i ∗ after the intervention. Note that this is not needed for t ∗ on which we intervene and for d ∗ that has no parents in the DAG. Finally, the decoder generates the counterfactual image, given the exogenous noise U img and all counterfactual attributes.">
             <figcaption> Figure 2: Producing a counterfactual MorphoMNIST digit:
-              <strong><em>Abduction</em>:</strong> We infer the exogenous noise separately, using Normalising Flows <em>f<sup>-1</sup></em> for the attributes and the encoder of the image mechanism (e.g. VAE, HVAE, or GAN), conditioned on factual parents.
-    <strong><em>Action</em>:</strong> We intervene (<em>do(t<sup>*</sup>)</em>) only on <em>thickness</em>.
-    <strong><em>Prediction</em>:</strong> We employ the Normalizing Flow <em>f</em> conditioned on the counterfactual thickness <em>t<sup>*</sup></em> to obtain <em>i<sup>*</sup></em> after the intervention. Note that this is not needed for <em>t<sup>*</sup></em> on which we intervene and for <em>d<sup>*</sup></em> that has no parents in the DAG. Finally, the decoder generates the counterfactual image, given the exogenous noise <em>U<sub>img</sub></em> and all counterfactual attributes.</figcaption>          </div>
-    <br><br>
+              <strong><em>Abduction:</em></strong> We infer the exogenous noise separately, using Normalising Flows <em>f<sup>-1</sup></em> for the attributes and the encoder of the image mechanism (e.g. VAE, HVAE, or GAN), conditioned on factual parents.
+    <strong><em>Action:</em></strong> We intervene (<em>do(t<sup>*</sup>)</em>) only on <em>thickness</em>.
+    <strong><em>Prediction:</em></strong> We employ the Normalizing Flow <em>f</em> conditioned on the counterfactual thickness <em>t<sup>*</sup></em> to obtain <em>i<sup>*</sup></em> after the intervention. Note that this is not needed for <em>t<sup>*</sup></em> on which we intervene and for <em>d<sup>*</sup></em> that has no parents in the DAG. Finally, the decoder generates the counterfactual image, given the exogenous noise <em>U<sub>img</sub></em> and all counterfactual attributes.</figcaption>          </div>
+    <!-- <br><br>
     <p>During counterfactual inference, we independently infer the noise for each variable while ensuring that any intervened variables are set to constants. For example, when generating a counterfactual digit in the MorphoMNIST dataset, we infer the necessary noise for attributes and images, make specific changes to a feature (like thickness), and then predict the new image based on these adjustments. This method highlights the importance of causal reasoning in generating realistic counterfactual images and provides a framework for exploring how changes in attributes can lead to different visual outcomes.
-    </p>
+    </p> -->
   </div>
       </div>
     </div>
@@ -271,7 +346,7 @@ End teaser video -->
 </div>
 </section>
 
-<section class="section hero is-small is-light">
+<section class="section hero is-small">
   <div class="container is-max-desktop">
     <div class="columns is-centered">
       <div class="column is-full">
@@ -294,13 +369,13 @@ End teaser video -->
 </div>
 </section>
 
-<section class="section hero is-small">
+<section class="section hero is-light">
   <div class="container is-max-desktop">
     <div class="columns is-centered">
       <div class="column is-full">
         <div class="content">
           <div class="level-set has-text-justified">
-            <h2 class="title is-4 has-text-centered">Results</h2>
+            <h2 class="title is-4 has-text-centered">Experiments</h2>
             <p>Given the availability of architectures and demonstrated outcomes in the literature, we benchmark the above three models on the following datasets:</p>
             <ol>
                 <li><a href="https://github.com/dccastro/Morpho-MNIST" target="_blank">MorphoMNIST</a></li>
@@ -356,7 +431,7 @@ End teaser video -->
   </div>
 </div>
 </section>
-
+<!--
 <br>
 
 <div class="columns is-centered has-text-centered">
@@ -372,7 +447,6 @@ End teaser video -->
         <h2 class="title is-5">MorphoMNIST</h2>
       </div>
       <div id="results-carousel" class="carousel results-carousel" data-directory="static/images/morphomnist">
-        <!-- Carousel items will be dynamically added here by JavaScript -->
       </div>
       <h2 class="subtitle has-text-centered">(from top to bottom: VAE, HVAE, GAN)</h2>
     </div>
@@ -389,7 +463,6 @@ End teaser video -->
         <h2 class="title is-5">CelebA (simple)</h2>
       </div>
       <div id="results-carousel" class="carousel results-carousel" data-directory="static/images/simple">
-        <!-- Carousel items will be dynamically added here by JavaScript -->
       </div>
       <h2 class="subtitle has-text-centered">(from top to bottom: VAE, HVAE, GAN)</h2>
     </div>
@@ -406,7 +479,6 @@ End teaser video -->
         <h2 class="title is-5">CelebA (complex)</h2>
       </div>
       <div id="results-carousel" class="carousel results-carousel" data-directory="static/images/complex">
-        <!-- Carousel items will be dynamically added here by JavaScript -->
       </div>
       <h2 class="subtitle has-text-centered">(from top to bottom: VAE, HVAE, GAN)</h2>
     </div>
@@ -424,12 +496,11 @@ End teaser video -->
         <h2 class="title is-5">ADNI</h2>
       </div>
       <div id="results-carousel" class="carousel results-carousel" data-directory="static/images/adni">
-        <!-- Carousel items will be dynamically added here by JavaScript -->
       </div>
       <h2 class="subtitle has-text-centered">(from top to bottom: VAE, HVAE, GAN)</h2>
     </div>
   </div>
-</section>
+</section> -->
 
 
 <!-- Youtube video
