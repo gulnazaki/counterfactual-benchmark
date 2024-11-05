@@ -20,6 +20,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const actionSelector = document.getElementById("actionSelector");
   const actionSection = document.getElementById("actionSection");
   const imagesSection = document.getElementById("imagesSection");
+  const datasetPreview = document.getElementById("datasetPreview");
 
   const factualImage = document.getElementById("factualImage");
   const vaeImage = document.getElementById("vaeImage");
@@ -72,6 +73,13 @@ document.addEventListener("DOMContentLoaded", function () {
       ganImage.alt = `${dataset} GAN image for ${action} ${index}`;
   }
 
+
+  // Update the preview image based on selected dataset
+  function updatePreviewImage(dataset) {
+      datasetPreview.src = `static/images/${datasetNames[dataset]}/graph.svg`;
+      datasetPreview.alt = `${dataset} preview image`;
+  }
+
     // Function to try another sample
     function tryAnotherSample() {
       const selectedDataset = datasetSelector.value;
@@ -98,6 +106,7 @@ document.addEventListener("DOMContentLoaded", function () {
           populateActionSelector(selectedDataset);
           currentIndex = getRandomIndex(null); // Generate a new random index (null means no current index)
           loadImages(selectedDataset, actionSelector.value, currentIndex); // Load images with the selected action
+          updatePreviewImage(selectedDataset);
           actionSection.style.display = "block";
           imagesSection.style.display = "block";
       }
@@ -114,6 +123,7 @@ document.addEventListener("DOMContentLoaded", function () {
   currentIndex = getRandomIndex(null); // Generate a random index (null means no current index)
   populateActionSelector("MorphoMNIST");
   loadImages("MorphoMNIST", "thickness", currentIndex);
+  updatePreviewImage("MorphoMNIST");
   actionSection.style.display = "block";
   imagesSection.style.display = "block";
 });

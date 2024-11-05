@@ -235,6 +235,12 @@ End teaser video -->
     <option value="CelebA_complex">CelebA (complex)</option>
     <option value="ADNI">ADNI</option>
   </select>
+
+<!-- Dataset Preview Image -->
+<div id="datasetPreviewContainer" style="margin-top: 10px; text-align: center;">
+  <img id="datasetPreview" src="" alt="Dataset Preview"
+       style="width: 25%; height: auto; padding: 5px; display: block; margin: 0 auto;">
+</div>
 </section>
 
 <!-- Action Selector -->
@@ -375,17 +381,7 @@ End teaser video -->
       <div class="column is-full">
         <div class="content">
           <div class="level-set has-text-justified">
-            <h2 class="title is-4 has-text-centered">Experiments</h2>
-            <p>Given the availability of architectures and demonstrated outcomes in the literature, we benchmark the above three models on the following datasets:</p>
-            <ol>
-                <li><a href="https://github.com/dccastro/Morpho-MNIST" target="_blank">MorphoMNIST</a></li>
-                <li><a href="https://mmlab.ie.cuhk.edu.hk/projects/CelebA.html" target="_blank">CelebA</a> (simple & complex causal graph)</li>
-                <li><a href="https://adni.loni.usc.edu/data-samples/adni-data/neuroimaging/mri/" target="_blank">ADNI</a></li>
-            </ol>
-            <img src="static/images/causal_graphs.png" class="blend-img-background smaller-image" alt="Figure 3: Causal graphs for all examined datasets.">
-            <figcaption>Figure 3: Causal graphs for all examined datasets.</figcaption>
-
-            <br>
+            <!-- <h2 class="title is-4 has-text-centered">Results</h2> -->
           <h2 class="title is-5 has-text-centered">Composition</h2>
           <p>Our findings indicate that HVAE consistently outperforms other models on <strong>composition</strong>. While both VAE and GAN show similar performance, they have distinct drawbacks: VAE reconstructions maintain image structure but appear too blurry, while GAN alters image structure, especially with complex datasets.</p>
 
@@ -416,7 +412,7 @@ End teaser video -->
 </div>
 </section>
 
-<section class="section hero is-small is-light">
+<section class="section hero is-small colorful-section">
   <div class="container is-max-desktop">
     <div class="columns is-centered">
       <div class="column is-full">

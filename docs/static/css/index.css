@@ -310,42 +310,22 @@ ol li a:hover {
 }
 
 .colorful-section {
-  background-color: #E91E63; /* Use this for soft pink */
+  background-color: #a3c9f5;
   padding: 40px 20px; /* Increase padding for a more spacious look */
   border-radius: 10px; /* Rounded corners */
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); /* Soft shadow for depth */
-  color: #000000; /* Set default text color to black */
+  width: 100%;
 }
 
 .colorful-section .title {
   font-size: 2em; /* Increase font size for the title */
   margin-bottom: 20px; /* Space below the title */
   text-align: center; /* Center the title */
-  color: #ffffff; /* White color for the title */
+  color: #000000; /* White color for the title */
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); /* Text shadow for better readability */
 }
 
-.colorful-section ol {
-  margin: 20px 0; /* Add margin to the list */
-  padding-left: 20px; /* Indent the list */
-  line-height: 1.6; /* Increase line height for better readability */
-}
-
-.colorful-section li {
-  background-color: rgba(255, 255, 255, 0.2); /* Light background for list items */
-  border-radius: 5px; /* Rounded corners for list items */
-  margin: 5px 0; /* Space between list items */
-  padding: 10px; /* Padding for list items */
-  transition: background-color 0.3s ease; /* Smooth transition */
-  color: #000000; /* Black text for list items */
-}
-
-.colorful-section li:hover {
-  background-color: rgba(255, 255, 255, 0.4); /* Change background on hover */
-}
-
 .colorful-section p {
-  font-size: 1.1em; /* Slightly larger text for the paragraph */
   margin-top: 15px; /* Space above paragraph */
   color: #000000; /* Black color for paragraph text */
 }
