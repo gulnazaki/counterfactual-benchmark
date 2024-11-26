@@ -139,6 +139,17 @@
                   <span>arXiv</span>
                 </a>
               </span>
+
+              <!-- Poster -->
+              <span class="link-block">
+                <a href="https://neurips.cc/media/PosterPDFs/NeurIPS%202024/97876.png" target="_blank"
+                class="external-link button is-normal is-rounded is-dark">
+                <span class="icon">
+                  <i class="fas fa-file-image"></i>
+                </span>
+                <span>Poster</span>
+              </a>
+            </span>
             </div>
           </div>
         </div>
@@ -237,9 +248,8 @@ End teaser video -->
   </select>
 
 <!-- Dataset Preview Image -->
-<div id="datasetPreviewContainer" style="margin-top: 10px; text-align: center;">
-  <img id="datasetPreview" src="" alt="Dataset Preview"
-       style="width: 25%; height: auto; padding: 5px; display: block; margin: 0 auto;">
+<div id="datasetPreviewContainer">
+  <img id="datasetPreview" src="" alt="Dataset Preview">
 </div>
 </section>
 
@@ -331,17 +341,17 @@ End teaser video -->
             <p>To obtain counterfactuals, we utilize the <strong><em>Abduction-Action-Prediction</em></strong> paradigm.
               This involves three key steps: <strong><em>Abduction</em></strong>, where we infer the noise compatible with an observation;
                 <strong><em>Action</em></strong>, where we alter the structural equations to reflect our intervention; and <strong><em>Prediction</em></strong>, where we compute the resulting outcomes
-              based on the modified model. Following previous work, we incorporate <strong>Conditional Normalizing Flows</strong> for the mechanisms of the image attributes,
-              while for the image mechanisms we condider (i) <strong>Conditional Variational Autoencoders (VAEs)</strong>, (ii) <strong>Conditional Hierarchical VAEs (HVAEs)</strong>
+              based on the modified model. Following previous work, we incorporate <strong>Conditional Normalizing Flows</strong> for the mechanisms of the attributes,
+              while for the image mechanisms we consider (i) <strong>Conditional Variational Autoencoders (VAEs)</strong>, (ii) <strong>Conditional Hierarchical VAEs (HVAEs)</strong>
               and (iii) <strong>Conditional Generative Adversarial Networks (GANs)</strong>.
             </p>
 
             <br>
-            <img src="static/images/abduction_action_prediction.png" class="blend-img-background center-image" alt="Figure 2: Producing a counterfactual MorphoMNIST digit: Abduction: We infer the exogenous noise separately, using Normalising Flows f −1 for the attributes and the encoder of the image mechanism (e.g. VAE, HVAE or GAN), conditioned on factual parents. Action: We intervene (do(t ∗ )) only on thickness. Prediction: We employ the Normalizing Flow f conditioned on the counterfactual thickness t ∗ to obtain i ∗ after the intervention. Note that this is not needed for t ∗ on which we intervene and for d ∗ that has no parents in the DAG. Finally, the decoder generates the counterfactual image, given the exogenous noise U img and all counterfactual attributes.">
+            <img src="static/images/abduction_action_prediction.png" class="blend-img-background center-image" alt="Figure 2: Producing a counterfactual MorphoMNIST digit: Abduction: We infer the exogenous noise separately, using Normalising Flows f −1 for the attributes and the encoder of the image mechanism (e.g. VAE, HVAE or GAN), conditioned on the factual parents. Action: We intervene do(t ∗ ) only on thickness. Prediction: We employ the Normalizing Flow f conditioned on the counterfactual thickness t ∗ to obtain i ∗ after the intervention. Note that this is not needed for t ∗ on which we intervene and for d ∗ that has no parents in the DAG. Finally, the decoder generates the counterfactual image, given the exogenous noise U img and all counterfactual attributes.">
             <figcaption> Figure 2: Producing a counterfactual MorphoMNIST digit:
-              <strong><em>Abduction:</em></strong> We infer the exogenous noise separately, using Normalising Flows <em>f<sup>-1</sup></em> for the attributes and the encoder of the image mechanism (e.g. VAE, HVAE, or GAN), conditioned on factual parents.
-    <strong><em>Action:</em></strong> We intervene (<em>do(t<sup>*</sup>)</em>) only on <em>thickness</em>.
-    <strong><em>Prediction:</em></strong> We employ the Normalizing Flow <em>f</em> conditioned on the counterfactual thickness <em>t<sup>*</sup></em> to obtain <em>i<sup>*</sup></em> after the intervention. Note that this is not needed for <em>t<sup>*</sup></em> on which we intervene and for <em>d<sup>*</sup></em> that has no parents in the DAG. Finally, the decoder generates the counterfactual image, given the exogenous noise <em>U<sub>img</sub></em> and all counterfactual attributes.</figcaption>          </div>
+              <strong><em>Abduction:</em></strong> We infer the exogenous noise separately, using Normalising Flows <em>f<sup>-1</sup></em> for the attributes and the encoder of the image mechanism (e.g. VAE, HVAE, or GAN), conditioned on the factual parents.
+    <strong><em>Action:</em></strong> We intervene <em>do(t<sup>*</sup>)</em> only on <em>thickness</em>.
+    <strong><em>Prediction:</em></strong> We employ the Normalizing Flow <em>f</em> conditioned on the counterfactual thickness <em>t<sup>*</sup></em> to obtain <em>i<sup>*</sup></em> after the intervention. Note that this is not needed for <em>t<sup>*</sup></em> on which we intervene and for <em>d<sup>*</sup></em> that has no parents in the DAG. <br>Finally, the decoder generates the counterfactual image, given the exogenous noise <em>U<sub>img</sub></em> and all counterfactual attributes.</figcaption>          </div>
     <!-- <br><br>
     <p>During counterfactual inference, we independently infer the noise for each variable while ensuring that any intervened variables are set to constants. For example, when generating a counterfactual digit in the MorphoMNIST dataset, we infer the necessary noise for attributes and images, make specific changes to a feature (like thickness), and then predict the new image based on these adjustments. This method highlights the importance of causal reasoning in generating realistic counterfactual images and provides a framework for exploring how changes in attributes can lead to different visual outcomes.
     </p> -->
@@ -361,11 +371,18 @@ End teaser video -->
             <h2 class="title is-4 has-text-centered">Key Metrics</h2>
     <ul>
         <li><strong>Composition</strong>: Ensures the image remains unchanged under "null-intervention" (when no change is applied). We use distances like the <em>L1 distance</em> and <em>LPIPS</em> to measure this.</li>
+        <img src="static/images/composition.gif" class="blend-img-background smaller-image" alt="Composition"><figcaption>Composition</figcaption>
+        <br>
         <li><strong>Effectiveness</strong>: Confirms the intervention worked as intended. We use predictors on image features and metrics like <em>accuracy</em> and <em>F1-score</em> for evaluation.</li>
+        <img src="static/images/effectiveness.gif" class="blend-img-background smaller-image" alt="Effectiveness"><figcaption>Effectiveness</figcaption>
+        <br>
         <li><strong>Realism</strong>: Measures how similar the counterfactual is to real images, using the <em>Fréchet Inception Distance (FID)</em>.</li>
+        <img src="static/images/realism.gif" class="blend-img-background smaller-image" alt="Realism"><figcaption>Realism</figcaption>
+        <br>
         <li><strong>Minimality</strong>: Ensures changes are focused on the intended attribute, measured with <em>Counterfactual Latent Divergence (CLD)</em> for closeness to the original.</li>
+        <img src="static/images/minimality.gif" class="blend-img-background smaller-image" alt="Minimality"><figcaption>Minimality</figcaption>
     </ul>
-
+    <br>
     <p>In essence, evaluating counterfactual images requires balancing these metrics to ensure images are realistic, minimal in changes, and effective in showcasing intended modifications.</p>
   </div>
         </div>
@@ -381,29 +398,34 @@ End teaser video -->
       <div class="column is-full">
         <div class="content">
           <div class="level-set has-text-justified">
-            <!-- <h2 class="title is-4 has-text-centered">Results</h2> -->
-          <h2 class="title is-5 has-text-centered">Composition</h2>
-          <p>Our findings indicate that HVAE consistently outperforms other models on <strong>composition</strong>. While both VAE and GAN show similar performance, they have distinct drawbacks: VAE reconstructions maintain image structure but appear too blurry, while GAN alters image structure, especially with complex datasets.</p>
+            <h2 class="title is-4 has-text-centered"><em>Who is the winner?</em></h2>
+            <img src="static/images/summary_table.svg" class="blend-img-background smaller-image" alt="Summary table showing the best performing models on each metric for all datasets">
+            <figcaption>Summary table showing the best performing models on each metric for all datasets</figcaption>
+            <br>
+            <!-- <h2 class="title is-5 has-text-centered">Composition</h2> -->
+          <p>Our findings indicate that HVAE consistently outperforms all other models on <strong>composition</strong>.
+            VAE and GAN have distinct drawbacks: VAE reconstructions maintain image structure but appear too blurry, while GAN alters image structure, especially on complex datasets.
+            The advantage of HVAE over other models becomes clear as data complexity increases (e.g. CelebA, ADNI).
+            This improvement may be attributed to HVAE's multiple stochastic layers of latent variables, which allow it to more effectively learn and retain the prior of the latent from the data distribution.</p>
 
-          <p>The advantage of HVAE over other models becomes clear as data complexity increases (e.g., with datasets like CelebA and ADNI). This improvement may be attributed to HVAE's multiple stochastic layers of latent variables, which allow it to more effectively learn and retain the prior of the latent from the data distribution across composition cycles.</p>
-
-          <img src="static/images/composition.png" class="blend-img-background smaller-image" alt="Figure 4: Qualitative evaluation of composition across all datasets/graphs. From left to right across
+          <!-- <img src="static/images/composition.png" class="blend-img-background smaller-image" alt="Figure 4: Qualitative evaluation of composition across all datasets/graphs. From left to right across
           all datasets: (i) factual, (ii) null-intervention (reconstruction) (iii) 10 cycles of null-intervention">
-            <figcaption>Figure 4: Qualitative evaluation of composition across all datasets/graphs. From left to right across all datasets: <br>(i) factual, (ii) null-intervention (reconstruction) (iii) 10 cycles of null-intervention</figcaption>
-
-          <br>
-          <h2 class="title is-5 has-text-centered">Effectiveness</h2>
-          <p>We attribute HVAE’s superior performance in generating counterfactuals to the high expressivity of its hierarchical latent variables. This hierarchical structure enables HVAE to align closely with the underlying causal graph, allowing it to retain the semantic information of the original image while implementing the intended causal modifications effectively.</p>
-
-    <p>The rich representation of latent variables in HVAE not only preserves the original content but also allows for more accurate and nuanced manipulation of causal factors. This results in counterfactuals that are both effective and plausible, making HVAE a powerful tool for counterfactual generation.</p>
-    <img src="static/images/effectiveness.png" class="blend-img-background smaller-image" alt="Figure 5: Qualitative evaluation of effectiveness for all datasets/graphs. From left to right across
+            <figcaption>Figure 4: Qualitative evaluation of composition across all datasets/graphs. From left to right across all datasets: <br>(i) factual, (ii) null-intervention (reconstruction) (iii) 10 cycles of null-intervention</figcaption> -->
+          <!-- <h2 class="title is-5 has-text-centered">Effectiveness</h2> -->
+          <p>When measuring <strong>effectiveness</strong>, HVAE has the best score on most attributes, with VAE and GAN being competitive on other attributes, depending on the dataset.
+            We believe that HVAE's hierarchical structure enables it to align closely with the underlying causal graph, allowing of a more accurate and nuanced manipulation of causal factors.
+            This resulting in counterfactuals that are both effective and plausible.</p>
+<!--
+    <p>The rich representation of latent variables in HVAE not only preserves the original content but also allows for more accurate and nuanced manipulation of causal factors.
+      This results in counterfactuals that are both effective and plausible, making HVAE a powerful tool for counterfactual generation.</p> -->
+    <!-- <img src="static/images/effectiveness.png" class="blend-img-background smaller-image" alt="Figure 5: Qualitative evaluation of effectiveness for all datasets/graphs. From left to right across
     datasets: the leftmost image is the factual one and then each column shows the causal counterfactual
     image after intervening on a single attribute. v: volume; vent: ventricle; eg: eyeglasses.">
-      <figcaption>Figure 5: Qualitative evaluation of effectiveness for all datasets/graphs. From left to right across datasets: the leftmost image is the factual one and then each column shows the causal counterfactual image after intervening on a single attribute.<br>v: volume; vent: ventricle; eg: eyeglasses.</figcaption>
-
-      <br>
-      <h2 class="title is-5 has-text-centered">Realism & Minimality</h2>
-      <p>We found that HVAE generates the most realistic counterfactuals across most metrics and datasets, namely the ones closest to the original data distribution. Introducing more attributes to condition the HVAE (complex graph on CelebA) affected image realism, while GAN maintained good performance. The GAN model, while capable of generating realistic images, failed to achieve optimal minimality due to its lower ability to preserve factual details, compared to HVAE, which is also evident by the composition metric.</p>
+      <figcaption>Figure 5: Qualitative evaluation of effectiveness for all datasets/graphs. From left to right across datasets: the leftmost image is the factual one and then each column shows the causal counterfactual image after intervening on a single attribute.<br>v: volume; vent: ventricle; eg: eyeglasses.</figcaption> -->
+      <!-- <h2 class="title is-5 has-text-centered">Realism & Minimality</h2> -->
+      <p>We found that HVAE generates the most <strong>realistic</strong> counterfactuals across most metrics and datasets.
+        However, introducing more attributes to condition the HVAE (as in CelebA (complex)) affected image realism, exhibiting a known issue of its counterfactual training step, termed <em>attribute amplification</em>.
+        GANs, while capable of generating realistic images, fail to achieve optimal <strong>minimality</strong> by preserving factual details, which is also evident through the composition metric.</p>
 
           </div>
       </div>
@@ -419,7 +441,7 @@ End teaser video -->
         <div class="content">
           <div class="level-set has-text-justified">
             <h2 class="title is-4 has-text-centered">🎉 Summing it up! 🎉</h2>
-            <p>Our work bridges a critical gap in counterfactual image generation by introducing a unified framework that rigorously benchmarks diverse models, datasets, and causal graphs. With this standardized evaluation, we uncover the exceptional expressivity of hierarchical structures in HVAE, which outperforms VAEs and GANs by capturing causal variables more accurately and preserving semantic details. Notably, our experiments with complex datasets—like human faces and brain MRIs—highlight HVAE’s capacity to generate realistic, causally sound counterfactuals. As we extend the reach of this benchmark, we look forward to seeing the community build on our foundation, exploring new methods, models, and causal graphs. To support these efforts, we’ve created an easy-to-use Python package that enables future innovations in counterfactual generation.</p>
+            <p>Our work bridges a critical gap in counterfactual image generation by introducing a unified framework that rigorously benchmarks diverse models, datasets, and causal graphs. With this standardized evaluation, we uncover the exceptional expressivity of hierarchical structures in HVAE, which outperforms VAEs and GANs by capturing causal variables more accurately and preserving semantic details. Notably, our experiments with complex datasets—like human faces and brain MRIs—highlight HVAE’s capacity to generate realistic, causally sound counterfactuals. As we extend the reach of this benchmark, we look forward to seeing the community build on our foundation, exploring new methods, models, and causal graphs. To support these efforts, we publish our open-source codebase to enable future contributions in counterfactual image generation.</p>
   </div>
         </div>
       </div>
@@ -427,76 +449,6 @@ End teaser video -->
   </div>
 </div>
 </section>
-<!--
-<br>
-
-<div class="columns is-centered has-text-centered">
-  <h2 class="title is-3">Generated Counterfactual Samples for all Datasets</h2>
-</div>
-
-<br>
-
-<section class="hero is-small">
-  <div class="hero-body">
-    <div class="container">
-      <div class="columns is-centered has-text-centered">
-        <h2 class="title is-5">MorphoMNIST</h2>
-      </div>
-      <div id="results-carousel" class="carousel results-carousel" data-directory="static/images/morphomnist">
-      </div>
-      <h2 class="subtitle has-text-centered">(from top to bottom: VAE, HVAE, GAN)</h2>
-    </div>
-  </div>
-</section>
-
-<br>
-<br>
-
-<section class="hero is-small">
-  <div class="hero-body">
-    <div class="container">
-      <div class="columns is-centered has-text-centered">
-        <h2 class="title is-5">CelebA (simple)</h2>
-      </div>
-      <div id="results-carousel" class="carousel results-carousel" data-directory="static/images/simple">
-      </div>
-      <h2 class="subtitle has-text-centered">(from top to bottom: VAE, HVAE, GAN)</h2>
-    </div>
-  </div>
-</section>
-
-<br>
-<br>
-
-<section class="hero is-small">
-  <div class="hero-body">
-    <div class="container">
-      <div class="columns is-centered has-text-centered">
-        <h2 class="title is-5">CelebA (complex)</h2>
-      </div>
-      <div id="results-carousel" class="carousel results-carousel" data-directory="static/images/complex">
-      </div>
-      <h2 class="subtitle has-text-centered">(from top to bottom: VAE, HVAE, GAN)</h2>
-    </div>
-  </div>
-</section>
-
-
-<br>
-<br>
-
-<section class="hero is-small">
-  <div class="hero-body">
-    <div class="container">
-      <div class="columns is-centered has-text-centered">
-        <h2 class="title is-5">ADNI</h2>
-      </div>
-      <div id="results-carousel" class="carousel results-carousel" data-directory="static/images/adni">
-      </div>
-      <h2 class="subtitle has-text-centered">(from top to bottom: VAE, HVAE, GAN)</h2>
-    </div>
-  </div>
-</section> -->
 
 
 <!-- Youtube video
@@ -549,24 +501,17 @@ End youtube video -->
 </section>
 End video carousel -->
 
-
-
-
-
-
-<!-- Paper poster
-<section class="hero is-small is-light">
+<!-- Paper poster -->
+<!-- <section class="hero is-small is-light">
   <div class="hero-body">
     <div class="container">
       <h2 class="title">Poster</h2>
-
-      <iframe  src="static/pdfs/sample.pdf" width="100%" height="550">
-          </iframe>
-
+      <img src="static/images/poster.png" width="100%" height="550">
+          </img>
       </div>
     </div>
-  </section>
-End paper poster -->
+  </section> -->
+<!-- End paper poster -->
 
 
 <!--BibTex citation -->

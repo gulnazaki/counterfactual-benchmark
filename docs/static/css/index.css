@@ -67,11 +67,12 @@ select:hover {
 .images-container {
   display: flex !important;
   flex-direction: row !important;
+  flex-wrap: wrap;
   justify-content: center;
   align-items: center;
-  gap: 20px;
-  margin-top: 20px;
-  padding: 20px;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 10px;
   border-radius: 10px;
   background-color: #fff;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -81,11 +82,14 @@ select:hover {
 .image-item {
   display: flex;
   flex-direction: column;
+  flex: 1 1 22%;
+  min-width: 80px;
+  max-width: 22%;
   align-items: center;
   text-align: center;
   background-color: #fafafa;
-  padding: 15px;
-  border-radius: 8px;
+  padding: 5px;
+  border-radius: 5px;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
@@ -96,10 +100,10 @@ select:hover {
 }
 
 .image-item img {
-  width: 150px;
+  width: 100%;
   height: auto;
   border: 1px solid #ddd;
-  border-radius: 8px;
+  border-radius: 5px;
   padding: 5px;
   transition: transform 0.3s ease;
 }
@@ -113,22 +117,6 @@ select:hover {
   font-weight: bold;
   font-size: 0.9em;
   color: #666;
-}
-
-/* Responsive Adjustments */
-@media (max-width: 768px) {
-  .images-container {
-    flex-direction: column;
-    gap: 15px;
-  }
-
-  h1 {
-    font-size: 2em;
-  }
-
-  section {
-    width: 90%;
-  }
 }
 
 .footer .icon-link {
@@ -328,4 +316,64 @@ ol li a:hover {
 .colorful-section p {
   margin-top: 15px; /* Space above paragraph */
   color: #000000; /* Black color for paragraph text */
+}
+
+/* General styling for the BibTeX container */
+#BibTeX {
+  word-wrap: break-word; /* Allow long words to break and wrap */
+  overflow-wrap: break-word; /* Ensures text wraps within container */
+}
+
+/* Styling to make <pre> tag responsive */
+#BibTeX pre {
+  white-space: pre-wrap; /* Preserve formatting but allow wrapping */
+  word-break: break-word; /* Break long words if necessary */
+  overflow-x: auto; /* Add horizontal scroll only if necessary */
+  background-color: #f5f5f5; /* Optional: Light background for <pre> block */
+  padding: 10px; /* Optional: Padding for better appearance */
+  border-radius: 5px; /* Optional: Rounded corners */
+}
+
+/* Optional styling for <code> to ensure good visibility */
+#BibTeX code {
+  font-family: monospace; /* Use a monospace font */
+  font-size: 0.9em; /* Slightly smaller for better fit */
+  color: #333; /* Darker color for better contrast */
+}
+
+/* Styling for the Dataset Preview Container */
+#datasetPreviewContainer {
+  margin-top: 10px;
+  text-align: center;
+}
+
+/* Styling for the Dataset Preview Image */
+#datasetPreview {
+  width: 25%; /* Make image take up 25% of its container's width */
+  height: auto; /* Maintain aspect ratio */
+  padding: 5px;
+  display: block; /* Center the image horizontally */
+  margin: 0 auto; /* Center align the image */
+  border-radius: 5px; /* Optional: Rounded corners */
+}
+
+/* Media query for responsiveness on smaller screens */
+@media (max-width: 768px) {
+  .smaller-image{
+    display: block;
+    width: 100%; /* Make the image fill its container */
+    margin-left: auto;
+    margin-right: auto;
+    height: auto; /* Keeps the aspect ratio */
+  }
+
+  #datasetPreview {
+    width: 50%; /* Increase image width to 50% on tablet screens */
+  }
+}
+
+@media (max-width: 480px) {
+  #datasetPreview {
+    width: 70%; /* Increase image width to 70% on mobile screens */
+  }
 }
