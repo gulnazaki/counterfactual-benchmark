@@ -371,16 +371,16 @@ End teaser video -->
             <h2 class="title is-4 has-text-centered">Key Metrics</h2>
     <ul>
         <li><strong>Composition</strong>: Ensures the image remains unchanged under "null-intervention" (when no change is applied). We use distances like the <em>L1 distance</em> and <em>LPIPS</em> to measure this.</li>
-        <img src="static/images/composition.gif" class="blend-img-background smaller-image" alt="Composition"><figcaption>Composition</figcaption>
+        <img src="static/images/composition.svg" class="blend-img-background smaller-image" alt="Composition"><figcaption>Composition</figcaption>
         <br>
         <li><strong>Effectiveness</strong>: Confirms the intervention worked as intended. We use predictors on image features and metrics like <em>accuracy</em> and <em>F1-score</em> for evaluation.</li>
-        <img src="static/images/effectiveness.gif" class="blend-img-background smaller-image" alt="Effectiveness"><figcaption>Effectiveness</figcaption>
+        <img src="static/images/effectiveness.svg" class="blend-img-background smaller-image" alt="Effectiveness"><figcaption>Effectiveness</figcaption>
         <br>
         <li><strong>Realism</strong>: Measures how similar the counterfactual is to real images, using the <em>Fréchet Inception Distance (FID)</em>.</li>
-        <img src="static/images/realism.gif" class="blend-img-background smaller-image" alt="Realism"><figcaption>Realism</figcaption>
+        <img src="static/images/realism.svg" class="blend-img-background smaller-image" alt="Realism"><figcaption>Realism</figcaption>
         <br>
         <li><strong>Minimality</strong>: Ensures changes are focused on the intended attribute, measured with <em>Counterfactual Latent Divergence (CLD)</em> for closeness to the original.</li>
-        <img src="static/images/minimality.gif" class="blend-img-background smaller-image" alt="Minimality"><figcaption>Minimality</figcaption>
+        <img src="static/images/minimality.svg" class="blend-img-background smaller-image" alt="Minimality"><figcaption>Minimality</figcaption>
     </ul>
     <br>
     <p>In essence, evaluating counterfactual images requires balancing these metrics to ensure images are realistic, minimal in changes, and effective in showcasing intended modifications.</p>
