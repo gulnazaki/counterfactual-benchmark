@@ -1,10 +1,13 @@
 # Benchmarking Counterfactual Image Generation
 ![image](https://github.com/gulnazaki/counterfactual-benchmark/assets/57211914/966b0d1f-3a3d-47c2-a77e-d32cf01d2868)
-![image](https://github.com/gulnazaki/counterfactual-benchmark/assets/57211914/8e8b5970-9474-4e06-b005-1a251341030b)
 
 Code to reproduce our paper "Benchmarking Counterfactual Image Generation".
 
-[Paper](https://arxiv.org/abs/2403.20287)
+Published as a conference paper at [NeurIPS 2024 Datasets and Benchmarks Track](https://neurips.cc/virtual/2024/poster/97876).
+
+You can find an interactive demo to compare counterfactual generation methods on our [project page](https://gulnazaki.github.io/counterfactual-benchmark/).
+
+If you are interested, take a look at the [paper](https://arxiv.org/abs/2403.20287).
 
 ## Repository Organization
 ```
@@ -119,8 +122,11 @@ A description of all possible arguments for the evaluation script can be obtaine
 "pretrained_path": "<insert_checkpoint_path>",
 ```
 
+## Datasets
 
-## Get CelebA Dataset
+![image](https://github.com/gulnazaki/counterfactual-benchmark/assets/57211914/8e8b5970-9474-4e06-b005-1a251341030b)
+
+### Get CelebA Dataset
 Images have to be downloaded from Google Drive and extracted:
 
 See: https://drive.usercontent.google.com/download?id=0B7EVK8r0v71pZjFTYXZWM3FlRnM
@@ -142,7 +148,7 @@ Download attributes, etc. from:
 Move everything to `counterfactual_benchmark/datasets/celeba/data/`
 
 
-## Get ADNI Dataset
+### Get ADNI Dataset
 To request access to [Alzheimer’s Disease Neuroimaging Initiative (ADNI)](https://adni.loni.usc.edu/) you should apply [here](https://ida.loni.usc.edu/collaboration/access/appLicense.jsp).
 
 After getting access (typically takes 1-2 days) you have to login in this [platform](https://ida.loni.usc.edu/login.jsp?project=ADNI).
@@ -154,19 +160,19 @@ Move the downloaded csv files and the zip in `counterfactual_benchmark/datasets/
 
 Finally, follow the instructions in `counterfactual_benchmark/datasets/adni/preprocessing/README.md` to perform the preprocessing of ADNI
 
-## How good is your counterfactual image?
+## How good is your counterfactual image generation?
 ![image](https://github.com/gulnazaki/counterfactual-benchmark/assets/57211914/ed125278-9c79-467d-9852-4693b319d91a)
 
 
 ## Citation
 ```
 If you find this work helpful in your research, cite:
-@misc{melistas2024benchmarking,
-      title={Benchmarking Counterfactual Image Generation},
-      author={Thomas Melistas and Nikos Spyrou and Nefeli Gkouti and Pedro Sanchez and Athanasios Vlontzos and Yannis Panagakis and Giorgos Papanastasiou and Sotirios A. Tsaftaris},
-      year={2024},
-      eprint={2403.20287},
-      archivePrefix={arXiv},
-      primaryClass={cs.CV}
-}
+        @inproceedings{
+          melistas2024benchmarking,
+          title={Benchmarking Counterfactual Image Generation},
+          author={Thomas Melistas and Nikos Spyrou and Nefeli Gkouti and Pedro Sanchez and Athanasios Vlontzos and Yannis Panagakis and Giorgos Papanastasiou and Sotirios A. Tsaftaris},
+          booktitle={The Thirty-eight Conference on Neural Information Processing Systems Datasets and Benchmarks Track},
+          year={2024},
+          url={https://openreview.net/forum?id=0T8xRFrScB}
+        }
 ```
