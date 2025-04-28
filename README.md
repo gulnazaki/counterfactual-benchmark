@@ -160,6 +160,9 @@ Move the downloaded csv files and the zip in `counterfactual_benchmark/datasets/
 
 Finally, follow the instructions in `counterfactual_benchmark/datasets/adni/preprocessing/README.md` to perform the preprocessing of ADNI
 
+## Checkpoints for unconditional VAES (to compute CLD)
+You can download from this google drive folder: https://drive.google.com/drive/folders/1SAak8-S3HOCmPyk8JFojAjV-xv2spSlY?usp=sharing
+
 ## How good is your counterfactual image generation?
 ![image](https://github.com/gulnazaki/counterfactual-benchmark/assets/57211914/ed125278-9c79-467d-9852-4693b319d91a)
 
