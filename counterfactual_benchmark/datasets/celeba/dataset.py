@@ -15,7 +15,7 @@ def load_data(data_dir, split):
 def unnormalize(value, name):
     # [0,1] -> [min,max]
     value = (value * (MIN_MAX[name][1] - MIN_MAX[name][0])) +  MIN_MAX[name][0]
-    return value.to(torch.uint8)
+    return value.to(torch.int32)
 
 class Celeba(Dataset):
     def __init__(self, attribute_size, split='train', normalize_=True,
