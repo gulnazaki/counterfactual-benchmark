@@ -46,7 +46,7 @@ def get_embedding_model(embedding, pretrained_vgg, classifier_config=None):
             "sex": 1,
             "brain_vol": 1,
             "vent_vol": 1,
-            "slice": 20
+            "slice": 10
             }
             model = ADNICondVAE(params, attribute_size, unconditional=True).eval().to('cuda')
             # add path of an unconditional VAE trained on ADNI

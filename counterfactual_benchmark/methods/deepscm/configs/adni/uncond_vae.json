@@ -14,7 +14,7 @@
         "sex": 1,
         "brain_vol": 1,
         "vent_vol": 1,
-        "slice": 20
+        "slice": 10
     },
     "mechanism_models": {
         "image": {
